@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
+from apps.engagement.models import LoyaltyReward, PromoCode, Review
 from apps.services.models import Service
 from apps.staff.models import StaffProfile, TimeOff, WorkingHours
 
@@ -191,7 +192,28 @@ class Command(BaseCommand):
                 + timedelta(days=2),
                 "status": "pending",
             },
+            {
+                "customer": customers[0],
+                "staff": staff_users[0],
+                "service": services[0],
+                "start_datetime": now.replace(
+                    hour=10, minute=0, second=0, microsecond=0
+                )
+                - timedelta(days=5),
+                "status": "completed",
+            },
+            {
+                "customer": customers[1],
+                "staff": staff_users[1],
+                "service": services[4],
+                "start_datetime": now.replace(
+                    hour=15, minute=0, second=0, microsecond=0
+                )
+                - timedelta(days=3),
+                "status": "completed",
+            },
         ]
+        completed_appointments = []
         for a in appointment_data:
             service = a["service"]
             a["end_datetime"] = a["start_datetime"] + timedelta(
@@ -206,6 +228,48 @@ class Command(BaseCommand):
             )
             if created:
                 self.stdout.write(f"  Appointment: {appointment}")
+            if appointment.status == "completed" and appointment.points_earned == 0:
+                appointment.points_earned = int(appointment.service.price)
+                appointment.save(update_fields=["points_earned"])
+            if appointment.status == "completed":
+                completed_appointments.append(appointment)
+
+        # Reviews for completed visits
+        review_data = [
+            {"appointment": completed_appointments[0], "rating": 5, "comment": "Great cut, will be back!"},
+            {"appointment": completed_appointments[1], "rating": 4, "comment": "Very relaxing massage."},
+        ]
+        for r in review_data:
+            appt = r["appointment"]
+            Review.objects.get_or_create(
+                appointment=appt,
+                defaults={
+                    "customer": appt.customer,
+                    "staff": appt.staff,
+                    "rating": r["rating"],
+                    "comment": r["comment"],
+                },
+            )
+        self.stdout.write(f"  Reviews created for {len(review_data)} completed visits")
+
+        # Loyalty rewards catalog
+        reward_data = [
+            {"name": "10% off next visit", "description": "Applies to any single service", "points_cost": 50},
+            {"name": "Free add-on treatment", "description": "Hot towel or scalp massage upgrade", "points_cost": 90},
+            {"name": "Free haircut", "description": "Redeem for a full complimentary service", "points_cost": 150},
+        ]
+        for r in reward_data:
+            LoyaltyReward.objects.get_or_create(name=r["name"], defaults=r)
+        self.stdout.write(f"  Loyalty rewards: {len(reward_data)}")
+
+        # Promo campaigns
+        promo_data = [
+            {"code": "WELCOME15", "description": "New client welcome", "discount_type": "percent", "discount_value": 15},
+            {"code": "FRIEND20", "description": "Refer a friend credit", "discount_type": "fixed", "discount_value": 20},
+        ]
+        for p in promo_data:
+            PromoCode.objects.get_or_create(code=p["code"], defaults=p)
+        self.stdout.write(f"  Promo codes: {len(promo_data)}")
 
         self.stdout.write(self.style.SUCCESS("Demo data seeded successfully!"))
         self.stdout.write("")

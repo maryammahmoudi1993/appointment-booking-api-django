@@ -52,9 +52,17 @@ export default function Staff() {
                   .slice(0, 2)
                   .toUpperCase()}
               </span>
-              <h3 className="font-display text-lg font-semibold text-brand-900">
-                {s.full_name}
-              </h3>
+              <div>
+                <h3 className="font-display text-lg font-semibold text-brand-900">
+                  {s.full_name}
+                </h3>
+                {s.average_rating !== null && (
+                  <p className="text-xs text-amber-600">
+                    ★ {s.average_rating.toFixed(1)} ({s.review_count} review
+                    {s.review_count === 1 ? "" : "s"})
+                  </p>
+                )}
+              </div>
             </div>
             {s.bio && <p className="mt-3 text-sm text-gray-600">{s.bio}</p>}
             {s.services_offered.length > 0 && (

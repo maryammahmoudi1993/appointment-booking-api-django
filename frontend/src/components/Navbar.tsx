@@ -47,6 +47,9 @@ export default function Navbar() {
               <Link to="/my-bookings" className="transition hover:text-brand-700">
                 My Bookings
               </Link>
+              <Link to="/loyalty" className="transition hover:text-brand-700">
+                Loyalty
+              </Link>
               {user.role === "admin" && (
                 <Link to="/admin" className="transition hover:text-brand-700">
                   Admin
@@ -116,6 +119,9 @@ export default function Navbar() {
                 </Link>
                 <Link to="/my-bookings" onClick={() => setOpen(false)}>
                   My Bookings
+                </Link>
+                <Link to="/loyalty" onClick={() => setOpen(false)}>
+                  Loyalty
                 </Link>
                 {user.role === "admin" && (
                   <Link to="/admin" onClick={() => setOpen(false)}>

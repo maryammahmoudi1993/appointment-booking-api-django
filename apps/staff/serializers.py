@@ -42,14 +42,34 @@ class TimeOffSerializer(serializers.ModelSerializer):
 class StaffProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     full_name = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
 
     class Meta:
         model = StaffProfile
-        fields = ("id", "user", "username", "full_name", "bio", "services_offered")
+        fields = (
+            "id",
+            "user",
+            "username",
+            "full_name",
+            "bio",
+            "services_offered",
+            "average_rating",
+            "review_count",
+        )
         read_only_fields = ("id",)
 
     def get_full_name(self, obj) -> str:
         return obj.user.get_full_name() or obj.user.username
+
+    def get_review_count(self, obj) -> int:
+        return obj.user.reviews_received.count()
+
+    def get_average_rating(self, obj):
+        reviews = obj.user.reviews_received.all()
+        if not reviews:
+            return None
+        return round(sum(r.rating for r in reviews) / len(reviews), 1)
 
     def validate_user(self, value):
         if value.role != "staff":
@@ -60,6 +80,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
 class StaffAvailabilitySlotSerializer(serializers.Serializer):
     start = serializers.TimeField()
     end = serializers.TimeField()
+    available = serializers.BooleanField()
 
 
 class StaffCreateSerializer(serializers.Serializer):

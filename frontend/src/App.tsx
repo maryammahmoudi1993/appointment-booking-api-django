@@ -8,6 +8,7 @@ import Services from "./pages/Services";
 import Staff from "./pages/Staff";
 import BookAppointment from "./pages/BookAppointment";
 import MyBookings from "./pages/MyBookings";
+import Loyalty from "./pages/Loyalty";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <MyBookings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/loyalty"
+          element={
+            <PrivateRoute>
+              <Loyalty />
             </PrivateRoute>
           }
         />

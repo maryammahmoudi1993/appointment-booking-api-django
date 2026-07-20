@@ -1,9 +1,16 @@
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import permissions, status, viewsets
+from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from apps.engagement.services import (
+    PromoCodeError,
+    compute_discount,
+    validate_promo_code,
+)
+from apps.engagement.models import PromoRedemption
 
 from .models import Appointment
 from .permissions import IsOwnerOrStaffOrAdmin
@@ -96,6 +103,14 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         data = serializer.validated_data
+        promo_code = data.pop("promo_code", None)
+        promo = None
+        if promo_code:
+            try:
+                promo = validate_promo_code(promo_code)
+            except PromoCodeError as exc:
+                raise serializers.ValidationError({"promo_code": [str(exc)]})
+
         appointment = create_appointment_atomic(
             customer_id=data["customer"].id,
             staff_id=data["staff"].id,
@@ -104,6 +119,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             end_datetime=data["end_datetime"],
             notes=data.get("notes", ""),
         )
+        if promo:
+            PromoRedemption.objects.create(
+                promo=promo,
+                customer=appointment.customer,
+                appointment=appointment,
+                discount_amount=compute_discount(promo, appointment.service.price),
+            )
         serializer.instance = appointment
 
     def perform_update(self, serializer):
@@ -156,4 +178,31 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             )
         appointment.status = "confirmed"
         appointment.save(update_fields=["status", "updated_at"])
+        return Response(AppointmentSerializer(appointment).data)
+
+    @extend_schema(
+        tags=["Appointments"],
+        summary="Complete an appointment",
+        description=(
+            "Staff/admin only. Sets status from 'confirmed' to 'completed' and "
+            "awards loyalty points to the customer based on the service price."
+        ),
+        responses={200: AppointmentSerializer, 403: "Forbidden", 400: "Not confirmed"},
+    )
+    @action(detail=True, methods=["patch"], url_path="complete")
+    def complete(self, request, pk=None):
+        if request.user.role not in ["staff", "admin"]:
+            return Response(
+                {"detail": "Only staff or admin can complete appointments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        appointment = self.get_object()
+        if appointment.status != "confirmed":
+            return Response(
+                {"detail": "Only confirmed appointments can be completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        appointment.status = "completed"
+        appointment.points_earned = int(appointment.service.price)
+        appointment.save(update_fields=["status", "points_earned", "updated_at"])
         return Response(AppointmentSerializer(appointment).data)

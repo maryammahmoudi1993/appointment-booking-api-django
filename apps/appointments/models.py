@@ -29,6 +29,7 @@ class Appointment(models.Model):
     end_datetime = models.DateTimeField()
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="pending")
     notes = models.TextField(blank=True)
+    points_earned = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

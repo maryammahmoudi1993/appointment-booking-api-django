@@ -101,6 +101,12 @@ class TestStaffAvailability:
             {"date": target.strftime("%Y-%m-%d")},
         )
         assert response.status_code == status.HTTP_200_OK
+        booked = next(
+            s
+            for s in response.data["available_slots"]
+            if s["start"] == start.strftime("%H:%M:%S")
+        )
+        assert booked["available"] is False
 
     def test_availability_excludes_time_off(self, api_client):
         staff = StaffFactory()
@@ -123,3 +129,9 @@ class TestStaffAvailability:
             {"date": target.strftime("%Y-%m-%d")},
         )
         assert response.status_code == status.HTTP_200_OK
+        blocked = next(
+            s
+            for s in response.data["available_slots"]
+            if s["start"] == to_start.strftime("%H:%M:%S")
+        )
+        assert blocked["available"] is False

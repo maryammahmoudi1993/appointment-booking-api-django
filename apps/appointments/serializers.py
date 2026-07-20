@@ -9,6 +9,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
     )
     staff_name = serializers.CharField(source="staff.get_full_name", read_only=True)
     service_name = serializers.CharField(source="service.name", read_only=True)
+    has_review = serializers.SerializerMethodField()
+    discount_amount = serializers.SerializerMethodField()
+    promo_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = Appointment
@@ -24,10 +27,27 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "end_datetime",
             "status",
             "notes",
+            "points_earned",
+            "has_review",
+            "discount_amount",
+            "promo_code",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at", "status")
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+            "status",
+            "points_earned",
+        )
+
+    def get_has_review(self, obj) -> bool:
+        return hasattr(obj, "review")
+
+    def get_discount_amount(self, obj):
+        redemption = getattr(obj, "promo_redemption", None)
+        return str(redemption.discount_amount) if redemption else None
 
     def validate_customer(self, value):
         if value.role != "customer":
@@ -48,6 +68,7 @@ class AppointmentListSerializer(serializers.ModelSerializer):
     )
     staff_name = serializers.CharField(source="staff.get_full_name", read_only=True)
     service_name = serializers.CharField(source="service.name", read_only=True)
+    has_review = serializers.SerializerMethodField()
 
     class Meta:
         model = Appointment
@@ -62,5 +83,10 @@ class AppointmentListSerializer(serializers.ModelSerializer):
             "start_datetime",
             "end_datetime",
             "status",
+            "points_earned",
+            "has_review",
             "created_at",
         )
+
+    def get_has_review(self, obj) -> bool:
+        return hasattr(obj, "review")

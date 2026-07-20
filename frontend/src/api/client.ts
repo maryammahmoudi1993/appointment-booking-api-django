@@ -67,11 +67,14 @@ export interface StaffProfile {
   full_name: string;
   bio: string;
   services_offered: number[];
+  average_rating: number | null;
+  review_count: number;
 }
 
 export interface AvailabilitySlot {
   start: string;
   end: string;
+  available: boolean;
 }
 
 export interface AvailabilityResponse {
@@ -91,6 +94,64 @@ export interface Appointment {
   end_datetime: string;
   notes: string;
   status: "pending" | "confirmed" | "completed" | "cancelled";
+  points_earned: number;
+  has_review: boolean;
+  discount_amount: string | null;
+  created_at: string;
+}
+
+export interface Review {
+  id: number;
+  appointment: number;
+  customer: number;
+  customer_name: string;
+  staff: number;
+  staff_name: string;
+  service_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface LoyaltyReward {
+  id: number;
+  name: string;
+  description: string;
+  points_cost: number;
+  is_active: boolean;
+}
+
+export interface LoyaltyRedemption {
+  id: number;
+  reward: number;
+  reward_name: string;
+  points_spent: number;
+  created_at: string;
+}
+
+export interface LoyaltySummary {
+  balance: number;
+  history: {
+    appointment: number;
+    service_name: string;
+    points: number;
+    date: string;
+  }[];
+  redemptions: LoyaltyRedemption[];
+}
+
+export interface PromoCode {
+  id: number;
+  code: string;
+  description: string;
+  discount_type: "percent" | "fixed";
+  discount_value: string;
+  is_active: boolean;
+  max_redemptions: number | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  times_redeemed: number;
+  revenue_influenced: string;
   created_at: string;
 }
 
@@ -107,6 +168,14 @@ export interface WorkingHours {
   weekday: number;
   start_time: string;
   end_time: string;
+}
+
+export interface TimeOff {
+  id: number;
+  staff: number;
+  start_datetime: string;
+  end_datetime: string;
+  reason: string;
 }
 
 export const authApi = {
@@ -176,9 +245,29 @@ export const workingHoursApi = {
   delete: (id: number) => api.delete(`/working-hours/${id}/`),
 };
 
+export const timeOffApi = {
+  list: (staffUserId: number) =>
+    api.get<PaginatedResponse<TimeOff>>("/time-off/", {
+      params: { staff: staffUserId },
+    }),
+  create: (data: {
+    staff: number;
+    start_datetime: string;
+    end_datetime: string;
+    reason?: string;
+  }) => api.post<TimeOff>("/time-off/", data),
+  delete: (id: number) => api.delete(`/time-off/${id}/`),
+};
+
 export const appointmentsApi = {
-  list: (params?: { status?: string }) =>
-    api.get<PaginatedResponse<Appointment>>("/appointments/", { params }),
+  list: (params?: {
+    status?: string;
+    staff?: number;
+    service?: number;
+    date_from?: string;
+    date_to?: string;
+    page_size?: number;
+  }) => api.get<PaginatedResponse<Appointment>>("/appointments/", { params }),
   get: (id: number) => api.get<Appointment>(`/appointments/${id}/`),
   create: (data: {
     customer: number;
@@ -187,10 +276,45 @@ export const appointmentsApi = {
     start_datetime: string;
     end_datetime: string;
     notes?: string;
-  }) => api.post("/appointments/", data),
+    promo_code?: string;
+  }) => api.post<Appointment>("/appointments/", data),
   update: (id: number, data: Partial<Appointment>) =>
     api.patch(`/appointments/${id}/`, data),
   cancel: (id: number) => api.post(`/appointments/${id}/cancel/`),
   confirm: (id: number) => api.patch(`/appointments/${id}/confirm/`),
   complete: (id: number) => api.patch(`/appointments/${id}/complete/`),
+};
+
+export const reviewsApi = {
+  list: (params?: { staff?: number }) =>
+    api.get<PaginatedResponse<Review>>("/reviews/", { params }),
+  create: (data: { appointment: number; rating: number; comment?: string }) =>
+    api.post<Review>("/reviews/", data),
+};
+
+export const loyaltyApi = {
+  summary: () => api.get<LoyaltySummary>("/loyalty/summary/"),
+  rewards: () => api.get<PaginatedResponse<LoyaltyReward>>("/loyalty/rewards/"),
+  redeem: (rewardId: number) =>
+    api.post<LoyaltyRedemption>(`/loyalty/rewards/${rewardId}/redeem/`),
+};
+
+export const promotionsApi = {
+  list: () => api.get<PaginatedResponse<PromoCode>>("/promotions/"),
+  create: (data: {
+    code: string;
+    description?: string;
+    discount_type: "percent" | "fixed";
+    discount_value: string;
+    max_redemptions?: number | null;
+  }) => api.post<PromoCode>("/promotions/", data),
+  update: (id: number, data: Partial<Pick<PromoCode, "is_active">>) =>
+    api.patch<PromoCode>(`/promotions/${id}/`, data),
+  delete: (id: number) => api.delete(`/promotions/${id}/`),
+  validate: (code: string) =>
+    api.post<{
+      code: string;
+      discount_type: "percent" | "fixed";
+      discount_value: string;
+    }>("/promotions/validate/", { code }),
 };

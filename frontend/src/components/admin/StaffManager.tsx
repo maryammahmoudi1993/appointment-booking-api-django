@@ -3,8 +3,10 @@ import {
   staffApi,
   servicesApi,
   workingHoursApi,
+  timeOffApi,
   type StaffProfile,
   type Service,
+  type TimeOff,
 } from "../../api/client";
 
 const WEEKDAYS = [
@@ -269,6 +271,17 @@ function StaffCard({
   const [hoursError, setHoursError] = useState("");
   const [hoursSaved, setHoursSaved] = useState(false);
 
+  const [timeOffOpen, setTimeOffOpen] = useState(false);
+  const [timeOffLoading, setTimeOffLoading] = useState(false);
+  const [timeOffs, setTimeOffs] = useState<TimeOff[]>([]);
+  const [timeOffForm, setTimeOffForm] = useState({
+    start: "",
+    end: "",
+    reason: "",
+  });
+  const [timeOffError, setTimeOffError] = useState("");
+  const [savingTimeOff, setSavingTimeOff] = useState(false);
+
   const toggleService = (id: number) => {
     setProfileSaved(false);
     setServiceIds((prev) =>
@@ -350,6 +363,40 @@ function StaffCard({
     } finally {
       setSavingHours(false);
     }
+  };
+
+  const loadTimeOff = () => {
+    setTimeOffOpen(true);
+    setTimeOffLoading(true);
+    timeOffApi
+      .list(staff.user)
+      .then((res) => setTimeOffs(res.data.results))
+      .finally(() => setTimeOffLoading(false));
+  };
+
+  const addTimeOff = async () => {
+    if (!timeOffForm.start || !timeOffForm.end) return;
+    setTimeOffError("");
+    setSavingTimeOff(true);
+    try {
+      await timeOffApi.create({
+        staff: staff.user,
+        start_datetime: timeOffForm.start,
+        end_datetime: timeOffForm.end,
+        reason: timeOffForm.reason,
+      });
+      setTimeOffForm({ start: "", end: "", reason: "" });
+      loadTimeOff();
+    } catch (err: any) {
+      setTimeOffError(extractErrorMessage(err, "Failed to add time off."));
+    } finally {
+      setSavingTimeOff(false);
+    }
+  };
+
+  const removeTimeOff = async (id: number) => {
+    await timeOffApi.delete(id);
+    loadTimeOff();
   };
 
   return (
@@ -484,6 +531,88 @@ function StaffCard({
                 </span>
               )}
             </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 border-t border-gray-100 pt-4">
+        {!timeOffOpen ? (
+          <button
+            onClick={loadTimeOff}
+            className="text-xs font-semibold text-brand-700 hover:text-brand-800"
+          >
+            Manage time off →
+          </button>
+        ) : timeOffLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+          </div>
+        ) : (
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              Time off
+            </p>
+            {timeOffs.length === 0 ? (
+              <p className="mt-2 text-sm text-gray-400">No time off scheduled.</p>
+            ) : (
+              <div className="mt-2 space-y-1.5">
+                {timeOffs.map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-600"
+                  >
+                    <span>
+                      {new Date(t.start_datetime).toLocaleString()} –{" "}
+                      {new Date(t.end_datetime).toLocaleString()}
+                      {t.reason && ` (${t.reason})`}
+                    </span>
+                    <button
+                      onClick={() => removeTimeOff(t.id)}
+                      className="font-medium text-red-600 hover:text-red-800"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <input
+                type="datetime-local"
+                value={timeOffForm.start}
+                onChange={(e) =>
+                  setTimeOffForm({ ...timeOffForm, start: e.target.value })
+                }
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+              />
+              <input
+                type="datetime-local"
+                value={timeOffForm.end}
+                onChange={(e) =>
+                  setTimeOffForm({ ...timeOffForm, end: e.target.value })
+                }
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+              />
+              <input
+                placeholder="Reason (optional)"
+                value={timeOffForm.reason}
+                onChange={(e) =>
+                  setTimeOffForm({ ...timeOffForm, reason: e.target.value })
+                }
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+              />
+            </div>
+            {timeOffError && (
+              <p className="mt-2 text-xs text-red-700">{timeOffError}</p>
+            )}
+            <button
+              onClick={addTimeOff}
+              disabled={savingTimeOff}
+              className="mt-3 rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              {savingTimeOff ? "Adding..." : "Add time off"}
+            </button>
           </div>
         )}
       </div>

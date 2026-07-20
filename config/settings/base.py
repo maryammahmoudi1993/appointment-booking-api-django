@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.services",
     "apps.staff",
     "apps.appointments",
+    "apps.engagement",
     "core",
 ]
 

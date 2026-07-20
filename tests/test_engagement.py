@@ -1,0 +1,238 @@
+from datetime import timedelta
+from decimal import Decimal
+
+import pytest
+from django.utils import timezone
+from rest_framework import status
+
+from apps.engagement.models import LoyaltyReward, PromoCode, Review
+from tests.factories import AppointmentFactory, ServiceFactory
+
+
+def _completed_appointment(customer, staff, service, points=50):
+    appt = AppointmentFactory(
+        customer=customer, staff=staff, service=service, status="completed"
+    )
+    appt.points_earned = points
+    appt.save(update_fields=["points_earned"])
+    return appt
+
+
+@pytest.mark.django_db
+class TestAppointmentComplete:
+    def test_staff_completes_confirmed_appointment_awards_points(
+        self, staff_client, staff_user, customer, service
+    ):
+        service.price = Decimal("42.00")
+        service.save()
+        appt = AppointmentFactory(
+            customer=customer, staff=staff_user, service=service, status="confirmed"
+        )
+        response = staff_client.patch(f"/api/appointments/{appt.id}/complete/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "completed"
+        assert response.data["points_earned"] == 42
+
+    def test_cannot_complete_pending_appointment(
+        self, staff_client, staff_user, customer, service
+    ):
+        appt = AppointmentFactory(
+            customer=customer, staff=staff_user, service=service, status="pending"
+        )
+        response = staff_client.patch(f"/api/appointments/{appt.id}/complete/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_customer_cannot_complete_appointment(
+        self, auth_client, customer, staff_user, service
+    ):
+        appt = AppointmentFactory(
+            customer=customer, staff=staff_user, service=service, status="confirmed"
+        )
+        response = auth_client.patch(f"/api/appointments/{appt.id}/complete/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+class TestReviews:
+    def test_customer_can_review_completed_appointment(
+        self, auth_client, customer, staff_user, service
+    ):
+        appt = _completed_appointment(customer, staff_user, service)
+        response = auth_client.post(
+            "/api/reviews/", {"appointment": appt.id, "rating": 5, "comment": "Great!"}
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Review.objects.filter(appointment=appt).exists()
+
+    def test_cannot_review_pending_appointment(
+        self, auth_client, customer, staff_user, service
+    ):
+        appt = AppointmentFactory(
+            customer=customer, staff=staff_user, service=service, status="pending"
+        )
+        response = auth_client.post(
+            "/api/reviews/", {"appointment": appt.id, "rating": 4}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_cannot_review_twice(self, auth_client, customer, staff_user, service):
+        appt = _completed_appointment(customer, staff_user, service)
+        Review.objects.create(appointment=appt, customer=customer, staff=staff_user, rating=5)
+        response = auth_client.post(
+            "/api/reviews/", {"appointment": appt.id, "rating": 3}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_cannot_review_someone_elses_appointment(
+        self, auth_client, staff_user, service
+    ):
+        other_customer = AppointmentFactory(staff=staff_user, service=service).customer
+        appt = _completed_appointment(other_customer, staff_user, service)
+        response = auth_client.post(
+            "/api/reviews/", {"appointment": appt.id, "rating": 5}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_reviews_list_is_public(self, api_client):
+        response = api_client.get("/api/reviews/")
+        assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestLoyalty:
+    def test_balance_reflects_completed_visits(
+        self, auth_client, customer, staff_user, service
+    ):
+        _completed_appointment(customer, staff_user, service, points=30)
+        _completed_appointment(customer, staff_user, service, points=20)
+        response = auth_client.get("/api/loyalty/summary/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["balance"] == 50
+        assert len(response.data["history"]) == 2
+
+    def test_redeem_reward_deducts_points(self, auth_client, customer, staff_user, service):
+        _completed_appointment(customer, staff_user, service, points=100)
+        reward = LoyaltyReward.objects.create(name="10% off", points_cost=50)
+        response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
+        assert response.status_code == status.HTTP_201_CREATED
+
+        summary = auth_client.get("/api/loyalty/summary/")
+        assert summary.data["balance"] == 50
+
+    def test_redeem_fails_with_insufficient_points(
+        self, auth_client, customer, staff_user, service
+    ):
+        reward = LoyaltyReward.objects.create(name="Free massage", points_cost=500)
+        response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_only_admin_can_create_reward(self, auth_client):
+        response = auth_client.post(
+            "/api/loyalty/rewards/", {"name": "Free cut", "points_cost": 10}
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+        response = auth_client.get("/api/loyalty/rewards/")
+        assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestPromotions:
+    def test_admin_can_create_promo_code(self, admin_client):
+        response = admin_client.post(
+            "/api/promotions/",
+            {
+                "code": "welcome15",
+                "discount_type": "percent",
+                "discount_value": "15.00",
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["code"] == "WELCOME15"
+
+    def test_non_admin_cannot_list_promotions(self, auth_client):
+        response = auth_client.get("/api/promotions/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_validate_active_code(self, auth_client):
+        PromoCode.objects.create(
+            code="SAVE10", discount_type="fixed", discount_value=Decimal("10.00")
+        )
+        response = auth_client.post("/api/promotions/validate/", {"code": "save10"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["code"] == "SAVE10"
+
+    def test_validate_inactive_code_fails(self, auth_client):
+        PromoCode.objects.create(
+            code="OLD5",
+            discount_type="fixed",
+            discount_value=Decimal("5.00"),
+            is_active=False,
+        )
+        response = auth_client.post("/api/promotions/validate/", {"code": "OLD5"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_booking_with_valid_promo_creates_redemption(
+        self, auth_client, customer, staff_user, service
+    ):
+        from tests.factories import WorkingHoursFactory
+
+        service.price = Decimal("100.00")
+        service.save()
+        PromoCode.objects.create(
+            code="TENOFF", discount_type="fixed", discount_value=Decimal("10.00")
+        )
+        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
+
+        target = timezone.now().date()
+        days_ahead = (0 - target.weekday()) % 7 or 7
+        target = target + timedelta(days=days_ahead)
+        start = timezone.make_aware(
+            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=10))
+        )
+        response = auth_client.post(
+            "/api/appointments/",
+            {
+                "customer": customer.id,
+                "staff": staff_user.id,
+                "service": service.id,
+                "start_datetime": start.isoformat(),
+                "end_datetime": (start + timedelta(minutes=30)).isoformat(),
+                "promo_code": "tenoff",
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["discount_amount"] == "10.00"
+
+    def test_booking_with_invalid_promo_fails(
+        self, auth_client, customer, staff_user, service
+    ):
+        from tests.factories import WorkingHoursFactory
+
+        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
+        target = timezone.now().date()
+        days_ahead = (0 - target.weekday()) % 7 or 7
+        target = target + timedelta(days=days_ahead)
+        start = timezone.make_aware(
+            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=11))
+        )
+        response = auth_client.post(
+            "/api/appointments/",
+            {
+                "customer": customer.id,
+                "staff": staff_user.id,
+                "service": service.id,
+                "start_datetime": start.isoformat(),
+                "end_datetime": (start + timedelta(minutes=30)).isoformat(),
+                "promo_code": "DOESNOTEXIST",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        from apps.appointments.models import Appointment
+
+        assert not Appointment.objects.filter(staff=staff_user, start_datetime=start).exists()
+
+
+@pytest.fixture
+def service(db):
+    return ServiceFactory()

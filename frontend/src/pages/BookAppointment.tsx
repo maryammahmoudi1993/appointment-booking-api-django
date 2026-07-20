@@ -5,10 +5,23 @@ import {
   servicesApi,
   staffApi,
   appointmentsApi,
+  promotionsApi,
   type Service,
   type StaffProfile,
   type AvailabilitySlot,
 } from "../api/client";
+
+interface AppliedPromo {
+  code: string;
+  discount_type: "percent" | "fixed";
+  discount_value: string;
+}
+
+function computeDiscount(promo: AppliedPromo, price: number): number {
+  const value = Number(promo.discount_value);
+  const discount = promo.discount_type === "percent" ? (price * value) / 100 : value;
+  return Math.min(discount, price);
+}
 
 type Step = "service" | "staff" | "datetime" | "confirm" | "done";
 
@@ -49,6 +62,10 @@ export default function BookAppointment() {
     null
   );
   const [notes, setNotes] = useState("");
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   useEffect(() => {
     servicesApi.list().then((res) => setServices(res.data.results));
@@ -87,6 +104,21 @@ export default function BookAppointment() {
     }
   }, [selectedStaff, selectedDate]);
 
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setPromoError("");
+    setApplyingPromo(true);
+    try {
+      const res = await promotionsApi.validate(promoInput.trim());
+      setAppliedPromo(res.data);
+    } catch (err: any) {
+      setAppliedPromo(null);
+      setPromoError(extractErrorMessage(err, "Invalid promo code."));
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
   const handleConfirm = async () => {
     if (!selectedService || !selectedStaff || !selectedSlot || !user) return;
     setError("");
@@ -99,6 +131,7 @@ export default function BookAppointment() {
         start_datetime: `${selectedDate}T${selectedSlot.start}`,
         end_datetime: `${selectedDate}T${selectedSlot.end}`,
         notes,
+        promo_code: appliedPromo?.code,
       });
       setStep("done");
     } catch (err: any) {
@@ -234,11 +267,14 @@ export default function BookAppointment() {
                     {slots.map((slot) => (
                       <button
                         key={slot.start}
+                        disabled={!slot.available}
                         onClick={() => setSelectedSlot(slot)}
                         className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                          selectedSlot?.start === slot.start
-                            ? "border-brand-600 bg-brand-50 text-brand-700"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-brand-300"
+                          !slot.available
+                            ? "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-300 line-through"
+                            : selectedSlot?.start === slot.start
+                              ? "border-brand-600 bg-brand-50 text-brand-700"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-brand-300"
                         }`}
                       >
                         {slot.start.slice(0, 5)}
@@ -260,6 +296,50 @@ export default function BookAppointment() {
                     rows={3}
                     className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Promo code (optional)
+                  </label>
+                  {appliedPromo ? (
+                    <div className="mt-1 flex items-center justify-between rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-800">
+                      <span>
+                        <strong>{appliedPromo.code}</strong> applied —{" "}
+                        {appliedPromo.discount_type === "percent"
+                          ? `${appliedPromo.discount_value}% off`
+                          : `$${appliedPromo.discount_value} off`}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setAppliedPromo(null);
+                          setPromoInput("");
+                        }}
+                        className="text-xs font-medium text-brand-600 hover:text-brand-800"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-1 flex gap-2">
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        placeholder="e.g. WELCOME15"
+                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      />
+                      <button
+                        onClick={handleApplyPromo}
+                        disabled={applyingPromo}
+                        className="rounded-lg border border-brand-200 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+                      >
+                        {applyingPromo ? "..." : "Apply"}
+                      </button>
+                    </div>
+                  )}
+                  {promoError && (
+                    <p className="mt-1 text-xs text-red-700">{promoError}</p>
+                  )}
                 </div>
                 <button
                   onClick={() => setStep("confirm")}
@@ -287,6 +367,22 @@ export default function BookAppointment() {
                   `${selectedSlot.start.slice(0, 5)} - ${selectedSlot.end.slice(0, 5)}`,
                 ],
                 ["Price", `$${selectedService.price}`],
+                ...(appliedPromo
+                  ? [
+                      [
+                        `Promo (${appliedPromo.code})`,
+                        `-$${computeDiscount(appliedPromo, Number(selectedService.price)).toFixed(2)}`,
+                      ],
+                      [
+                        "Total",
+                        `$${Math.max(
+                          0,
+                          Number(selectedService.price) -
+                            computeDiscount(appliedPromo, Number(selectedService.price))
+                        ).toFixed(2)}`,
+                      ],
+                    ]
+                  : []),
                 ...(notes ? [["Notes", notes]] : []),
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4">
@@ -339,6 +435,8 @@ export default function BookAppointment() {
                   setSelectedDate("");
                   setSelectedSlot(null);
                   setNotes("");
+                  setPromoInput("");
+                  setAppliedPromo(null);
                 }}
                 className="rounded-full border border-brand-200 bg-white px-6 py-2 text-sm font-medium text-brand-800 hover:bg-brand-50"
               >

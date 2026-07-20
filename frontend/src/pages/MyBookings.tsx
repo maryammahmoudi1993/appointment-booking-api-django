@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { appointmentsApi, type Appointment } from "../api/client";
+import { appointmentsApi, reviewsApi, type Appointment } from "../api/client";
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -9,12 +9,15 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-800",
 };
 
+const POLL_INTERVAL_MS = 20000;
+
 export default function MyBookings() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewingId, setReviewingId] = useState<number | null>(null);
 
-  const fetchBookings = () => {
-    setLoading(true);
+  const fetchBookings = (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     appointmentsApi
       .list()
       .then((res) => setAppointments(res.data.results))
@@ -23,6 +26,8 @@ export default function MyBookings() {
 
   useEffect(() => {
     fetchBookings();
+    const interval = setInterval(() => fetchBookings(false), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, []);
 
   const handleCancel = async (id: number) => {
@@ -98,6 +103,16 @@ export default function MyBookings() {
                       Notes: {a.notes}
                     </p>
                   )}
+                  {a.discount_amount && (
+                    <p className="mt-2 text-xs font-medium text-brand-700">
+                      Promo applied: -${a.discount_amount}
+                    </p>
+                  )}
+                  {a.status === "completed" && a.points_earned > 0 && (
+                    <p className="mt-2 text-xs font-medium text-brand-700">
+                      +{a.points_earned} loyalty pts earned
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span
@@ -115,12 +130,112 @@ export default function MyBookings() {
                       Cancel
                     </button>
                   )}
+                  {a.status === "completed" && !a.has_review && (
+                    <button
+                      onClick={() => setReviewingId(a.id)}
+                      className="rounded-full border border-brand-200 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50"
+                    >
+                      Rate your visit
+                    </button>
+                  )}
+                  {a.status === "completed" && a.has_review && (
+                    <span className="text-xs text-gray-400">Reviewed ✓</span>
+                  )}
                 </div>
               </div>
+
+              {reviewingId === a.id && (
+                <ReviewForm
+                  appointment={a}
+                  onDone={() => {
+                    setReviewingId(null);
+                    fetchBookings(false);
+                  }}
+                  onCancel={() => setReviewingId(null)}
+                />
+              )}
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ReviewForm({
+  appointment,
+  onDone,
+  onCancel,
+}: {
+  appointment: Appointment;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      await reviewsApi.create({ appointment: appointment.id, rating, comment });
+      onDone();
+    } catch (err: any) {
+      setError(
+        err.response?.data?.detail ||
+          err.response?.data?.appointment?.[0] ||
+          "Could not submit review."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/40 p-4">
+      <p className="text-sm font-medium text-gray-700">
+        Rate your visit for {appointment.service_name} with {appointment.staff_name}
+      </p>
+      <div className="mt-2 flex gap-1">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => setRating(n)}
+            className={`text-2xl leading-none ${
+              n <= rating ? "text-amber-500" : "text-gray-300"
+            }`}
+            aria-label={`${n} star`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Optional comment"
+        rows={2}
+        className="mt-3 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      />
+      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+        >
+          {submitting ? "Submitting..." : "Submit review"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="rounded-full border border-gray-300 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

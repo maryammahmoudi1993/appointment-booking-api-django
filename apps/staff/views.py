@@ -166,6 +166,7 @@ class TimeOffViewSet(viewsets.ModelViewSet):
                         "properties": {
                             "start": {"type": "string"},
                             "end": {"type": "string"},
+                            "available": {"type": "boolean"},
                         },
                     },
                 },
@@ -235,8 +236,9 @@ def staff_availability(request, staff_id):
                         is_available = False
                         break
 
-            if is_available:
-                slots.append({"start": current.time(), "end": next_slot.time()})
+            slots.append(
+                {"start": current.time(), "end": next_slot.time(), "available": is_available}
+            )
 
             current = next_slot
 

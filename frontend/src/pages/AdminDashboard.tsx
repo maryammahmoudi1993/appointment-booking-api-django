@@ -2,17 +2,23 @@ import { useEffect, useState } from "react";
 import {
   appointmentsApi,
   servicesApi,
+  staffApi,
   type Appointment,
   type Service,
+  type StaffProfile,
 } from "../api/client";
 import StaffManager from "../components/admin/StaffManager";
+import PromotionsPanel from "../components/admin/PromotionsPanel";
+import RevenuePanel from "../components/admin/RevenuePanel";
 
-type Tab = "appointments" | "services" | "staff";
+type Tab = "appointments" | "services" | "staff" | "marketing" | "revenue";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "appointments", label: "Appointments" },
   { key: "services", label: "Services" },
   { key: "staff", label: "Staff" },
+  { key: "marketing", label: "Marketing" },
+  { key: "revenue", label: "Revenue" },
 ];
 
 export default function AdminDashboard() {
@@ -42,6 +48,8 @@ export default function AdminDashboard() {
         {tab === "appointments" && <AppointmentsPanel />}
         {tab === "services" && <ServicesPanel />}
         {tab === "staff" && <StaffManager />}
+        {tab === "marketing" && <PromotionsPanel />}
+        {tab === "revenue" && <RevenuePanel />}
       </div>
     </div>
   );
@@ -93,21 +101,37 @@ function StatCard({
   );
 }
 
+const POLL_INTERVAL_MS = 20000;
+
 function AppointmentsPanel() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [staffList, setStaffList] = useState<StaffProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [staffFilter, setStaffFilter] = useState("");
 
-  const fetchAll = () => {
-    setLoading(true);
+  const fetchAll = (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     appointmentsApi
-      .list()
+      .list({
+        status: statusFilter || undefined,
+        staff: staffFilter ? Number(staffFilter) : undefined,
+        page_size: 100,
+      })
       .then((res) => setAppointments(res.data.results))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    fetchAll();
+    staffApi.list().then((res) => setStaffList(res.data.results));
   }, []);
+
+  useEffect(() => {
+    fetchAll();
+    const interval = setInterval(() => fetchAll(false), POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, staffFilter]);
 
   const handleAction = async (
     id: number,
@@ -147,6 +171,36 @@ function AppointmentsPanel() {
         <StatCard label="Pending confirmations" value={pendingCount} tone="amber" />
         <StatCard label="This week's bookings" value={weekCount} tone="gray" />
       </div>
+
+      <div className="mb-4 flex flex-wrap gap-3">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <select
+          value={staffFilter}
+          onChange={(e) => setStaffFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All staff</option>
+          {staffList.map((s) => (
+            <option key={s.id} value={s.user}>
+              {s.full_name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {appointments.length === 0 ? (
+        <p className="text-sm text-gray-500">No appointments match these filters.</p>
+      ) : (
       <div className="space-y-4">
         {appointments.map((a) => (
           <div
@@ -209,6 +263,7 @@ function AppointmentsPanel() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
