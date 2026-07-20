@@ -1,5 +1,6 @@
 import factory
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from apps.appointments.models import Appointment
 from apps.services.models import Service
@@ -69,7 +70,9 @@ class TimeOffFactory(factory.django.DjangoModelFactory):
         model = TimeOff
 
     staff = factory.SubFactory(StaffFactory)
-    start_datetime = factory.Faker("date_time_this_month", after_now=True)
+    start_datetime = factory.LazyFunction(
+        lambda: timezone.now() + __import__("datetime").timedelta(days=1)
+    )
     end_datetime = factory.LazyAttribute(
         lambda o: o.start_datetime + __import__("datetime").timedelta(hours=2)
     )
@@ -83,8 +86,8 @@ class AppointmentFactory(factory.django.DjangoModelFactory):
     customer = factory.SubFactory(CustomerFactory)
     staff = factory.SubFactory(StaffFactory)
     service = factory.SubFactory(ServiceFactory)
-    start_datetime = factory.Faker(
-        "date_time_between", start_date="+1d", end_date="+7d"
+    start_datetime = factory.LazyFunction(
+        lambda: timezone.now() + __import__("datetime").timedelta(days=2, hours=10)
     )
     end_datetime = factory.LazyAttribute(
         lambda o: o.start_datetime + __import__("datetime").timedelta(minutes=30)

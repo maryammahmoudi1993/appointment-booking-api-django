@@ -24,16 +24,35 @@ class TestRegister:
         assert "access" in response.data["tokens"]
         assert "refresh" in response.data["tokens"]
         assert response.data["user"]["username"] == "newuser"
+        assert "password" not in response.data["user"]
+
+        user = User.objects.get(username="newuser")
+        assert user.check_password("testpass123")
 
     def test_register_duplicate_username(self, api_client):
         CustomerFactory(username="existing")
         data = {
             "username": "existing",
             "email": "new@example.com",
+            "password": "pass123",
             "role": "customer",
         }
         response = api_client.post("/api/auth/register/", data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_register_then_login(self, api_client):
+        data = {
+            "username": "logincheck",
+            "email": "login@example.com",
+            "password": "mypassword",
+            "role": "customer",
+        }
+        api_client.post("/api/auth/register/", data)
+        response = api_client.post(
+            "/api/auth/login/",
+            {"username": "logincheck", "password": "mypassword"},
+        )
+        assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db
@@ -43,7 +62,8 @@ class TestLogin:
         user.set_password("pass123")
         user.save()
         response = api_client.post(
-            "/api/auth/login/", {"username": "logintest", "password": "pass123"}
+            "/api/auth/login/",
+            {"username": "logintest", "password": "pass123"},
         )
         assert response.status_code == status.HTTP_200_OK
         assert "access" in response.data
@@ -54,7 +74,8 @@ class TestLogin:
         user.set_password("correct")
         user.save()
         response = api_client.post(
-            "/api/auth/login/", {"username": "wrongpass", "password": "wrong"}
+            "/api/auth/login/",
+            {"username": "wrongpass", "password": "wrong"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -80,18 +101,14 @@ class TestMe:
 
 @pytest.mark.django_db
 class TestLogout:
-    def test_logout_success(self, api_client, customer):
-        api_client.force_authenticate(user=customer)
+    def test_logout_success(self, api_client):
+        user = CustomerFactory()
+        user.set_password("testpass123")
+        user.save()
+        api_client.force_authenticate(user=user)
         login_resp = api_client.post(
             "/api/auth/login/",
-            {"username": customer.username, "password": "testpass123"},
-        )
-        # Use factory-generated user with known password
-        customer.set_password("testpass123")
-        customer.save()
-        login_resp = api_client.post(
-            "/api/auth/login/",
-            {"username": customer.username, "password": "testpass123"},
+            {"username": user.username, "password": "testpass123"},
         )
         refresh = login_resp.data["refresh"]
         response = api_client.post("/api/auth/logout/", {"refresh": refresh})
