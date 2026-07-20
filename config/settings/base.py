@@ -82,6 +82,11 @@ DATABASES = {
 
 AUTH_USER_MODEL = "accounts.User"
 
+# Django Admin
+ADMIN_SITE_HEADER = "Booking System Admin"
+ADMIN_SITE_TITLE = "Booking Admin Portal"
+ADMIN_INDEX_TITLE = "Manage Bookings"
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
