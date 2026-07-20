@@ -1,6 +1,11 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from apps.services.models import Service
+
 from .models import StaffProfile, TimeOff, WorkingHours
+
+User = get_user_model()
 
 
 class WorkingHoursSerializer(serializers.ModelSerializer):
@@ -55,3 +60,41 @@ class StaffProfileSerializer(serializers.ModelSerializer):
 class StaffAvailabilitySlotSerializer(serializers.Serializer):
     start = serializers.TimeField()
     end = serializers.TimeField()
+
+
+class StaffCreateSerializer(serializers.Serializer):
+    """Admin-only: create a User(role='staff') and its StaffProfile together."""
+
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField(required=False, allow_blank=True, default="")
+    first_name = serializers.CharField(
+        max_length=150, required=False, allow_blank=True, default=""
+    )
+    last_name = serializers.CharField(
+        max_length=150, required=False, allow_blank=True, default=""
+    )
+    phone_number = serializers.CharField(
+        max_length=20, required=False, allow_blank=True, default=""
+    )
+    password = serializers.CharField(write_only=True, min_length=8)
+    bio = serializers.CharField(required=False, allow_blank=True, default="")
+    services_offered = serializers.PrimaryKeyRelatedField(
+        queryset=Service.objects.all(), many=True, required=False, default=list
+    )
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return value
+
+    def create(self, validated_data):
+        services = validated_data.pop("services_offered", [])
+        password = validated_data.pop("password")
+        bio = validated_data.pop("bio", "")
+        user = User(role="staff", **validated_data)
+        user.set_password(password)
+        user.save()
+        profile = StaffProfile.objects.create(user=user, bio=bio)
+        if services:
+            profile.services_offered.set(services)
+        return profile

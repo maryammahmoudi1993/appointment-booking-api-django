@@ -3,16 +3,18 @@ from datetime import datetime, timedelta
 from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework import status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.appointments.models import Appointment
+from core.permissions import IsAdminRole
 
 from .models import StaffProfile, TimeOff, WorkingHours
 from .serializers import (
     StaffAvailabilitySlotSerializer,
+    StaffCreateSerializer,
     StaffProfileSerializer,
     TimeOffSerializer,
     WorkingHoursSerializer,
@@ -32,13 +34,55 @@ from .serializers import (
         description="Public endpoint. Returns a single staff profile by ID.",
         responses={200: StaffProfileSerializer},
     ),
+    update=extend_schema(
+        tags=["Staff"],
+        summary="Update a staff profile",
+        description="Admin only. Update bio and offered services.",
+        responses={200: StaffProfileSerializer},
+    ),
+    partial_update=extend_schema(
+        tags=["Staff"],
+        summary="Partially update a staff profile",
+        description="Admin only. Update bio and/or offered services.",
+        responses={200: StaffProfileSerializer},
+    ),
+    destroy=extend_schema(
+        tags=["Staff"],
+        summary="Remove a staff profile",
+        description="Admin only. Deletes the staff profile (not the underlying user account).",
+        responses={204: None},
+    ),
 )
-class StaffProfileViewSet(viewsets.ReadOnlyModelViewSet):
+class StaffProfileViewSet(viewsets.ModelViewSet):
     queryset = StaffProfile.objects.select_related("user").prefetch_related(
         "services_offered"
     )
     serializer_class = StaffProfileSerializer
-    permission_classes = [AllowAny]
+    http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
+
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
+        return [IsAdminRole()]
+
+    @extend_schema(
+        tags=["Staff"],
+        summary="Add a new staff member",
+        description=(
+            "Admin only. Creates a User with role='staff' and its StaffProfile "
+            "in one step, including bio and offered services."
+        ),
+        request=StaffCreateSerializer,
+        responses={201: StaffProfileSerializer},
+    )
+    @action(detail=False, methods=["post"], url_path="onboard")
+    def onboard(self, request):
+        serializer = StaffCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        profile = serializer.save()
+        return Response(
+            StaffProfileSerializer(profile).data, status=status.HTTP_201_CREATED
+        )
 
 
 @extend_schema_view(
@@ -58,6 +102,14 @@ class StaffProfileViewSet(viewsets.ReadOnlyModelViewSet):
 class WorkingHoursViewSet(viewsets.ModelViewSet):
     queryset = WorkingHours.objects.all()
     serializer_class = WorkingHoursSerializer
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        staff_id = self.request.query_params.get("staff")
+        if staff_id:
+            queryset = queryset.filter(staff_id=staff_id)
+        return queryset
 
 
 @extend_schema_view(
@@ -77,6 +129,14 @@ class WorkingHoursViewSet(viewsets.ModelViewSet):
 class TimeOffViewSet(viewsets.ModelViewSet):
     queryset = TimeOff.objects.all()
     serializer_class = TimeOffSerializer
+    permission_classes = [IsAdminRole]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        staff_id = self.request.query_params.get("staff")
+        if staff_id:
+            queryset = queryset.filter(staff_id=staff_id)
+        return queryset
 
 
 @extend_schema(

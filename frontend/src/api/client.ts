@@ -101,6 +101,14 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
+export interface WorkingHours {
+  id: number;
+  staff: number;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+}
+
 export const authApi = {
   login: (data: { username: string; password: string }) =>
     api.post("/auth/login/", data),
@@ -133,6 +141,39 @@ export const staffApi = {
     api.get<AvailabilityResponse>(`/staff/${userId}/availability/`, {
       params: { date },
     }),
+  onboard: (data: {
+    username: string;
+    password: string;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+    phone_number?: string;
+    bio?: string;
+    services_offered?: number[];
+  }) => api.post<StaffProfile>("/staff/onboard/", data),
+  update: (
+    id: number,
+    data: Partial<Pick<StaffProfile, "bio" | "services_offered">>
+  ) => api.patch<StaffProfile>(`/staff/${id}/`, data),
+  delete: (id: number) => api.delete(`/staff/${id}/`),
+};
+
+export const workingHoursApi = {
+  list: (staffUserId: number) =>
+    api.get<PaginatedResponse<WorkingHours>>("/working-hours/", {
+      params: { staff: staffUserId },
+    }),
+  create: (data: {
+    staff: number;
+    weekday: number;
+    start_time: string;
+    end_time: string;
+  }) => api.post<WorkingHours>("/working-hours/", data),
+  update: (
+    id: number,
+    data: Partial<Pick<WorkingHours, "start_time" | "end_time">>
+  ) => api.patch<WorkingHours>(`/working-hours/${id}/`, data),
+  delete: (id: number) => api.delete(`/working-hours/${id}/`),
 };
 
 export const appointmentsApi = {

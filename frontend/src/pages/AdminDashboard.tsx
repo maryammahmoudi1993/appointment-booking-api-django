@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import {
   appointmentsApi,
   servicesApi,
-  staffApi,
   type Appointment,
   type Service,
-  type StaffProfile,
 } from "../api/client";
+import StaffManager from "../components/admin/StaffManager";
 
 type Tab = "appointments" | "services" | "staff";
 
@@ -42,7 +41,7 @@ export default function AdminDashboard() {
       <div className="mt-6">
         {tab === "appointments" && <AppointmentsPanel />}
         {tab === "services" && <ServicesPanel />}
-        {tab === "staff" && <StaffPanel />}
+        {tab === "staff" && <StaffManager />}
       </div>
     </div>
   );
@@ -367,54 +366,3 @@ function ServicesPanel() {
   );
 }
 
-function StaffPanel() {
-  const [staff, setStaff] = useState<StaffProfile[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([staffApi.list(), servicesApi.list()])
-      .then(([staffRes, servicesRes]) => {
-        setStaff(staffRes.data.results);
-        setServices(servicesRes.data.results);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const serviceName = (id: number) =>
-    services.find((sv) => sv.id === id)?.name ?? `Service #${id}`;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-10">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {staff.map((s) => (
-        <div
-          key={s.id}
-          className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"
-        >
-          <h3 className="font-semibold text-gray-900">{s.full_name}</h3>
-          {s.bio && <p className="mt-1 text-sm text-gray-600">{s.bio}</p>}
-          {s.services_offered.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {s.services_offered.map((id) => (
-                <span
-                  key={id}
-                  className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700"
-                >
-                  {serviceName(id)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
