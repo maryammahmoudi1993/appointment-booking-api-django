@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -85,10 +85,58 @@ def validate_booking(
     if exclude_appointment_id:
         overlap_query &= ~Q(id=exclude_appointment_id)
 
-    if Appointment.objects.filter(overlap_query).exists():
-        from core.exceptions import BookingConflict
+    with transaction.atomic():
+        existing = Appointment.objects.select_for_update().filter(overlap_query)
+        if existing.exists():
+            from core.exceptions import BookingConflict
 
-        raise BookingConflict()
+            raise BookingConflict()
+
+
+def create_appointment_atomic(
+    customer_id: int,
+    staff_id: int,
+    service_id: int,
+    start_datetime,
+    end_datetime,
+    notes: str = "",
+) -> Appointment:
+    with transaction.atomic():
+        validate_booking(staff_id, service_id, start_datetime, end_datetime)
+        appointment = Appointment.objects.create(
+            customer_id=customer_id,
+            staff_id=staff_id,
+            service_id=service_id,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            notes=notes,
+        )
+        return appointment
+
+
+def update_appointment_atomic(
+    appointment_id: int,
+    staff_id: int,
+    service_id: int,
+    start_datetime,
+    end_datetime,
+) -> Appointment:
+    with transaction.atomic():
+        validate_booking(
+            staff_id,
+            service_id,
+            start_datetime,
+            end_datetime,
+            exclude_appointment_id=appointment_id,
+        )
+        appointment = Appointment.objects.get(id=appointment_id)
+        appointment.start_datetime = start_datetime
+        appointment.end_datetime = end_datetime
+        appointment.service_id = service_id
+        appointment.save(
+            update_fields=["start_datetime", "end_datetime", "service", "updated_at"]
+        )
+        return appointment
 
 
 def get_available_slots_for_date(staff_id: int, target_date):

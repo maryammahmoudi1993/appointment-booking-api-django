@@ -41,18 +41,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Assigned user must have role 'staff'.")
         return value
 
-    def validate(self, attrs):
-        from .validators import validate_booking
-
-        staff_id = attrs["staff"].id
-        service_id = attrs["service"].id
-        start = attrs["start_datetime"]
-        end = attrs["end_datetime"]
-        exclude_id = self.instance.id if self.instance else None
-
-        validate_booking(staff_id, service_id, start, end, exclude_id)
-        return attrs
-
 
 class AppointmentListSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(

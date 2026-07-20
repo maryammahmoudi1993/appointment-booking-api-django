@@ -1,3 +1,4 @@
+from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 from .models import Appointment
 from .permissions import IsOwnerOrStaffOrAdmin
 from .serializers import AppointmentListSerializer, AppointmentSerializer
+from .validators import create_appointment_atomic, update_appointment_atomic
 
 
 class AppointmentFilter(filters.FilterSet):
@@ -42,21 +44,21 @@ class AppointmentFilter(filters.FilterSet):
         tags=["Appointments"],
         summary="Create a new booking",
         description=(
-            "Create an appointment. Runs full conflict-check: no double-booking, "
-            "within working hours, not during time-off. Returns 409 on conflict."
+            "Create an appointment. Runs full conflict-check inside a DB transaction "
+            "with select_for_update to prevent race conditions. Returns 409 on conflict."
         ),
         responses={201: AppointmentSerializer, 409: "Booking conflict"},
     ),
     update=extend_schema(
         tags=["Appointments"],
         summary="Update/reschedule an appointment",
-        description="Full update. Re-runs conflict-check logic.",
+        description="Full update. Re-runs conflict-check logic inside a transaction.",
         responses={200: AppointmentSerializer, 409: "Booking conflict"},
     ),
     partial_update=extend_schema(
         tags=["Appointments"],
         summary="Partially update an appointment",
-        description="Partial update. Re-runs conflict-check logic.",
+        description="Partial update. Re-runs conflict-check logic inside a transaction.",
         responses={200: AppointmentSerializer, 409: "Booking conflict"},
     ),
     destroy=extend_schema(
@@ -91,6 +93,29 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return AppointmentListSerializer
         return AppointmentSerializer
+
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        appointment = create_appointment_atomic(
+            customer_id=data["customer"].id,
+            staff_id=data["staff"].id,
+            service_id=data["service"].id,
+            start_datetime=data["start_datetime"],
+            end_datetime=data["end_datetime"],
+            notes=data.get("notes", ""),
+        )
+        serializer.instance = appointment
+
+    def perform_update(self, serializer):
+        data = serializer.validated_data
+        appointment = update_appointment_atomic(
+            appointment_id=serializer.instance.id,
+            staff_id=data["staff"].id,
+            service_id=data["service"].id,
+            start_datetime=data["start_datetime"],
+            end_datetime=data["end_datetime"],
+        )
+        serializer.instance = appointment
 
     @extend_schema(
         tags=["Appointments"],
