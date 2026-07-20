@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { promotionsApi, type PromoCode } from "../../api/client";
+import {
+  promotionsApi,
+  servicesApi,
+  type PromoCode,
+  type Service,
+} from "../../api/client";
 
 function extractErrorMessage(err: any, fallback: string): string {
   const data = err.response?.data;
@@ -17,16 +22,20 @@ const EMPTY_FORM = {
 
 export default function PromotionsPanel() {
   const [promos, setPromos] = useState<PromoCode[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [serviceIds, setServiceIds] = useState<number[]>([]);
   const [error, setError] = useState("");
 
   const fetchAll = () => {
     setLoading(true);
-    promotionsApi
-      .list()
-      .then((res) => setPromos(res.data.results))
+    Promise.all([promotionsApi.list(), servicesApi.list()])
+      .then(([promoRes, servicesRes]) => {
+        setPromos(promoRes.data.results);
+        setServices(servicesRes.data.results);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -34,12 +43,19 @@ export default function PromotionsPanel() {
     fetchAll();
   }, []);
 
+  const toggleService = (id: number) => {
+    setServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     try {
-      await promotionsApi.create(form);
+      await promotionsApi.create({ ...form, services: serviceIds });
       setForm(EMPTY_FORM);
+      setServiceIds([]);
       setShowForm(false);
       fetchAll();
     } catch (err: any) {
@@ -143,9 +159,37 @@ export default function PromotionsPanel() {
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
+
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700">Applies to</p>
+            <p className="text-xs text-gray-400">
+              Leave all unchecked to apply this code to every service.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {services.map((sv) => (
+                <label
+                  key={sv.id}
+                  className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    serviceIds.includes(sv.id)
+                      ? "border-brand-600 bg-brand-50 text-brand-700"
+                      : "border-gray-200 text-gray-600 hover:border-brand-300"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={serviceIds.includes(sv.id)}
+                    onChange={() => toggleService(sv.id)}
+                    className="mr-1.5 hidden"
+                  />
+                  {sv.name}
+                </label>
+              ))}
+            </div>
+          </div>
+
           <button
             type="submit"
-            className="mt-4 rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            className="mt-5 rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700"
           >
             Create campaign
           </button>
@@ -159,6 +203,7 @@ export default function PromotionsPanel() {
               <th className="px-4 py-3">Promotion</th>
               <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Discount</th>
+              <th className="px-4 py-3">Applies to</th>
               <th className="px-4 py-3">Redemptions</th>
               <th className="px-4 py-3">Active</th>
             </tr>
@@ -176,6 +221,11 @@ export default function PromotionsPanel() {
                   {p.discount_type === "percent"
                     ? `${p.discount_value}% off`
                     : `$${p.discount_value} off`}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-600">
+                  {p.service_names.length === 0
+                    ? "All services"
+                    : p.service_names.join(", ")}
                 </td>
                 <td className="px-4 py-3 text-gray-700">{p.times_redeemed}</td>
                 <td className="px-4 py-3">

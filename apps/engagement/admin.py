@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import LoyaltyRedemption, LoyaltyReward, PromoCode, PromoRedemption, Review
+from .models import (
+    LoyaltyRedemption,
+    LoyaltyReward,
+    PromoCode,
+    PromoRedemption,
+    Review,
+    SupportMessage,
+)
 
 
 @admin.register(Review)
@@ -33,3 +40,10 @@ class PromoCodeAdmin(admin.ModelAdmin):
 class PromoRedemptionAdmin(admin.ModelAdmin):
     list_display = ("promo", "customer", "discount_amount", "created_at")
     search_fields = ("promo__code", "customer__username")
+
+
+@admin.register(SupportMessage)
+class SupportMessageAdmin(admin.ModelAdmin):
+    list_display = ("customer", "is_read", "created_at", "replied_at")
+    list_filter = ("is_read",)
+    search_fields = ("customer__username", "message")

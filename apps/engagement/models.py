@@ -66,6 +66,12 @@ class PromoCode(models.Model):
     description = models.CharField(max_length=255, blank=True)
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_CHOICES)
     discount_value = models.DecimalField(max_digits=8, decimal_places=2)
+    services = models.ManyToManyField(
+        "services.Service",
+        blank=True,
+        related_name="promo_codes",
+        help_text="Services this code applies to. Leave empty to apply to all services.",
+    )
     is_active = models.BooleanField(default=True)
     max_redemptions = models.PositiveIntegerField(null=True, blank=True)
     starts_at = models.DateTimeField(null=True, blank=True)
@@ -107,3 +113,20 @@ class PromoRedemption(models.Model):
 
     def __str__(self) -> str:
         return f"{self.promo.code} used by {self.customer.username}"
+
+
+class SupportMessage(models.Model):
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="support_messages"
+    )
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    admin_reply = models.TextField(blank=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Message from {self.customer.username} at {self.created_at:%Y-%m-%d %H:%M}"

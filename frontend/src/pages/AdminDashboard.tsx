@@ -10,8 +10,9 @@ import {
 import StaffManager from "../components/admin/StaffManager";
 import PromotionsPanel from "../components/admin/PromotionsPanel";
 import RevenuePanel from "../components/admin/RevenuePanel";
+import InboxPanel from "../components/admin/InboxPanel";
 
-type Tab = "appointments" | "services" | "staff" | "marketing" | "revenue";
+type Tab = "appointments" | "services" | "staff" | "marketing" | "revenue" | "inbox";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "appointments", label: "Appointments" },
@@ -19,6 +20,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "staff", label: "Staff" },
   { key: "marketing", label: "Marketing" },
   { key: "revenue", label: "Revenue" },
+  { key: "inbox", label: "Inbox" },
 ];
 
 export default function AdminDashboard() {
@@ -50,6 +52,7 @@ export default function AdminDashboard() {
         {tab === "staff" && <StaffManager />}
         {tab === "marketing" && <PromotionsPanel />}
         {tab === "revenue" && <RevenuePanel />}
+        {tab === "inbox" && <InboxPanel />}
       </div>
     </div>
   );
@@ -268,16 +271,19 @@ function AppointmentsPanel() {
   );
 }
 
+const EMPTY_SERVICE_FORM = {
+  name: "",
+  description: "",
+  duration_minutes: 60,
+  price: "0.00",
+};
+
 function ServicesPanel() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    duration_minutes: 60,
-    price: "0.00",
-  });
+  const [form, setForm] = useState(EMPTY_SERVICE_FORM);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const fetchServices = () => {
     setLoading(true);
@@ -299,7 +305,7 @@ function ServicesPanel() {
         duration_minutes: Number(form.duration_minutes),
       });
       setShowForm(false);
-      setForm({ name: "", description: "", duration_minutes: 60, price: "0.00" });
+      setForm(EMPTY_SERVICE_FORM);
       fetchServices();
     } catch {
       alert("Failed to create service.");
@@ -382,42 +388,170 @@ function ServicesPanel() {
         </form>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        {services.map((s) => (
-          <div
-            key={s.id}
-            className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">{s.name}</h3>
-                <p className="mt-1 text-sm text-gray-600">{s.description}</p>
+        {services.map((s) =>
+          editingId === s.id ? (
+            <EditServiceForm
+              key={s.id}
+              service={s}
+              onDone={() => {
+                setEditingId(null);
+                fetchServices();
+              }}
+              onCancel={() => setEditingId(null)}
+            />
+          ) : (
+            <div
+              key={s.id}
+              className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{s.name}</h3>
+                  <p className="mt-1 text-sm text-gray-600">{s.description}</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setEditingId(s.id)}
+                    className="text-sm text-brand-700 hover:text-brand-800"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => handleDelete(s.id)}
-                className="text-sm text-red-600 hover:text-red-800"
-              >
-                Delete
-              </button>
+              <div className="mt-3 flex items-center gap-4 text-sm">
+                <span className="font-display font-semibold text-brand-600">
+                  ${s.price}
+                </span>
+                <span className="text-gray-500">{s.duration_minutes} min</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    s.is_active
+                      ? "bg-brand-100 text-brand-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {s.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
             </div>
-            <div className="mt-3 flex items-center gap-4 text-sm">
-              <span className="font-display font-semibold text-brand-600">
-                ${s.price}
-              </span>
-              <span className="text-gray-500">{s.duration_minutes} min</span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  s.is_active
-                    ? "bg-brand-100 text-brand-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {s.is_active ? "Active" : "Inactive"}
-              </span>
-            </div>
-          </div>
-        ))}
+          )
+        )}
       </div>
     </div>
+  );
+}
+
+function EditServiceForm({
+  service,
+  onDone,
+  onCancel,
+}: {
+  service: Service;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  const [form, setForm] = useState({
+    name: service.name,
+    description: service.description,
+    duration_minutes: service.duration_minutes,
+    price: service.price,
+    is_active: service.is_active,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      await servicesApi.update(service.id, {
+        ...form,
+        duration_minutes: Number(form.duration_minutes),
+      });
+      onDone();
+    } catch {
+      setError("Failed to save changes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl border border-brand-300 bg-white p-6 shadow-sm"
+    >
+      {error && (
+        <p className="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">
+          {error}
+        </p>
+      )}
+      <div className="grid gap-3">
+        <input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          required
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+        <textarea
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          rows={2}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="number"
+            step="0.01"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            required
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          <input
+            type="number"
+            value={form.duration_minutes}
+            onChange={(e) =>
+              setForm({ ...form, duration_minutes: Number(e.target.value) })
+            }
+            required
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={form.is_active}
+            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+          />
+          Active (visible to customers)
+        </label>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save changes"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-full border border-gray-300 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 

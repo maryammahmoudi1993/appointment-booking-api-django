@@ -146,12 +146,25 @@ export interface PromoCode {
   description: string;
   discount_type: "percent" | "fixed";
   discount_value: string;
+  services: number[];
+  service_names: string[];
   is_active: boolean;
   max_redemptions: number | null;
   starts_at: string | null;
   ends_at: string | null;
   times_redeemed: number;
   revenue_influenced: string;
+  created_at: string;
+}
+
+export interface SupportMessage {
+  id: number;
+  customer: number;
+  customer_name: string;
+  message: string;
+  is_read: boolean;
+  admin_reply: string;
+  replied_at: string | null;
   created_at: string;
 }
 
@@ -306,15 +319,26 @@ export const promotionsApi = {
     description?: string;
     discount_type: "percent" | "fixed";
     discount_value: string;
+    services?: number[];
     max_redemptions?: number | null;
   }) => api.post<PromoCode>("/promotions/", data),
-  update: (id: number, data: Partial<Pick<PromoCode, "is_active">>) =>
-    api.patch<PromoCode>(`/promotions/${id}/`, data),
+  update: (
+    id: number,
+    data: Partial<Pick<PromoCode, "is_active" | "services">>
+  ) => api.patch<PromoCode>(`/promotions/${id}/`, data),
   delete: (id: number) => api.delete(`/promotions/${id}/`),
-  validate: (code: string) =>
+  validate: (code: string, service?: number) =>
     api.post<{
       code: string;
       discount_type: "percent" | "fixed";
       discount_value: string;
-    }>("/promotions/validate/", { code }),
+    }>("/promotions/validate/", { code, service }),
+};
+
+export const supportApi = {
+  list: () => api.get<PaginatedResponse<SupportMessage>>("/support-messages/"),
+  send: (message: string) =>
+    api.post<SupportMessage>("/support-messages/", { message }),
+  reply: (id: number, reply: string) =>
+    api.post<SupportMessage>(`/support-messages/${id}/reply/`, { reply }),
 };

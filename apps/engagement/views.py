@@ -1,4 +1,5 @@
 from django.db.models import Sum
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -9,13 +10,14 @@ from rest_framework.views import APIView
 from apps.appointments.models import Appointment
 from core.permissions import IsAdminRole, IsCustomerRole
 
-from .models import LoyaltyRedemption, LoyaltyReward, PromoCode, Review
+from .models import LoyaltyRedemption, LoyaltyReward, PromoCode, Review, SupportMessage
 from .serializers import (
     LoyaltyRedemptionSerializer,
     LoyaltyRewardSerializer,
     PromoCodeSerializer,
     PromoValidateSerializer,
     ReviewSerializer,
+    SupportMessageSerializer,
 )
 from .services import PromoCodeError, validate_promo_code
 
@@ -169,7 +171,10 @@ class PromoCodeViewSet(viewsets.ModelViewSet):
         serializer = PromoValidateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            promo = validate_promo_code(serializer.validated_data["code"])
+            promo = validate_promo_code(
+                serializer.validated_data["code"],
+                service=serializer.validated_data.get("service"),
+            )
         except PromoCodeError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(
@@ -179,3 +184,64 @@ class PromoCodeViewSet(viewsets.ModelViewSet):
                 "discount_value": str(promo.discount_value),
             }
         )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Support"],
+        summary="List support messages",
+        description="Admin sees every message (inbox); customers see only their own.",
+    ),
+    create=extend_schema(
+        tags=["Support"],
+        summary="Send a message to the admin",
+        description="Authenticated customer sends a message that lands in the admin inbox.",
+    ),
+)
+class SupportMessageViewSet(viewsets.ModelViewSet):
+    queryset = SupportMessage.objects.select_related("customer")
+    serializer_class = SupportMessageSerializer
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_permissions(self):
+        if self.action == "reply":
+            return [IsAdminRole()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        if user.role == "admin":
+            return queryset
+        return queryset.filter(customer=user)
+
+    def perform_create(self, serializer):
+        serializer.save(customer=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if request.user.role == "admin" and not instance.is_read:
+            instance.is_read = True
+            instance.save(update_fields=["is_read"])
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        tags=["Support"],
+        summary="Reply to a support message",
+        description="Admin only.",
+        request={"application/json": {"type": "object", "properties": {"reply": {"type": "string"}}}},
+        responses={200: SupportMessageSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="reply")
+    def reply(self, request, pk=None):
+        message = self.get_object()
+        reply_text = request.data.get("reply", "").strip()
+        if not reply_text:
+            return Response(
+                {"detail": "Reply text is required."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        message.admin_reply = reply_text
+        message.replied_at = timezone.now()
+        message.is_read = True
+        message.save(update_fields=["admin_reply", "replied_at", "is_read"])
+        return Response(SupportMessageSerializer(message).data)

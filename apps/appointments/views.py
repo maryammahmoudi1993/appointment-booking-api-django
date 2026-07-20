@@ -107,7 +107,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         promo = None
         if promo_code:
             try:
-                promo = validate_promo_code(promo_code)
+                promo = validate_promo_code(promo_code, service=data["service"])
             except PromoCodeError as exc:
                 raise serializers.ValidationError({"promo_code": [str(exc)]})
 

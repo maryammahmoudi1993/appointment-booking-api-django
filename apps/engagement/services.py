@@ -9,7 +9,7 @@ class PromoCodeError(Exception):
     pass
 
 
-def validate_promo_code(code: str) -> PromoCode:
+def validate_promo_code(code: str, service=None) -> PromoCode:
     try:
         promo = PromoCode.objects.get(code=code.upper().strip())
     except PromoCode.DoesNotExist:
@@ -25,6 +25,11 @@ def validate_promo_code(code: str) -> PromoCode:
         raise PromoCodeError("This promo code has expired.")
     if promo.max_redemptions is not None and promo.redemptions.count() >= promo.max_redemptions:
         raise PromoCodeError("This promo code has reached its redemption limit.")
+
+    applicable_services = promo.services.all()
+    if applicable_services.exists() and service is not None:
+        if not applicable_services.filter(pk=service.pk).exists():
+            raise PromoCodeError("This promo code does not apply to the selected service.")
 
     return promo
 

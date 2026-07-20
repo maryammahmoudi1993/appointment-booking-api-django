@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
 from apps.appointments.models import Appointment
+from apps.services.models import Service
 
-from .models import LoyaltyReward, LoyaltyRedemption, PromoCode, Review
+from .models import LoyaltyReward, LoyaltyRedemption, PromoCode, Review, SupportMessage
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -72,6 +73,10 @@ class LoyaltyRedemptionSerializer(serializers.ModelSerializer):
 class PromoCodeSerializer(serializers.ModelSerializer):
     times_redeemed = serializers.SerializerMethodField()
     revenue_influenced = serializers.SerializerMethodField()
+    services = serializers.PrimaryKeyRelatedField(
+        queryset=Service.objects.all(), many=True, required=False
+    )
+    service_names = serializers.SerializerMethodField()
 
     class Meta:
         model = PromoCode
@@ -81,6 +86,8 @@ class PromoCodeSerializer(serializers.ModelSerializer):
             "description",
             "discount_type",
             "discount_value",
+            "services",
+            "service_names",
             "is_active",
             "max_redemptions",
             "starts_at",
@@ -94,6 +101,9 @@ class PromoCodeSerializer(serializers.ModelSerializer):
     def get_times_redeemed(self, obj) -> int:
         return obj.redemptions.count()
 
+    def get_service_names(self, obj) -> list:
+        return [s.name for s in obj.services.all()]
+
     def get_revenue_influenced(self, obj) -> str:
         total = sum(
             (r.appointment.service.price for r in obj.redemptions.all() if r.appointment),
@@ -104,3 +114,33 @@ class PromoCodeSerializer(serializers.ModelSerializer):
 
 class PromoValidateSerializer(serializers.Serializer):
     code = serializers.CharField()
+    service = serializers.PrimaryKeyRelatedField(
+        queryset=Service.objects.all(), required=False
+    )
+
+
+class SupportMessageSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(
+        source="customer.get_full_name", read_only=True
+    )
+
+    class Meta:
+        model = SupportMessage
+        fields = (
+            "id",
+            "customer",
+            "customer_name",
+            "message",
+            "is_read",
+            "admin_reply",
+            "replied_at",
+            "created_at",
+        )
+        read_only_fields = (
+            "id",
+            "customer",
+            "is_read",
+            "admin_reply",
+            "replied_at",
+            "created_at",
+        )

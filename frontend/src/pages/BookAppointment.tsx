@@ -109,7 +109,10 @@ export default function BookAppointment() {
     setPromoError("");
     setApplyingPromo(true);
     try {
-      const res = await promotionsApi.validate(promoInput.trim());
+      const res = await promotionsApi.validate(
+        promoInput.trim(),
+        selectedService?.id
+      );
       setAppliedPromo(res.data);
     } catch (err: any) {
       setAppliedPromo(null);

@@ -232,6 +232,84 @@ class TestPromotions:
 
         assert not Appointment.objects.filter(staff=staff_user, start_datetime=start).exists()
 
+    def test_promo_scoped_to_service_applies(self, auth_client, service):
+        promo = PromoCode.objects.create(
+            code="HAIRONLY", discount_type="percent", discount_value=Decimal("10.00")
+        )
+        promo.services.add(service)
+        response = auth_client.post(
+            "/api/promotions/validate/", {"code": "HAIRONLY", "service": service.id}
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_promo_scoped_to_service_rejects_other_service(self, auth_client, service):
+        other_service = ServiceFactory()
+        promo = PromoCode.objects.create(
+            code="HAIRONLY2", discount_type="percent", discount_value=Decimal("10.00")
+        )
+        promo.services.add(service)
+        response = auth_client.post(
+            "/api/promotions/validate/", {"code": "HAIRONLY2", "service": other_service.id}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_promo_with_no_services_applies_to_any(self, auth_client, service):
+        PromoCode.objects.create(
+            code="ANYSERVICE", discount_type="percent", discount_value=Decimal("10.00")
+        )
+        response = auth_client.post(
+            "/api/promotions/validate/", {"code": "ANYSERVICE", "service": service.id}
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestSupportMessages:
+    def test_customer_can_send_message(self, auth_client):
+        response = auth_client.post(
+            "/api/support-messages/", {"message": "Can I reschedule tomorrow's visit?"}
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_customer_only_sees_own_messages(self, auth_client, customer):
+        from apps.engagement.models import SupportMessage
+        from tests.factories import CustomerFactory
+
+        SupportMessage.objects.create(customer=customer, message="mine")
+        SupportMessage.objects.create(customer=CustomerFactory(), message="not mine")
+        response = auth_client.get("/api/support-messages/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_admin_sees_all_messages_inbox(self, admin_client, customer):
+        from apps.engagement.models import SupportMessage
+
+        SupportMessage.objects.create(customer=customer, message="hello")
+        response = admin_client.get("/api/support-messages/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_admin_can_reply(self, admin_client, customer):
+        from apps.engagement.models import SupportMessage
+
+        msg = SupportMessage.objects.create(customer=customer, message="hello")
+        response = admin_client.post(
+            f"/api/support-messages/{msg.id}/reply/", {"reply": "We'll call you back."}
+        )
+        assert response.status_code == status.HTTP_200_OK
+        msg.refresh_from_db()
+        assert msg.admin_reply == "We'll call you back."
+        assert msg.is_read is True
+
+    def test_customer_cannot_reply(self, auth_client, customer):
+        from apps.engagement.models import SupportMessage
+
+        msg = SupportMessage.objects.create(customer=customer, message="hello")
+        response = auth_client.post(
+            f"/api/support-messages/{msg.id}/reply/", {"reply": "nope"}
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
 
 @pytest.fixture
 def service(db):

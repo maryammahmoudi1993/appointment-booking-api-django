@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { supportApi } from "../api/client";
 
 type ChatMessage = { from: "bot" | "user"; text: string };
 
 const GREETING =
-  "Hi! I'm here to help with bookings, rescheduling, or any questions about Bloom Studio.";
+  "Hi! I'm here to help with bookings, rescheduling, or any questions about Bloom Studio. Quick answers below, or send the team a message and it'll land straight in their inbox.";
 
 const QUICK_REPLIES: { label: string; reply: string }[] = [
   {
@@ -24,28 +26,52 @@ const QUICK_REPLIES: { label: string; reply: string }[] = [
 ];
 
 export default function SupportWidget() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { from: "bot", text: GREETING },
   ]);
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
 
   const handleQuickReply = (label: string, reply: string) => {
     setMessages((m) => [...m, { from: "user", text: label }, { from: "bot", text: reply }]);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim();
-    if (!text) return;
-    setMessages((m) => [
-      ...m,
-      { from: "user", text },
-      {
-        from: "bot",
-        text: "Thanks for the message! For anything beyond quick FAQs, please try one of the options below or reach out during business hours.",
-      },
-    ]);
+    if (!text || sending) return;
+
+    if (!user) {
+      setMessages((m) => [
+        ...m,
+        { from: "user", text },
+        { from: "bot", text: "Please sign in first so our team knows who to reply to." },
+      ]);
+      setInput("");
+      return;
+    }
+
+    setSending(true);
+    setMessages((m) => [...m, { from: "user", text }]);
     setInput("");
+    try {
+      await supportApi.send(text);
+      setMessages((m) => [
+        ...m,
+        {
+          from: "bot",
+          text: "Sent! Your message is in our team's inbox — we'll get back to you soon.",
+        },
+      ]);
+    } catch {
+      setMessages((m) => [
+        ...m,
+        { from: "bot", text: "Sorry, that didn't go through. Please try again." },
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -101,13 +127,15 @@ export default function SupportWidget() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Type a message..."
+              placeholder="Message the admin..."
               className="flex-1 rounded-full border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
               onClick={handleSend}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
-              aria-label="Send"
+              disabled={sending}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
+              aria-label="Send to admin"
+              title="Send to admin"
             >
               ↑
             </button>
