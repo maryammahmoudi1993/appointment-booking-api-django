@@ -14,7 +14,10 @@ RUN pip install --no-cache-dir -r requirements/prod.txt
 
 COPY . .
 
-RUN adduser --disabled-password --no-create-home appuser
+RUN python manage.py collectstatic --noinput && \
+    adduser --disabled-password --no-create-home appuser && \
+    chown -R appuser:appuser /app/staticfiles /app/frontend/dist
+
 USER appuser
 
 EXPOSE 8000
