@@ -6,6 +6,10 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+admin.site.site_header = "Booking System Admin"
+admin.site.site_title = "Booking Admin Portal"
+admin.site.index_title = "Manage Bookings"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.accounts.urls")),
