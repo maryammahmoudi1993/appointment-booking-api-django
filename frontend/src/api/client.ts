@@ -63,14 +63,20 @@ export interface Service {
 export interface StaffProfile {
   id: number;
   user: number;
-  user_name: string;
+  username: string;
+  full_name: string;
   bio: string;
-  specialties: string[];
+  services_offered: number[];
 }
 
 export interface AvailabilitySlot {
   start: string;
   end: string;
+}
+
+export interface AvailabilityResponse {
+  date: string;
+  available_slots: AvailabilitySlot[];
 }
 
 export interface Appointment {
@@ -123,8 +129,8 @@ export const servicesApi = {
 export const staffApi = {
   list: () => api.get<PaginatedResponse<StaffProfile>>("/staff/"),
   get: (id: number) => api.get<StaffProfile>(`/staff/${id}/`),
-  availability: (id: number, date: string) =>
-    api.get<AvailabilitySlot[]>(`/staff/${id}/availability/`, {
+  availability: (userId: number, date: string) =>
+    api.get<AvailabilityResponse>(`/staff/${userId}/availability/`, {
       params: { date },
     }),
 };

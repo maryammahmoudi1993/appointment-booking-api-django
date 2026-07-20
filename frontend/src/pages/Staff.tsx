@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { staffApi, type StaffProfile } from "../api/client";
+import { staffApi, servicesApi, type StaffProfile, type Service } from "../api/client";
 
 export default function Staff() {
   const [staff, setStaff] = useState<StaffProfile[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    staffApi
-      .list()
-      .then((res) => setStaff(res.data.results))
+    Promise.all([staffApi.list(), servicesApi.list()])
+      .then(([staffRes, servicesRes]) => {
+        setStaff(staffRes.data.results);
+        setServices(servicesRes.data.results);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const serviceName = (id: number) =>
+    services.find((s) => s.id === id)?.name ?? `Service #${id}`;
 
   if (loading) {
     return (
@@ -39,7 +45,7 @@ export default function Staff() {
           >
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-100 font-display text-sm font-bold text-brand-700">
-                {s.user_name
+                {s.full_name
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -47,18 +53,18 @@ export default function Staff() {
                   .toUpperCase()}
               </span>
               <h3 className="font-display text-lg font-semibold text-brand-900">
-                {s.user_name}
+                {s.full_name}
               </h3>
             </div>
-            <p className="mt-3 text-sm text-gray-600">{s.bio}</p>
-            {s.specialties.length > 0 && (
+            {s.bio && <p className="mt-3 text-sm text-gray-600">{s.bio}</p>}
+            {s.services_offered.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {s.specialties.map((sp) => (
+                {s.services_offered.map((id) => (
                   <span
-                    key={sp}
+                    key={id}
                     className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700"
                   >
-                    {sp}
+                    {serviceName(id)}
                   </span>
                 ))}
               </div>

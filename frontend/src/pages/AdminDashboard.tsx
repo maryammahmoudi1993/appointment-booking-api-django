@@ -369,14 +369,20 @@ function ServicesPanel() {
 
 function StaffPanel() {
   const [staff, setStaff] = useState<StaffProfile[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    staffApi
-      .list()
-      .then((res) => setStaff(res.data.results))
+    Promise.all([staffApi.list(), servicesApi.list()])
+      .then(([staffRes, servicesRes]) => {
+        setStaff(staffRes.data.results);
+        setServices(servicesRes.data.results);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const serviceName = (id: number) =>
+    services.find((sv) => sv.id === id)?.name ?? `Service #${id}`;
 
   if (loading) {
     return (
@@ -393,16 +399,16 @@ function StaffPanel() {
           key={s.id}
           className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"
         >
-          <h3 className="font-semibold text-gray-900">{s.user_name}</h3>
-          <p className="mt-1 text-sm text-gray-600">{s.bio}</p>
-          {s.specialties.length > 0 && (
+          <h3 className="font-semibold text-gray-900">{s.full_name}</h3>
+          {s.bio && <p className="mt-1 text-sm text-gray-600">{s.bio}</p>}
+          {s.services_offered.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {s.specialties.map((sp) => (
+              {s.services_offered.map((id) => (
                 <span
-                  key={sp}
+                  key={id}
                   className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700"
                 >
-                  {sp}
+                  {serviceName(id)}
                 </span>
               ))}
             </div>

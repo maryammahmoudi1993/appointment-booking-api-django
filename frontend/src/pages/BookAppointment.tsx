@@ -46,8 +46,8 @@ export default function BookAppointment() {
   useEffect(() => {
     if (selectedStaff && selectedDate) {
       staffApi
-        .availability(selectedStaff.id, selectedDate)
-        .then((res) => setSlots(res.data))
+        .availability(selectedStaff.user, selectedDate)
+        .then((res) => setSlots(res.data.available_slots))
         .catch(() => setSlots([]));
     }
   }, [selectedStaff, selectedDate]);
@@ -58,7 +58,7 @@ export default function BookAppointment() {
     setSubmitting(true);
     try {
       await appointmentsApi.create({
-        staff: selectedStaff.id,
+        staff: selectedStaff.user,
         service: selectedService.id,
         start_datetime: `${selectedDate}T${selectedSlot.start}`,
         end_datetime: `${selectedDate}T${selectedSlot.end}`,
@@ -164,7 +164,7 @@ export default function BookAppointment() {
                 }}
                 className="rounded-xl border border-brand-100 bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:shadow-md"
               >
-                <div className="font-semibold text-gray-900">{s.user_name}</div>
+                <div className="font-semibold text-gray-900">{s.full_name}</div>
                 <div className="mt-1 text-sm text-gray-600">{s.bio}</div>
               </button>
             ))}
@@ -248,7 +248,7 @@ export default function BookAppointment() {
             <dl className="space-y-2 text-sm">
               {[
                 ["Service", selectedService.name],
-                ["Specialist", selectedStaff.user_name],
+                ["Specialist", selectedStaff.full_name],
                 ["Date", selectedDate],
                 [
                   "Time",
