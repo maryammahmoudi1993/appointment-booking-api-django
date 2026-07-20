@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -5,6 +6,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer
 
 
+@extend_schema_view(
+    post=extend_schema(
+        tags=["Auth"],
+        summary="Register a new user",
+        description="Create a new user account and return JWT tokens.",
+        responses={201: {"description": "User created with tokens"}},
+    ),
+)
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
@@ -26,6 +35,20 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
+@extend_schema_view(
+    post=extend_schema(
+        tags=["Auth"],
+        summary="Logout (blacklist refresh token)",
+        description="Blacklist a refresh token to invalidate it.",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {"refresh": {"type": "string"}},
+            }
+        },
+        responses={200: "Successfully logged out.", 400: "Invalid token."},
+    ),
+)
 class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -50,6 +73,21 @@ class LogoutView(generics.GenericAPIView):
             )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Auth"],
+        summary="Get current user profile",
+        description="Retrieve the authenticated user's profile.",
+        responses={200: UserSerializer},
+    ),
+    patch=extend_schema(
+        tags=["Auth"],
+        summary="Update current user profile",
+        description="Partially update the authenticated user's profile.",
+        request=UserSerializer,
+        responses={200: UserSerializer},
+    ),
+)
 class MeView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]

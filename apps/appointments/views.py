@@ -1,4 +1,5 @@
 from django_filters import rest_framework as filters
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,6 +21,51 @@ class AppointmentFilter(filters.FilterSet):
         fields = ["status", "date_from", "date_to", "staff", "service"]
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Appointments"],
+        summary="List appointments",
+        description=(
+            "Role-scoped appointment list. Customers see their own bookings, "
+            "staff see assigned bookings, admins see all. Supports filtering by "
+            "status, date range, staff, and service."
+        ),
+        responses={200: AppointmentListSerializer(many=True)},
+    ),
+    retrieve=extend_schema(
+        tags=["Appointments"],
+        summary="Get appointment detail",
+        description="Returns a single appointment by ID. Object-level permission check.",
+        responses={200: AppointmentSerializer},
+    ),
+    create=extend_schema(
+        tags=["Appointments"],
+        summary="Create a new booking",
+        description=(
+            "Create an appointment. Runs full conflict-check: no double-booking, "
+            "within working hours, not during time-off. Returns 409 on conflict."
+        ),
+        responses={201: AppointmentSerializer, 409: "Booking conflict"},
+    ),
+    update=extend_schema(
+        tags=["Appointments"],
+        summary="Update/reschedule an appointment",
+        description="Full update. Re-runs conflict-check logic.",
+        responses={200: AppointmentSerializer, 409: "Booking conflict"},
+    ),
+    partial_update=extend_schema(
+        tags=["Appointments"],
+        summary="Partially update an appointment",
+        description="Partial update. Re-runs conflict-check logic.",
+        responses={200: AppointmentSerializer, 409: "Booking conflict"},
+    ),
+    destroy=extend_schema(
+        tags=["Appointments"],
+        summary="Delete an appointment",
+        description="Hard-delete an appointment. Consider using cancel instead.",
+        responses={204: None},
+    ),
+)
 class AppointmentViewSet(viewsets.ModelViewSet):
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrStaffOrAdmin]
@@ -46,6 +92,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             return AppointmentListSerializer
         return AppointmentSerializer
 
+    @extend_schema(
+        tags=["Appointments"],
+        summary="Cancel an appointment",
+        description="Soft-cancel. Sets status to 'cancelled'. Cannot cancel already cancelled/completed appointments.",
+        responses={200: AppointmentSerializer, 400: "Cannot cancel"},
+    )
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel(self, request, pk=None):
         appointment = self.get_object()
@@ -58,6 +110,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appointment.save(update_fields=["status", "updated_at"])
         return Response(AppointmentSerializer(appointment).data)
 
+    @extend_schema(
+        tags=["Appointments"],
+        summary="Confirm an appointment",
+        description="Staff/admin only. Sets status from 'pending' to 'confirmed'.",
+        responses={200: AppointmentSerializer, 403: "Forbidden", 400: "Not pending"},
+    )
     @action(detail=True, methods=["patch"], url_path="confirm")
     def confirm(self, request, pk=None):
         if request.user.role not in ["staff", "admin"]:

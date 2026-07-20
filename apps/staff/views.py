@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from django.db.models import Q
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,13 +12,27 @@ from apps.appointments.models import Appointment
 
 from .models import StaffProfile, TimeOff, WorkingHours
 from .serializers import (
-    StaffProfileSerializer,
     StaffAvailabilitySlotSerializer,
+    StaffProfileSerializer,
     TimeOffSerializer,
     WorkingHoursSerializer,
 )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Staff"],
+        summary="List staff profiles",
+        description="Public endpoint. Returns all staff profiles with their offered services.",
+        responses={200: StaffProfileSerializer(many=True)},
+    ),
+    retrieve=extend_schema(
+        tags=["Staff"],
+        summary="Get staff profile detail",
+        description="Public endpoint. Returns a single staff profile by ID.",
+        responses={200: StaffProfileSerializer},
+    ),
+)
 class StaffProfileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StaffProfile.objects.select_related("user").prefetch_related(
         "services_offered"
@@ -26,16 +41,79 @@ class StaffProfileViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Staff"],
+        summary="List working hours",
+        description="Returns all working hour configurations.",
+        responses={200: WorkingHoursSerializer(many=True)},
+    ),
+    create=extend_schema(
+        tags=["Staff"],
+        summary="Create working hours",
+        description="Set working hours for a staff member.",
+        responses={201: WorkingHoursSerializer},
+    ),
+)
 class WorkingHoursViewSet(viewsets.ModelViewSet):
     queryset = WorkingHours.objects.all()
     serializer_class = WorkingHoursSerializer
 
 
+@extend_schema_view(
+    list=extend_schema(
+        tags=["Staff"],
+        summary="List time-off periods",
+        description="Returns all configured time-off periods.",
+        responses={200: TimeOffSerializer(many=True)},
+    ),
+    create=extend_schema(
+        tags=["Staff"],
+        summary="Create time-off period",
+        description="Block a time period for a staff member.",
+        responses={201: TimeOffSerializer},
+    ),
+)
 class TimeOffViewSet(viewsets.ModelViewSet):
     queryset = TimeOff.objects.all()
     serializer_class = TimeOffSerializer
 
 
+@extend_schema(
+    tags=["Staff"],
+    summary="Get staff availability for a date",
+    description=(
+        "Returns computed free time slots for a staff member on a given date. "
+        "Slots are based on working hours minus existing bookings and time-off blocks."
+    ),
+    parameters=[
+        OpenApiParameter(
+            name="date",
+            type=str,
+            required=True,
+            description="Date in YYYY-MM-DD format.",
+        ),
+    ],
+    responses={
+        200: {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string"},
+                "available_slots": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "start": {"type": "string"},
+                            "end": {"type": "string"},
+                        },
+                    },
+                },
+            },
+        },
+        400: {"description": "Missing or invalid date parameter."},
+    },
+)
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def staff_availability(request, staff_id):
