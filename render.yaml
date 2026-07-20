@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: appointment-booking-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements/prod.txt
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: booking-db
+          property: connectionString
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://your-frontend.onrender.com
+
+databases:
+  - name: booking-db
+    plan: free
+    databaseName: booking_db
