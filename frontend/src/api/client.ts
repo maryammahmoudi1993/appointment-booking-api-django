@@ -140,6 +140,7 @@ export const appointmentsApi = {
     api.get<PaginatedResponse<Appointment>>("/appointments/", { params }),
   get: (id: number) => api.get<Appointment>(`/appointments/${id}/`),
   create: (data: {
+    customer: number;
     staff: number;
     service: number;
     start_datetime: string;

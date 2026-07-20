@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   servicesApi,
   staffApi,
@@ -18,8 +19,19 @@ const STEPS: { key: Step; label: string }[] = [
   { key: "confirm", label: "Confirm" },
 ];
 
+function extractErrorMessage(err: any, fallback: string): string {
+  const data = err.response?.data;
+  if (!data) return fallback;
+  if (typeof data.detail === "string") return data.detail;
+  if (Array.isArray(data.detail)) return data.detail[0];
+  const firstFieldError = Object.values(data).flat()[0];
+  return typeof firstFieldError === "string" ? firstFieldError : fallback;
+}
+
 export default function BookAppointment() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<Step>("service");
   const [error, setError] = useState("");
 
@@ -43,6 +55,29 @@ export default function BookAppointment() {
     staffApi.list().then((res) => setStaffList(res.data.results));
   }, []);
 
+  // Pre-select service/staff when arriving from a "Book" link on the
+  // Services or Staff page (e.g. /book?staff=2) and jump ahead a step.
+  useEffect(() => {
+    if (!services.length && !staffList.length) return;
+
+    const serviceId = searchParams.get("service");
+    const staffId = searchParams.get("staff");
+    const preselectedService = serviceId
+      ? services.find((s) => s.id === Number(serviceId))
+      : null;
+    const preselectedStaff = staffId
+      ? staffList.find((s) => s.id === Number(staffId))
+      : null;
+
+    if (preselectedService) setSelectedService(preselectedService);
+    if (preselectedStaff) setSelectedStaff(preselectedStaff);
+
+    if (preselectedService && preselectedStaff) setStep("datetime");
+    else if (preselectedService) setStep("staff");
+    else if (preselectedStaff) setStep("service");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [services, staffList]);
+
   useEffect(() => {
     if (selectedStaff && selectedDate) {
       staffApi
@@ -53,11 +88,12 @@ export default function BookAppointment() {
   }, [selectedStaff, selectedDate]);
 
   const handleConfirm = async () => {
-    if (!selectedService || !selectedStaff || !selectedSlot) return;
+    if (!selectedService || !selectedStaff || !selectedSlot || !user) return;
     setError("");
     setSubmitting(true);
     try {
       await appointmentsApi.create({
+        customer: user.id,
         staff: selectedStaff.user,
         service: selectedService.id,
         start_datetime: `${selectedDate}T${selectedSlot.start}`,
@@ -66,11 +102,7 @@ export default function BookAppointment() {
       });
       setStep("done");
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail?.[0] ||
-          err.response?.data?.detail ||
-          "Booking failed. Please try again."
-      );
+      setError(extractErrorMessage(err, "Booking failed. Please try again."));
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +167,7 @@ export default function BookAppointment() {
                 key={s.id}
                 onClick={() => {
                   setSelectedService(s);
-                  setStep("staff");
+                  setStep(selectedStaff ? "datetime" : "staff");
                 }}
                 className="rounded-xl border border-brand-100 bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:shadow-md"
               >

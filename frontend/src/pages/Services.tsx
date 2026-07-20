@@ -52,7 +52,7 @@ export default function Services() {
               {s.description}
             </p>
             <Link
-              to="/book"
+              to={`/book?service=${s.id}`}
               className="mt-5 inline-flex w-fit items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
             >
               Book

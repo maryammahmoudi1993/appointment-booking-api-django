@@ -70,7 +70,7 @@ export default function Staff() {
               </div>
             )}
             <Link
-              to="/book"
+              to={`/book?staff=${s.id}`}
               className="mt-5 inline-flex items-center justify-center rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
             >
               Book
