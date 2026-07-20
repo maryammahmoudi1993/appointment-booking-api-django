@@ -19,7 +19,7 @@ export default function PrivateRoute({ children, requiredRole }: Props) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (requiredRole === "admin" && user.role !== "admin") {
+  if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 

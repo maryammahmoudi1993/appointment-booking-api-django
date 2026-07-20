@@ -40,7 +40,7 @@ export default function App() {
         <Route
           path="/loyalty"
           element={
-            <PrivateRoute>
+            <PrivateRoute requiredRole="customer">
               <Loyalty />
             </PrivateRoute>
           }

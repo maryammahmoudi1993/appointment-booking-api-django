@@ -8,12 +8,20 @@ export default function Loyalty() {
   const [redeemingId, setRedeemingId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
+  const [loadError, setLoadError] = useState("");
+
   const fetchAll = () => {
     setLoading(true);
+    setLoadError("");
     Promise.all([loyaltyApi.summary(), loyaltyApi.rewards()])
       .then(([summaryRes, rewardsRes]) => {
         setSummary(summaryRes.data);
         setRewards(rewardsRes.data.results);
+      })
+      .catch((err) => {
+        setLoadError(
+          err.response?.data?.detail || "Could not load your loyalty rewards."
+        );
       })
       .finally(() => setLoading(false));
   };
@@ -37,10 +45,20 @@ export default function Loyalty() {
     }
   };
 
-  if (loading || !summary) {
+  if (loading) {
     return (
       <div className="flex justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (loadError || !summary) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8">
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          {loadError || "Could not load your loyalty rewards."}
+        </p>
       </div>
     );
   }
