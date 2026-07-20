@@ -1,0 +1,76 @@
+from django_filters import rest_framework as filters
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from .models import Appointment
+from .permissions import IsOwnerOrStaffOrAdmin
+from .serializers import AppointmentListSerializer, AppointmentSerializer
+
+
+class AppointmentFilter(filters.FilterSet):
+    date_from = filters.DateTimeFilter(field_name="start_datetime", lookup_expr="gte")
+    date_to = filters.DateTimeFilter(field_name="start_datetime", lookup_expr="lte")
+    staff = filters.NumberFilter(field_name="staff_id")
+    service = filters.NumberFilter(field_name="service_id")
+    status = filters.CharFilter(field_name="status")
+
+    class Meta:
+        model = Appointment
+        fields = ["status", "date_from", "date_to", "staff", "service"]
+
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrStaffOrAdmin]
+    filterset_class = AppointmentFilter
+    search_fields = ("customer__username", "staff__username", "service__name")
+    ordering_fields = ("start_datetime", "status", "created_at")
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == "admin":
+            return Appointment.objects.select_related(
+                "customer", "staff", "service"
+            ).all()
+        elif user.role == "staff":
+            return Appointment.objects.select_related(
+                "customer", "staff", "service"
+            ).filter(staff=user)
+        return Appointment.objects.select_related(
+            "customer", "staff", "service"
+        ).filter(customer=user)
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return AppointmentListSerializer
+        return AppointmentSerializer
+
+    @action(detail=True, methods=["post"], url_path="cancel")
+    def cancel(self, request, pk=None):
+        appointment = self.get_object()
+        if appointment.status in ["cancelled", "completed"]:
+            return Response(
+                {"detail": f"Cannot cancel a {appointment.status} appointment."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        appointment.status = "cancelled"
+        appointment.save(update_fields=["status", "updated_at"])
+        return Response(AppointmentSerializer(appointment).data)
+
+    @action(detail=True, methods=["patch"], url_path="confirm")
+    def confirm(self, request, pk=None):
+        if request.user.role not in ["staff", "admin"]:
+            return Response(
+                {"detail": "Only staff or admin can confirm appointments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        appointment = self.get_object()
+        if appointment.status != "pending":
+            return Response(
+                {"detail": "Only pending appointments can be confirmed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        appointment.status = "confirmed"
+        appointment.save(update_fields=["status", "updated_at"])
+        return Response(AppointmentSerializer(appointment).data)
