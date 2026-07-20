@@ -40,21 +40,26 @@ def validate_booking(
         raise OutsideWorkingHours()
 
     wh = working_hours.first()
+    local_dt = timezone.localtime(start_datetime)
     staff_start = timezone.make_aware(
-        timezone.localtime(start_datetime).replace(
+        local_dt.replace(
             hour=wh.start_time.hour,
             minute=wh.start_time.minute,
             second=0,
             microsecond=0,
-        )
+            tzinfo=None,
+        ),
+        timezone.get_current_timezone(),
     )
     staff_end = timezone.make_aware(
-        timezone.localtime(start_datetime).replace(
+        local_dt.replace(
             hour=wh.end_time.hour,
             minute=wh.end_time.minute,
             second=0,
             microsecond=0,
-        )
+            tzinfo=None,
+        ),
+        timezone.get_current_timezone(),
     )
     if start_datetime < staff_start or end_datetime > staff_end:
         from core.exceptions import OutsideWorkingHours
