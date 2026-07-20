@@ -2,6 +2,22 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+function extractLoginError(err: any): string {
+  const status = err.response?.status;
+  const detail = err.response?.data?.detail;
+  if (status === 429) {
+    return typeof detail === "string"
+      ? detail
+      : "Too many attempts — please wait a moment and try again.";
+  }
+  if (status === 401 || status === 400) {
+    return "Invalid username or password.";
+  }
+  return typeof detail === "string"
+    ? detail
+    : "Something went wrong signing in. Please try again.";
+}
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -17,8 +33,8 @@ export default function Login() {
     try {
       await login(username, password);
       navigate("/");
-    } catch {
-      setError("Invalid username or password.");
+    } catch (err: any) {
+      setError(extractLoginError(err));
     } finally {
       setSubmitting(false);
     }
