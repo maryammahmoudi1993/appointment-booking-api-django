@@ -29,11 +29,14 @@ def _make_aware(dt):
 @pytest.mark.django_db
 class TestStaffList:
     def test_list_staff_public(self, api_client):
+        from core.business import get_default_business
+
         StaffProfile = __import__(
             "apps.staff.models", fromlist=["StaffProfile"]
         ).StaffProfile
-        StaffProfile.objects.create(user=StaffFactory())
-        StaffProfile.objects.create(user=StaffFactory())
+        business = get_default_business()
+        StaffProfile.objects.create(user=StaffFactory(), business=business)
+        StaffProfile.objects.create(user=StaffFactory(), business=business)
         response = api_client.get("/api/staff/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 2

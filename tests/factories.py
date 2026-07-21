@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.appointments.models import Appointment
 from apps.services.models import Service
 from apps.staff.models import StaffProfile, TimeOff, WorkingHours
+from core.business import get_default_business
 
 User = get_user_model()
 
@@ -45,6 +46,7 @@ class ServiceFactory(factory.django.DjangoModelFactory):
     duration_minutes = 30
     price = factory.Faker("pydecimal", left_digits=3, right_digits=2, positive=True)
     is_active = True
+    business = factory.LazyFunction(get_default_business)
 
 
 class StaffProfileFactory(factory.django.DjangoModelFactory):
@@ -53,6 +55,7 @@ class StaffProfileFactory(factory.django.DjangoModelFactory):
 
     user = factory.SubFactory(StaffFactory)
     bio = factory.Faker("paragraph")
+    business = factory.LazyFunction(get_default_business)
 
 
 class WorkingHoursFactory(factory.django.DjangoModelFactory):
@@ -86,6 +89,7 @@ class AppointmentFactory(factory.django.DjangoModelFactory):
     customer = factory.SubFactory(CustomerFactory)
     staff = factory.SubFactory(StaffFactory)
     service = factory.SubFactory(ServiceFactory)
+    business = factory.LazyFunction(get_default_business)
     start_datetime = factory.LazyFunction(
         lambda: timezone.now() + __import__("datetime").timedelta(days=2, hours=10)
     )

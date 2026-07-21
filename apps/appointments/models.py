@@ -3,6 +3,12 @@ from django.db import models
 
 
 class Appointment(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="appointments",
+        null=True,
+    )
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("confirmed", "Confirmed"),

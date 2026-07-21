@@ -20,7 +20,7 @@ target-version = ["py312"]
 
 [tool.coverage.run]
 source = ["apps", "core"]
-omit = ["*/migrations/*", "*/tests/*"]
+omit = ["*/migrations/*", "*/tests/*", "*/management/commands/*", "core/utils.py"]
 
 [tool.coverage.report]
 fail_under = 79

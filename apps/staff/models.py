@@ -4,6 +4,12 @@ from django.db import models
 
 
 class StaffProfile(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="staff_profiles",
+        null=True,
+    )
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="staff_profile"
     )

@@ -11,6 +11,8 @@ from apps.engagement.services import (
     validate_promo_code,
 )
 
+from core.mixins import BusinessScopedMixin
+
 from .models import Appointment
 from .permissions import IsOwnerOrStaffOrAdmin
 from .serializers import AppointmentListSerializer, AppointmentSerializer
@@ -74,7 +76,7 @@ class AppointmentFilter(filters.FilterSet):
         responses={204: None},
     ),
 )
-class AppointmentViewSet(viewsets.ModelViewSet):
+class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrStaffOrAdmin]
     filterset_class = AppointmentFilter
@@ -83,17 +85,15 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        qs = Appointment.objects.select_related("customer", "staff", "service")
+        business = self.get_business()
+        if business:
+            qs = qs.filter(business=business)
         if user.role == "admin":
-            return Appointment.objects.select_related(
-                "customer", "staff", "service"
-            ).all()
+            return qs
         elif user.role == "staff":
-            return Appointment.objects.select_related(
-                "customer", "staff", "service"
-            ).filter(staff=user)
-        return Appointment.objects.select_related(
-            "customer", "staff", "service"
-        ).filter(customer=user)
+            return qs.filter(staff=user)
+        return qs.filter(customer=user)
 
     def get_serializer_class(self):
         if self.action == "list":

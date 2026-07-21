@@ -1,8 +1,11 @@
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework import status
+from rest_framework.test import APIRequestFactory
 
-from tests.factories import CustomerFactory
+from core.permissions import IsAdminRole, IsOwnerOrStaffOrAdmin, IsStaffRole
+
+from tests.factories import AdminFactory, CustomerFactory, StaffFactory
 
 User = get_user_model()
 
@@ -118,3 +121,43 @@ class TestLogout:
         api_client.force_authenticate(user=customer)
         response = api_client.post("/api/auth/logout/", {})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestPermissions:
+    def test_is_staff_role_allows_staff(self):
+        user = StaffFactory()
+        request = APIRequestFactory().get("/")
+        request.user = user
+        assert IsStaffRole().has_permission(request, None)
+
+    def test_is_staff_role_rejects_customer(self):
+        user = CustomerFactory()
+        request = APIRequestFactory().get("/")
+        request.user = user
+        assert not IsStaffRole().has_permission(request, None)
+
+    def test_is_staff_role_rejects_anon(self):
+        request = APIRequestFactory().get("/")
+        request.user = None
+        assert not IsStaffRole().has_permission(request, None)
+
+    def test_is_admin_role_allows_admin(self):
+        user = AdminFactory()
+        request = APIRequestFactory().get("/")
+        request.user = user
+        assert IsAdminRole().has_permission(request, None)
+
+    def test_is_owner_or_staff_admin_allows_admin(self, admin_user):
+        request = APIRequestFactory().get("/")
+        request.user = admin_user
+        assert IsOwnerOrStaffOrAdmin().has_object_permission(request, None, None)
+
+    def test_is_owner_or_staff_rejects_other_customer(self, customer, staff_user, db):
+        from tests.factories import AppointmentFactory
+
+        appt = AppointmentFactory(customer=customer, staff=staff_user)
+        other = CustomerFactory()
+        request = APIRequestFactory().get("/")
+        request.user = other
+        assert not IsOwnerOrStaffOrAdmin().has_object_permission(request, None, appt)

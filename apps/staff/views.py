@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.appointments.models import Appointment
+from core.mixins import BusinessScopedMixin
 from core.permissions import IsAdminRole
 
 from .models import StaffProfile, TimeOff, WorkingHours
@@ -52,7 +53,7 @@ from .serializers import (
         responses={204: None},
     ),
 )
-class StaffProfileViewSet(viewsets.ModelViewSet):
+class StaffProfileViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = StaffProfile.objects.select_related("user").prefetch_related(
         "services_offered"
     )

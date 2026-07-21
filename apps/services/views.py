@@ -1,6 +1,8 @@
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 
+from core.mixins import BusinessScopedMixin
+
 from .models import Service
 from .permissions import IsAdminOrReadOnly
 from .serializers import ServiceSerializer
@@ -44,7 +46,7 @@ from .serializers import ServiceSerializer
         responses={204: None},
     ),
 )
-class ServiceViewSet(viewsets.ModelViewSet):
+class ServiceViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = Service.objects.filter(is_active=True)
     serializer_class = ServiceSerializer
     permission_classes = [IsAdminOrReadOnly]
