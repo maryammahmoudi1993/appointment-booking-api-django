@@ -8,6 +8,8 @@ env = environ.Env(
     DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
     CORS_ALLOWED_ORIGINS=(list, ["http://localhost:3000"]),
     REST_FRAMEWORK_PAGE_SIZE=(int, 20),
+    EMAIL_USE_TLS=(bool, True),
+    EMAIL_PORT=(int, 587),
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     "apps.staff",
     "apps.appointments",
     "apps.engagement",
+    "apps.notifications",
     "apps.business",
     "core",
 ]
@@ -159,6 +162,19 @@ SPECTACULAR_SETTINGS = {
         {"name": "Appointments", "description": "Booking management"},
     ],
 }
+
+# Email
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = env("EMAIL_HOST", default="")
+EMAIL_PORT = env("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True, cast=bool)
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL", default="noreply@bloomflow.app"
+)
 
 # CORS
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
