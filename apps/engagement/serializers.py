@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.appointments.models import Appointment
 from apps.services.models import Service
 
-from .models import LoyaltyReward, LoyaltyRedemption, PromoCode, Review, SupportMessage
+from .models import LoyaltyRedemption, LoyaltyReward, PromoCode, Review, SupportMessage
 
 
 class ReviewSerializer(serializers.ModelSerializer):

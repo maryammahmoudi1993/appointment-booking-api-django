@@ -16,3 +16,6 @@ staticfiles/
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
+/bloom-studio-static-export/
+bloom-studio-static-export.zip
+bloom-studio-landing-source.zip

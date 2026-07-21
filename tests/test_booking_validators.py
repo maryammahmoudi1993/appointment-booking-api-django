@@ -1,6 +1,6 @@
-import pytest
 from datetime import timedelta
 
+import pytest
 from django.utils import timezone
 
 from apps.appointments.validators import validate_booking

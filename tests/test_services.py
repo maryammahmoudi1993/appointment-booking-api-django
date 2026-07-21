@@ -1,7 +1,7 @@
 import pytest
 from rest_framework import status
 
-from tests.factories import AdminFactory, ServiceFactory
+from tests.factories import ServiceFactory
 
 
 @pytest.mark.django_db

@@ -1,16 +1,15 @@
-from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.engagement.models import PromoRedemption
 from apps.engagement.services import (
     PromoCodeError,
     compute_discount,
     validate_promo_code,
 )
-from apps.engagement.models import PromoRedemption
 
 from .models import Appointment
 from .permissions import IsOwnerOrStaffOrAdmin

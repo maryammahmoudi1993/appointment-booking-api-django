@@ -1,4 +1,3 @@
-from django.contrib import messages
 from django.contrib.messages import constants as message_constants
 
 MESSAGE_TAGS = {
