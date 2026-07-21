@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from apps.appointments.models import Appointment
@@ -200,9 +199,6 @@ def staff_availability(request, staff_id):
         start_datetime__date__lte=target_date,
         end_datetime__date__gte=target_date,
     )
-
-    day_start = timezone.make_aware(datetime.combine(target_date, datetime.min.time()))
-    day_end = timezone.make_aware(datetime.combine(target_date, datetime.max.time()))
 
     existing_bookings = Appointment.objects.filter(
         staff_id=staff_id,
