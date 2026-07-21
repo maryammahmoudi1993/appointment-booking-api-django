@@ -7,11 +7,15 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from core.health import health_live, health_ready
+
 admin.site.site_header = "Booking System Admin"
 admin.site.site_title = "Booking Admin Portal"
 admin.site.index_title = "Manage Bookings"
 
 api_urlpatterns = [
+    path("api/health/live/", health_live, name="health-live"),
+    path("api/health/ready/", health_ready, name="health-ready"),
     path("api/", include("apps.accounts.urls")),
     path("api/", include("apps.services.urls")),
     path("api/", include("apps.staff.urls")),
