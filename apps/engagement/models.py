@@ -4,6 +4,12 @@ from django.db import models
 
 
 class Review(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_reviews",
+        null=True,
+    )
     appointment = models.OneToOneField(
         "appointments.Appointment", on_delete=models.CASCADE, related_name="review"
     )
@@ -27,6 +33,12 @@ class Review(models.Model):
 
 
 class LoyaltyReward(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_rewards",
+        null=True,
+    )
     name = models.CharField(max_length=200)
     description = models.CharField(max_length=255, blank=True)
     points_cost = models.PositiveIntegerField()
@@ -41,6 +53,12 @@ class LoyaltyReward(models.Model):
 
 
 class LoyaltyRedemption(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_redemptions",
+        null=True,
+    )
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -62,6 +80,12 @@ class LoyaltyRedemption(models.Model):
 class PromoCode(models.Model):
     DISCOUNT_CHOICES = [("percent", "Percent off"), ("fixed", "Fixed amount off")]
 
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_codes",
+        null=True,
+    )
     code = models.CharField(max_length=32, unique=True)
     description = models.CharField(max_length=255, blank=True)
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_CHOICES)
@@ -90,6 +114,12 @@ class PromoCode(models.Model):
 
 
 class PromoRedemption(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_promo_redemptions",
+        null=True,
+    )
     promo = models.ForeignKey(
         PromoCode, on_delete=models.CASCADE, related_name="redemptions"
     )
@@ -116,6 +146,12 @@ class PromoRedemption(models.Model):
 
 
 class SupportMessage(models.Model):
+    business = models.ForeignKey(
+        "business.Business",
+        on_delete=models.CASCADE,
+        related_name="%(class)s_messages",
+        null=True,
+    )
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="support_messages"
     )

@@ -129,6 +129,7 @@ class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
                 customer=appointment.customer,
                 appointment=appointment,
                 discount_amount=compute_discount(promo, appointment.service.price),
+                business=appointment.business,
             )
         serializer.instance = appointment
 

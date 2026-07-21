@@ -2,6 +2,7 @@ import pytest
 from rest_framework import status
 
 from apps.business.models import Business, BusinessMembership
+from apps.engagement.models import LoyaltyReward, PromoCode, Review, SupportMessage
 from core.business import get_default_business, get_user_business, get_user_business_or_404
 from tests.factories import (
     AdminFactory,
@@ -121,3 +122,58 @@ class TestBusinessUtilities:
         user = UserFactory()
         with pytest.raises(Exception):
             get_user_business_or_404(user)
+
+
+@pytest.mark.django_db
+class TestEngagementBusinessIsolation:
+    def test_other_business_rewards_not_visible(self, api_client, other_business):
+        business = get_default_business()
+        LoyaltyReward.objects.create(name="Reward A", points_cost=100, business=business)
+        LoyaltyReward.objects.create(name="Reward B", points_cost=200, business=other_business)
+        # Authenticate as a user in the default business
+        user = CustomerFactory()
+        BusinessMembership.objects.create(user=user, business=business, role="customer")
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/loyalty/rewards/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_other_business_reviews_not_visible(self, api_client, other_business):
+        business = get_default_business()
+        staff = StaffProfileFactory().user
+        cust1 = CustomerFactory()
+        cust2 = CustomerFactory()
+        appt1 = AppointmentFactory(customer=cust1, staff=staff, business=business, status="completed")
+        appt2 = AppointmentFactory(customer=cust2, staff=staff, business=other_business, status="completed")
+        Review.objects.create(appointment=appt1, customer=cust1, staff=staff, rating=5, business=business)
+        Review.objects.create(appointment=appt2, customer=cust2, staff=staff, rating=4, business=other_business)
+        user = CustomerFactory()
+        BusinessMembership.objects.create(user=user, business=business, role="customer")
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/reviews/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_other_business_promos_not_visible(self, api_client, other_business):
+        business = get_default_business()
+        PromoCode.objects.create(code="PROMO1", discount_type="percent", discount_value=10, business=business)
+        PromoCode.objects.create(code="PROMO2", discount_type="fixed", discount_value=5, business=other_business)
+        user = AdminFactory()
+        BusinessMembership.objects.create(user=user, business=business, role="admin")
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/promotions/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_other_business_support_messages_not_visible(self, api_client, other_business):
+        business = get_default_business()
+        cust1 = CustomerFactory()
+        cust2 = CustomerFactory()
+        SupportMessage.objects.create(customer=cust1, message="help", business=business)
+        SupportMessage.objects.create(customer=cust2, message="other help", business=other_business)
+        admin = AdminFactory()
+        BusinessMembership.objects.create(user=admin, business=business, role="admin")
+        api_client.force_authenticate(user=admin)
+        response = api_client.get("/api/support-messages/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1

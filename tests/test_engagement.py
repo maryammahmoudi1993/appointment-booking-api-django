@@ -6,7 +6,8 @@ from django.utils import timezone
 from rest_framework import status
 
 from apps.engagement.models import LoyaltyReward, PromoCode, Review
-from tests.factories import AppointmentFactory, ServiceFactory
+from core.business import get_default_business
+from tests.factories import AdminFactory, AppointmentFactory, CustomerFactory, ServiceFactory
 
 
 def _completed_appointment(customer, staff, service, points=50):
@@ -112,7 +113,7 @@ class TestLoyalty:
 
     def test_redeem_reward_deducts_points(self, auth_client, customer, staff_user, service):
         _completed_appointment(customer, staff_user, service, points=100)
-        reward = LoyaltyReward.objects.create(name="10% off", points_cost=50)
+        reward = LoyaltyReward.objects.create(name="10% off", points_cost=50, business=get_default_business())
         response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
         assert response.status_code == status.HTTP_201_CREATED
 
@@ -122,7 +123,7 @@ class TestLoyalty:
     def test_redeem_fails_with_insufficient_points(
         self, auth_client, customer, staff_user, service
     ):
-        reward = LoyaltyReward.objects.create(name="Free massage", points_cost=500)
+        reward = LoyaltyReward.objects.create(name="Free massage", points_cost=500, business=get_default_business())
         response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -275,8 +276,9 @@ class TestSupportMessages:
         from apps.engagement.models import SupportMessage
         from tests.factories import CustomerFactory
 
-        SupportMessage.objects.create(customer=customer, message="mine")
-        SupportMessage.objects.create(customer=CustomerFactory(), message="not mine")
+        business = get_default_business()
+        SupportMessage.objects.create(customer=customer, message="mine", business=business)
+        SupportMessage.objects.create(customer=CustomerFactory(), message="not mine", business=business)
         response = auth_client.get("/api/support-messages/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
@@ -284,7 +286,7 @@ class TestSupportMessages:
     def test_admin_sees_all_messages_inbox(self, admin_client, customer):
         from apps.engagement.models import SupportMessage
 
-        SupportMessage.objects.create(customer=customer, message="hello")
+        SupportMessage.objects.create(customer=customer, message="hello", business=get_default_business())
         response = admin_client.get("/api/support-messages/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
@@ -292,7 +294,7 @@ class TestSupportMessages:
     def test_admin_can_reply(self, admin_client, customer):
         from apps.engagement.models import SupportMessage
 
-        msg = SupportMessage.objects.create(customer=customer, message="hello")
+        msg = SupportMessage.objects.create(customer=customer, message="hello", business=get_default_business())
         response = admin_client.post(
             f"/api/support-messages/{msg.id}/reply/", {"reply": "We'll call you back."}
         )
@@ -304,11 +306,72 @@ class TestSupportMessages:
     def test_customer_cannot_reply(self, auth_client, customer):
         from apps.engagement.models import SupportMessage
 
-        msg = SupportMessage.objects.create(customer=customer, message="hello")
+        msg = SupportMessage.objects.create(customer=customer, message="hello", business=get_default_business())
         response = auth_client.post(
             f"/api/support-messages/{msg.id}/reply/", {"reply": "nope"}
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+class TestPromoEdgeCases:
+    def test_expired_promo_fails(self, auth_client):
+        business = get_default_business()
+        PromoCode.objects.create(
+            code="EXPIRED",
+            discount_type="percent",
+            discount_value=Decimal("10.00"),
+            ends_at=timezone.now() - timedelta(days=1),
+            business=business,
+        )
+        response = auth_client.post("/api/promotions/validate/", {"code": "EXPIRED"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_future_promo_fails(self, auth_client):
+        business = get_default_business()
+        PromoCode.objects.create(
+            code="FUTURE",
+            discount_type="percent",
+            discount_value=Decimal("10.00"),
+            starts_at=timezone.now() + timedelta(days=7),
+            business=business,
+        )
+        response = auth_client.post("/api/promotions/validate/", {"code": "FUTURE"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_max_redemptions_exceeded_fails(self, auth_client):
+        business = get_default_business()
+        promo = PromoCode.objects.create(
+            code="LIMITED",
+            discount_type="fixed",
+            discount_value=Decimal("5.00"),
+            max_redemptions=1,
+            business=business,
+        )
+        from apps.engagement.models import PromoRedemption
+        PromoRedemption.objects.create(
+            promo=promo, customer=CustomerFactory(), discount_amount=5, business=business
+        )
+        response = auth_client.post("/api/promotions/validate/", {"code": "LIMITED"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_inactive_reward_redemption_fails(self, auth_client, customer, staff_user, service):
+        _completed_appointment(customer, staff_user, service, points=100)
+        reward = LoyaltyReward.objects.create(
+            name="Inactive", points_cost=50, is_active=False, business=get_default_business()
+        )
+        response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_promo_redemption_endpoint_admin_only(self, api_client):
+        customer = CustomerFactory()
+        admin = AdminFactory()
+        api_client.force_authenticate(user=customer)
+        response = api_client.get("/api/promo-redemptions/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        api_client.force_authenticate(user=admin)
+        response = api_client.get("/api/promo-redemptions/")
+        assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.fixture

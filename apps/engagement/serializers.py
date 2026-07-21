@@ -3,7 +3,14 @@ from rest_framework import serializers
 from apps.appointments.models import Appointment
 from apps.services.models import Service
 
-from .models import LoyaltyRedemption, LoyaltyReward, PromoCode, Review, SupportMessage
+from .models import (
+    LoyaltyRedemption,
+    LoyaltyReward,
+    PromoCode,
+    PromoRedemption,
+    Review,
+    SupportMessage,
+)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -117,6 +124,38 @@ class PromoValidateSerializer(serializers.Serializer):
     service = serializers.PrimaryKeyRelatedField(
         queryset=Service.objects.all(), required=False
     )
+
+
+class PromoRedemptionSerializer(serializers.ModelSerializer):
+    promo_code = serializers.CharField(source="promo.code", read_only=True)
+    customer_name = serializers.CharField(
+        source="customer.get_full_name", read_only=True
+    )
+    appointment_id = serializers.IntegerField(
+        source="appointment.id", read_only=True, default=None
+    )
+
+    class Meta:
+        model = PromoRedemption
+        fields = (
+            "id",
+            "promo",
+            "promo_code",
+            "customer",
+            "customer_name",
+            "appointment",
+            "appointment_id",
+            "discount_amount",
+            "created_at",
+        )
+        read_only_fields = (
+            "id",
+            "promo_code",
+            "customer_name",
+            "appointment_id",
+            "discount_amount",
+            "created_at",
+        )
 
 
 class SupportMessageSerializer(serializers.ModelSerializer):

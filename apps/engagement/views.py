@@ -8,13 +8,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.appointments.models import Appointment
+from core.mixins import BusinessScopedMixin
 from core.permissions import IsAdminRole, IsCustomerRole
 
-from .models import LoyaltyRedemption, LoyaltyReward, PromoCode, Review, SupportMessage
+from .models import (
+    LoyaltyRedemption,
+    LoyaltyReward,
+    PromoCode,
+    PromoRedemption,
+    Review,
+    SupportMessage,
+)
 from .serializers import (
     LoyaltyRedemptionSerializer,
     LoyaltyRewardSerializer,
     PromoCodeSerializer,
+    PromoRedemptionSerializer,
     PromoValidateSerializer,
     ReviewSerializer,
     SupportMessageSerializer,
@@ -34,10 +43,13 @@ from .services import PromoCodeError, validate_promo_code
         description="Customer only, for their own completed appointments.",
     ),
 )
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = Review.objects.select_related("customer", "staff", "appointment__service")
     serializer_class = ReviewSerializer
     http_method_names = ["get", "post", "delete", "head", "options"]
+
+    def perform_create(self, serializer):
+        serializer.save(business=self.get_business())
 
     def get_permissions(self):
         if self.action in ("list", "retrieve"):
@@ -58,7 +70,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     list=extend_schema(tags=["Loyalty"], summary="List reward catalog"),
     create=extend_schema(tags=["Loyalty"], summary="Add a reward (admin)"),
 )
-class LoyaltyRewardViewSet(viewsets.ModelViewSet):
+class LoyaltyRewardViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = LoyaltyReward.objects.all()
     serializer_class = LoyaltyRewardSerializer
 
@@ -89,8 +101,10 @@ class LoyaltyRewardViewSet(viewsets.ModelViewSet):
                 {"detail": "Not enough points to redeem this reward."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        business = self.get_business()
         redemption = LoyaltyRedemption.objects.create(
-            customer=request.user, reward=reward, points_spent=reward.points_cost
+            customer=request.user, reward=reward, points_spent=reward.points_cost,
+            business=business,
         )
         return Response(
             LoyaltyRedemptionSerializer(redemption).data, status=status.HTTP_201_CREATED
@@ -151,7 +165,7 @@ class LoyaltySummaryView(APIView):
     list=extend_schema(tags=["Promotions"], summary="List promo campaigns (admin)"),
     create=extend_schema(tags=["Promotions"], summary="Create a promo campaign (admin)"),
 )
-class PromoCodeViewSet(viewsets.ModelViewSet):
+class PromoCodeViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = PromoCode.objects.all()
     serializer_class = PromoCodeSerializer
 
@@ -188,6 +202,22 @@ class PromoCodeViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(
+        tags=["Promotions"],
+        summary="List promo redemptions (admin)",
+        description="Admin only. Shows all promo code redemptions.",
+    ),
+)
+class PromoRedemptionViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
+    queryset = PromoRedemption.objects.select_related("promo", "customer", "appointment")
+    serializer_class = PromoRedemptionSerializer
+    http_method_names = ["get", "head", "options"]
+
+    def get_permissions(self):
+        return [IsAdminRole()]
+
+
+@extend_schema_view(
+    list=extend_schema(
         tags=["Support"],
         summary="List support messages",
         description="Admin sees every message (inbox); customers see only their own.",
@@ -198,7 +228,7 @@ class PromoCodeViewSet(viewsets.ModelViewSet):
         description="Authenticated customer sends a message that lands in the admin inbox.",
     ),
 )
-class SupportMessageViewSet(viewsets.ModelViewSet):
+class SupportMessageViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = SupportMessage.objects.select_related("customer")
     serializer_class = SupportMessageSerializer
     http_method_names = ["get", "post", "head", "options"]
@@ -216,7 +246,7 @@ class SupportMessageViewSet(viewsets.ModelViewSet):
         return queryset.filter(customer=user)
 
     def perform_create(self, serializer):
-        serializer.save(customer=self.request.user)
+        serializer.save(customer=self.request.user, business=self.get_business())
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

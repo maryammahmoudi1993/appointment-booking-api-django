@@ -12,38 +12,40 @@ from .models import (
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ("id", "customer", "staff", "rating", "created_at")
-    list_filter = ("rating",)
+    list_display = ("id", "customer", "staff", "rating", "business", "created_at")
+    list_filter = ("rating", "business")
     search_fields = ("customer__username", "staff__username", "comment")
 
 
 @admin.register(LoyaltyReward)
 class LoyaltyRewardAdmin(admin.ModelAdmin):
-    list_display = ("name", "points_cost", "is_active")
-    list_filter = ("is_active",)
+    list_display = ("name", "points_cost", "is_active", "business")
+    list_filter = ("is_active", "business")
 
 
 @admin.register(LoyaltyRedemption)
 class LoyaltyRedemptionAdmin(admin.ModelAdmin):
-    list_display = ("customer", "reward", "points_spent", "created_at")
+    list_display = ("customer", "reward", "points_spent", "business", "created_at")
+    list_filter = ("business",)
     search_fields = ("customer__username", "reward__name")
 
 
 @admin.register(PromoCode)
 class PromoCodeAdmin(admin.ModelAdmin):
-    list_display = ("code", "discount_type", "discount_value", "is_active", "created_at")
-    list_filter = ("is_active", "discount_type")
+    list_display = ("code", "discount_type", "discount_value", "is_active", "business", "created_at")
+    list_filter = ("is_active", "discount_type", "business")
     search_fields = ("code", "description")
 
 
 @admin.register(PromoRedemption)
 class PromoRedemptionAdmin(admin.ModelAdmin):
-    list_display = ("promo", "customer", "discount_amount", "created_at")
+    list_display = ("promo", "customer", "discount_amount", "business", "created_at")
+    list_filter = ("business",)
     search_fields = ("promo__code", "customer__username")
 
 
 @admin.register(SupportMessage)
 class SupportMessageAdmin(admin.ModelAdmin):
-    list_display = ("customer", "is_read", "created_at", "replied_at")
-    list_filter = ("is_read",)
+    list_display = ("customer", "is_read", "business", "created_at", "replied_at")
+    list_filter = ("is_read", "business")
     search_fields = ("customer__username", "message")
