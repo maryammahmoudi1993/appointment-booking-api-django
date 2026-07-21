@@ -1,24 +1,24 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from apps.appointments.models import Appointment
 from core.mixins import BusinessScopedMixin
 from core.permissions import IsAdminRole
 
-from .models import StaffProfile, TimeOff, WorkingHours
+from .models import Break, StaffProfile, TimeOff, WorkingHours
 from .serializers import (
+    BreakSerializer,
     StaffAvailabilitySlotSerializer,
     StaffCreateSerializer,
     StaffProfileSerializer,
     TimeOffSerializer,
     WorkingHoursSerializer,
 )
+from .services import get_available_slots
 
 
 @extend_schema_view(
@@ -131,6 +131,12 @@ class TimeOffViewSet(viewsets.ModelViewSet):
     serializer_class = TimeOffSerializer
     permission_classes = [IsAdminRole]
 
+
+class BreakViewSet(viewsets.ModelViewSet):
+    queryset = Break.objects.select_related("staff_profile__user")
+    serializer_class = BreakSerializer
+    permission_classes = [IsAdminRole]
+
     def get_queryset(self):
         queryset = super().get_queryset()
         staff_id = self.request.query_params.get("staff")
@@ -189,55 +195,6 @@ def staff_availability(request, staff_id):
     except ValueError:
         return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
-    weekday = target_date.weekday()
-
-    working_hours = WorkingHours.objects.filter(staff_id=staff_id, weekday=weekday)
-    if not working_hours.exists():
-        return Response({"date": date_str, "available_slots": []})
-
-    time_offs = TimeOff.objects.filter(
-        staff_id=staff_id,
-        start_datetime__date__lte=target_date,
-        end_datetime__date__gte=target_date,
-    )
-
-    existing_bookings = Appointment.objects.filter(
-        staff_id=staff_id,
-        start_datetime__date=target_date,
-        status__in=["pending", "confirmed"],
-    ).values_list("start_datetime", "end_datetime")
-
-    slots = []
-    for wh in working_hours:
-        slot_start = timezone.make_aware(datetime.combine(target_date, wh.start_time))
-        slot_end = timezone.make_aware(datetime.combine(target_date, wh.end_time))
-
-        current = slot_start
-        while current < slot_end:
-            next_slot = current + timedelta(minutes=30)
-            if next_slot > slot_end:
-                next_slot = slot_end
-
-            is_available = True
-
-            for to_start, to_end in time_offs.values_list(
-                "start_datetime", "end_datetime"
-            ):
-                if current < to_end and next_slot > to_start:
-                    is_available = False
-                    break
-
-            if is_available:
-                for bk_start, bk_end in existing_bookings:
-                    if current < bk_end and next_slot > bk_start:
-                        is_available = False
-                        break
-
-            slots.append(
-                {"start": current.time(), "end": next_slot.time(), "available": is_available}
-            )
-
-            current = next_slot
-
+    slots = get_available_slots(staff_id, target_date)
     serializer = StaffAvailabilitySlotSerializer(slots, many=True)
     return Response({"date": date_str, "available_slots": serializer.data})

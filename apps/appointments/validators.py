@@ -4,9 +4,17 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from apps.staff.models import TimeOff, WorkingHours
+from apps.staff.models import StaffProfile, TimeOff, WorkingHours
 
 from .models import Appointment
+
+
+def _get_staff_buffer_minutes(staff_id: int) -> tuple:
+    try:
+        profile = StaffProfile.objects.get(user_id=staff_id)
+        return profile.buffer_before_minutes, profile.buffer_after_minutes
+    except StaffProfile.DoesNotExist:
+        return 0, 0
 
 
 def validate_booking(
@@ -17,6 +25,7 @@ def validate_booking(
     exclude_appointment_id: int | None = None,
 ) -> None:
     from apps.services.models import Service
+    from apps.staff.models import Break
 
     if start_datetime >= end_datetime:
         from core.exceptions import InvalidTimeRange
@@ -31,6 +40,8 @@ def validate_booking(
         raise InvalidTimeRange(
             detail=f"End time must be {expected_end.strftime('%H:%M')} for a {service.duration_minutes}-minute service."
         )
+
+    buffer_before, buffer_after = _get_staff_buffer_minutes(staff_id)
 
     weekday = start_datetime.weekday()
     working_hours = WorkingHours.objects.filter(staff_id=staff_id, weekday=weekday)
@@ -76,17 +87,39 @@ def validate_booking(
 
         raise DuringTimeOff()
 
-    overlap_query = Q(
+    break_conflict = Break.objects.filter(
+        staff_profile__user_id=staff_id,
+        weekday=weekday,
+        start_time__lt=end_datetime,
+        end_time__gt=start_datetime,
+    ).exists()
+    if break_conflict:
+        from core.exceptions import DuringTimeOff
+
+        raise DuringTimeOff(detail="This time falls within a scheduled break.")
+
+    buffer_query = Q(
         staff_id=staff_id,
         status__in=["pending", "confirmed"],
-        start_datetime__lt=end_datetime,
-        end_datetime__gt=start_datetime,
     )
+    if buffer_before > 0 or buffer_after > 0:
+        buffered_appt_start = start_datetime - timedelta(minutes=buffer_before)
+        buffered_appt_end = end_datetime + timedelta(minutes=buffer_after)
+        buffer_query &= Q(
+            start_datetime__lt=buffered_appt_end,
+            end_datetime__gte=buffered_appt_start,
+        )
+    else:
+        buffer_query &= Q(
+            start_datetime__lt=end_datetime,
+            end_datetime__gt=start_datetime,
+        )
+
     if exclude_appointment_id:
-        overlap_query &= ~Q(id=exclude_appointment_id)
+        buffer_query &= ~Q(id=exclude_appointment_id)
 
     with transaction.atomic():
-        existing = Appointment.objects.select_for_update().filter(overlap_query)
+        existing = Appointment.objects.select_for_update().filter(buffer_query)
         if existing.exists():
             from core.exceptions import BookingConflict
 

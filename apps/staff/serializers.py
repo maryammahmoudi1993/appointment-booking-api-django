@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from apps.services.models import Service
 
-from .models import StaffProfile, TimeOff, WorkingHours
+from .models import Break, StaffProfile, TimeOff, WorkingHours
 
 User = get_user_model()
 
@@ -39,11 +39,19 @@ class TimeOffSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class BreakSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Break
+        fields = ("id", "staff_profile", "weekday", "start_time", "end_time", "label")
+        read_only_fields = ("id",)
+
+
 class StaffProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     full_name = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
+    breaks = BreakSerializer(many=True, read_only=True)
 
     class Meta:
         model = StaffProfile
@@ -56,6 +64,10 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             "services_offered",
             "average_rating",
             "review_count",
+            "timezone",
+            "buffer_before_minutes",
+            "buffer_after_minutes",
+            "breaks",
         )
         read_only_fields = ("id",)
 

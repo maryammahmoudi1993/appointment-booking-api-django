@@ -9,6 +9,7 @@ router = DefaultRouter()
 router.register("staff", views.StaffProfileViewSet, basename="staff-profile")
 router.register("working-hours", views.WorkingHoursViewSet, basename="working-hours")
 router.register("time-off", views.TimeOffViewSet, basename="time-off")
+router.register("breaks", views.BreakViewSet, basename="break")
 
 urlpatterns = [
     path(

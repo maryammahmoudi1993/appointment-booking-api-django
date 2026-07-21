@@ -15,12 +15,22 @@ class StaffProfile(models.Model):
     )
     bio = models.TextField(blank=True)
     services_offered = models.ManyToManyField("services.Service", blank=True)
+    timezone = models.CharField(max_length=50, blank=True)
+    buffer_before_minutes = models.PositiveIntegerField(default=0)
+    buffer_after_minutes = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["user__username"]
 
     def __str__(self) -> str:
         return f"Staff: {self.user.get_full_name() or self.user.username}"
+
+    def effective_timezone(self) -> str:
+        if self.timezone:
+            return self.timezone
+        if self.business and self.business.timezone:
+            return self.business.timezone
+        return "UTC"
 
 
 class WorkingHours(models.Model):
@@ -71,3 +81,22 @@ class TimeOff(models.Model):
 
     def __str__(self) -> str:
         return f"{self.staff.username} off: {self.start_datetime} - {self.end_datetime}"
+
+
+class Break(models.Model):
+    staff_profile = models.ForeignKey(
+        StaffProfile, on_delete=models.CASCADE, related_name="breaks"
+    )
+    weekday = models.IntegerField(
+        choices=WorkingHours.WEEKDAY_CHOICES,
+        validators=[MinValueValidator(0), MaxValueValidator(6)],
+    )
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    label = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        ordering = ["staff_profile", "weekday", "start_time"]
+
+    def __str__(self) -> str:
+        return f"{self.staff_profile} break: {self.start_time}-{self.end_time}"
