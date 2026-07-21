@@ -1,7 +1,17 @@
 from django.contrib import admin, messages
 from django.utils.html import format_html
 
-from .models import Appointment
+from .models import Appointment, AppointmentAuditLog
+
+
+class AppointmentAuditLogInline(admin.TabularInline):
+    model = AppointmentAuditLog
+    fields = ("action", "previous_status", "new_status", "changed_by", "created_at")
+    readonly_fields = fields
+    extra = 0
+    max_num = 0
+    can_delete = False
+    ordering = ("-created_at",)
 
 
 @admin.register(Appointment)
@@ -27,6 +37,7 @@ class AppointmentAdmin(admin.ModelAdmin):
     date_hierarchy = "start_datetime"
     readonly_fields = ("created_at", "updated_at")
     actions = ["confirm_appointments", "cancel_appointments", "complete_appointments"]
+    inlines = [AppointmentAuditLogInline]
 
     @admin.display(description="Status")
     def status_badge(self, obj):

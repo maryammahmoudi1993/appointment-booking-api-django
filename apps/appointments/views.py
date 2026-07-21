@@ -13,9 +13,14 @@ from apps.engagement.services import (
 
 from core.mixins import BusinessScopedMixin
 
-from .models import Appointment
+from .models import Appointment, AppointmentAuditLog
 from .permissions import IsOwnerOrStaffOrAdmin
-from .serializers import AppointmentListSerializer, AppointmentSerializer
+from .serializers import (
+    AppointmentAuditLogSerializer,
+    AppointmentListSerializer,
+    AppointmentSerializer,
+    RescheduleSerializer,
+)
 from .validators import create_appointment_atomic, update_appointment_atomic
 
 
@@ -135,6 +140,7 @@ class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
             service_id=data["service"].id,
             start_datetime=data["start_datetime"],
             end_datetime=data["end_datetime"],
+            changed_by=self.request.user,
         )
         serializer.instance = appointment
 
@@ -153,6 +159,7 @@ class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         appointment.status = "cancelled"
+        appointment._changed_by = request.user
         appointment.save(update_fields=["status", "updated_at"])
         return Response(AppointmentSerializer(appointment).data)
 
@@ -176,6 +183,7 @@ class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         appointment.status = "confirmed"
+        appointment._changed_by = request.user
         appointment.save(update_fields=["status", "updated_at"])
         return Response(AppointmentSerializer(appointment).data)
 
@@ -203,5 +211,53 @@ class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
             )
         appointment.status = "completed"
         appointment.points_earned = int(appointment.service.price)
+        appointment._changed_by = request.user
         appointment.save(update_fields=["status", "points_earned", "updated_at"])
+        return Response(AppointmentSerializer(appointment).data)
+
+    @extend_schema(
+        tags=["Appointments"],
+        summary="Get appointment audit log",
+        description="Returns the audit trail for a single appointment. Scoped to the appointment's permissions.",
+        responses={200: AppointmentAuditLogSerializer(many=True)},
+    )
+    @action(detail=True, methods=["get"], url_path="audit-log")
+    def audit_log(self, request, pk=None):
+        appointment = self.get_object()
+        logs = appointment.audit_logs.select_related("changed_by").all()
+        return Response(AppointmentAuditLogSerializer(logs, many=True).data)
+
+    @extend_schema(
+        tags=["Appointments"],
+        summary="Reschedule an appointment",
+        description="Change the date/time of an existing appointment. Re-runs conflict checks. Staff/admin only.",
+        request=RescheduleSerializer,
+        responses={200: AppointmentSerializer, 409: "Conflict"},
+    )
+    @action(detail=True, methods=["post"], url_path="reschedule")
+    def reschedule(self, request, pk=None):
+        if request.user.role not in ["staff", "admin"]:
+            return Response(
+                {"detail": "Only staff or admin can reschedule appointments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        appointment = self.get_object()
+        if appointment.status in ["cancelled", "completed"]:
+            return Response(
+                {"detail": f"Cannot reschedule a {appointment.status} appointment."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = RescheduleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            appointment = update_appointment_atomic(
+                appointment_id=appointment.id,
+                staff_id=appointment.staff_id,
+                service_id=appointment.service_id,
+                start_datetime=serializer.validated_data["start_datetime"],
+                end_datetime=serializer.validated_data["end_datetime"],
+                changed_by=request.user,
+            )
+        except Exception as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
         return Response(AppointmentSerializer(appointment).data)

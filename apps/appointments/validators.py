@@ -153,6 +153,7 @@ def update_appointment_atomic(
     service_id: int,
     start_datetime,
     end_datetime,
+    changed_by=None,
 ) -> Appointment:
     with transaction.atomic():
         validate_booking(
@@ -166,6 +167,8 @@ def update_appointment_atomic(
         appointment.start_datetime = start_datetime
         appointment.end_datetime = end_datetime
         appointment.service_id = service_id
+        if changed_by:
+            appointment._changed_by = changed_by
         appointment.save(
             update_fields=["start_datetime", "end_datetime", "service", "updated_at"]
         )

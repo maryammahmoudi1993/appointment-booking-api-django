@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Appointment
+from .models import Appointment, AppointmentAuditLog
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -90,3 +90,40 @@ class AppointmentListSerializer(serializers.ModelSerializer):
 
     def get_has_review(self, obj) -> bool:
         return hasattr(obj, "review")
+
+
+class AppointmentAuditLogSerializer(serializers.ModelSerializer):
+    changed_by_name = serializers.CharField(
+        source="changed_by.get_full_name", read_only=True, default=""
+    )
+
+    class Meta:
+        model = AppointmentAuditLog
+        fields = (
+            "id",
+            "appointment",
+            "action",
+            "previous_status",
+            "new_status",
+            "changed_by",
+            "changed_by_name",
+            "old_start",
+            "old_end",
+            "new_start",
+            "new_end",
+            "notes",
+            "created_at",
+        )
+        read_only_fields = fields
+
+
+class RescheduleSerializer(serializers.Serializer):
+    start_datetime = serializers.DateTimeField()
+    end_datetime = serializers.DateTimeField()
+
+    def validate(self, attrs):
+        if attrs["start_datetime"] >= attrs["end_datetime"]:
+            raise serializers.ValidationError(
+                "End datetime must be after start datetime."
+            )
+        return attrs

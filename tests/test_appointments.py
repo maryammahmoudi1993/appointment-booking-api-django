@@ -275,3 +275,189 @@ class TestAppointmentAccessControl:
         )
         response = api_client.get(f"/api/appointments/{apt.id}/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestAppointmentAuditLog:
+    def test_cancel_creates_audit_log(
+        self, api_client, customer_user, staff_user, service
+    ):
+        api_client.force_authenticate(user=customer_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="pending",
+        )
+        api_client.post(f"/api/appointments/{appointment.id}/cancel/")
+        logs = appointment.audit_logs.all()
+        assert logs.count() >= 1
+        status_log = logs.filter(action="status_change").first()
+        assert status_log is not None
+        assert status_log.previous_status == "pending"
+        assert status_log.new_status == "cancelled"
+        assert status_log.changed_by == customer_user
+
+    def test_confirm_creates_audit_log(
+        self, api_client, staff_user, customer_user, service
+    ):
+        api_client.force_authenticate(user=staff_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="pending",
+        )
+        api_client.patch(f"/api/appointments/{appointment.id}/confirm/")
+        logs = appointment.audit_logs.all()
+        status_log = logs.filter(action="status_change").first()
+        assert status_log is not None
+        assert status_log.previous_status == "pending"
+        assert status_log.new_status == "confirmed"
+        assert status_log.changed_by == staff_user
+
+    def test_complete_creates_audit_log(
+        self, api_client, admin_user, customer_user, staff_user, service
+    ):
+        api_client.force_authenticate(user=admin_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="confirmed",
+        )
+        api_client.patch(f"/api/appointments/{appointment.id}/complete/")
+        logs = appointment.audit_logs.all()
+        status_log = logs.filter(action="status_change").first()
+        assert status_log is not None
+        assert status_log.previous_status == "confirmed"
+        assert status_log.new_status == "completed"
+        assert status_log.changed_by == admin_user
+
+    def test_audit_log_endpoint_returns_logs(
+        self, api_client, staff_user, customer_user, service
+    ):
+        api_client.force_authenticate(user=staff_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="pending",
+        )
+        api_client.patch(f"/api/appointments/{appointment.id}/confirm/")
+        response = api_client.get(f"/api/appointments/{appointment.id}/audit-log/")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) >= 1
+
+    def test_reschedule_by_staff(
+        self, api_client, staff_user, customer_user, service
+    ):
+        api_client.force_authenticate(user=staff_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="pending",
+        )
+        new_start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=14, minute=0)
+            )
+        )
+        new_end = new_start + timedelta(minutes=30)
+        response = api_client.post(
+            f"/api/appointments/{appointment.id}/reschedule/",
+            {"start_datetime": new_start.isoformat(), "end_datetime": new_end.isoformat()},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        logs = appointment.audit_logs.all()
+        reschedule_log = logs.filter(action="reschedule").first()
+        assert reschedule_log is not None
+        assert reschedule_log.changed_by == staff_user
+
+    def test_reschedule_fails_for_customer(
+        self, api_client, customer_user, staff_user, service
+    ):
+        api_client.force_authenticate(user=customer_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+        )
+        response = api_client.post(
+            f"/api/appointments/{appointment.id}/reschedule/",
+            {"start_datetime": start.isoformat(), "end_datetime": (start + timedelta(minutes=30)).isoformat()},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_reschedule_fails_for_cancelled(
+        self, api_client, staff_user, customer_user, service
+    ):
+        api_client.force_authenticate(user=staff_user)
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10, minute=0)
+            )
+        )
+        appointment = AppointmentFactory(
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="cancelled",
+        )
+        response = api_client.post(
+            f"/api/appointments/{appointment.id}/reschedule/",
+            {"start_datetime": start.isoformat(), "end_datetime": (start + timedelta(minutes=30)).isoformat()},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
