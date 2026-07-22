@@ -342,3 +342,77 @@ export const supportApi = {
   reply: (id: number, reply: string) =>
     api.post<SupportMessage>(`/support-messages/${id}/reply/`, { reply }),
 };
+
+// ────────────────────────────────────────────────────────────────
+// AI Copilot
+// ────────────────────────────────────────────────────────────────
+
+export interface CopilotResponse {
+  reply: string;
+  tool_calls_made: string[];
+  conversation_id: string;
+}
+
+export interface CopilotRequest {
+  message: string;
+  conversation_id?: string;
+}
+
+export const copilotApi = {
+  chat: (data: CopilotRequest) =>
+    api.post<CopilotResponse>("/copilot/", data),
+  adminChat: (data: CopilotRequest) =>
+    api.post<CopilotResponse>("/admin/copilot/", data),
+};
+
+// ────────────────────────────────────────────────────────────────
+// Analytics (Admin)
+// ────────────────────────────────────────────────────────────────
+
+export interface RevenueAnalytics {
+  total_revenue: string;
+  total_bookings: number;
+  average_ticket: string;
+  revenue_by_period: {
+    period: string;
+    revenue: string;
+    bookings: number;
+  }[];
+}
+
+export interface StaffAnalyticsEntry {
+  staff_id: number;
+  name: string;
+  total_bookings: number;
+  completed: number;
+  revenue: string;
+  average_rating: number;
+  review_count: number;
+}
+
+export interface ServiceAnalyticsEntry {
+  service_id: number;
+  name: string;
+  total_bookings: number;
+  completed: number;
+  revenue: string;
+  average_rating: number;
+  duration_minutes: number;
+}
+
+export interface BookingAnalytics {
+  total: number;
+  pending: number;
+  confirmed: number;
+  cancelled: number;
+  completed: number;
+  completion_rate: number;
+  cancellation_rate: number;
+}
+
+export const analyticsApi = {
+  revenue: () => api.get<RevenueAnalytics>("/analytics/revenue/"),
+  staff: () => api.get<PaginatedResponse<StaffAnalyticsEntry>>("/analytics/staff/"),
+  service: () => api.get<PaginatedResponse<ServiceAnalyticsEntry>>("/analytics/service/"),
+  bookings: () => api.get<BookingAnalytics>("/analytics/bookings/"),
+};
