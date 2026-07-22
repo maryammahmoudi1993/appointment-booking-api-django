@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { reviewsApi, type Review } from "../../api/client";
 import SectionHeading from "../ui/SectionHeading";
+import serviceHair from "../../assets/landing/service-hair.webp";
+import serviceFacial from "../../assets/landing/service-facial.webp";
+import serviceManicure from "../../assets/landing/service-manicure.webp";
+import serviceMassage from "../../assets/landing/service-massage.webp";
+import promoProducts from "../../assets/landing/promo-products.webp";
+import decorativeFlower from "../../assets/landing/decorative-flower.webp";
+import avatar1 from "../../assets/landing/avatar-1.webp";
+import avatar2 from "../../assets/landing/avatar-2.webp";
+import avatar3 from "../../assets/landing/avatar-3.webp";
+
+const AVATARS = [avatar1, avatar2, avatar3];
 
 const FALLBACK_TESTIMONIALS = [
   {
@@ -24,12 +35,12 @@ const FALLBACK_TESTIMONIALS = [
 ];
 
 const galleryItems = [
-  { category: "Hair", color: "from-champagne/20 to-blush/30" },
-  { category: "Skincare", color: "from-blush/30 to-champagne/10" },
-  { category: "Nails", color: "from-champagne/15 to-blush/20" },
-  { category: "Spa", color: "from-blush/20 to-champagne/15" },
-  { category: "Makeup", color: "from-champagne/25 to-blush/25" },
-  { category: "Wellness", color: "from-blush/25 to-champagne/20" },
+  { category: "Hair", image: serviceHair },
+  { category: "Skincare", image: serviceFacial },
+  { category: "Nails", image: serviceManicure },
+  { category: "Spa", image: serviceMassage },
+  { category: "Makeup", image: promoProducts },
+  { category: "Wellness", image: decorativeFlower },
 ];
 
 function StarRating({ rating }: { rating: number }) {
@@ -79,13 +90,19 @@ export default function GalleryAndTestimonials() {
           {galleryItems.map((item) => (
             <div
               key={item.category}
-              className={`mb-4 break-inside-avoid rounded-xl bg-gradient-to-br ${item.color} p-8 transition-all hover:shadow-md hover:scale-[1.02]`}
+              className="group relative mb-4 break-inside-avoid overflow-hidden rounded-xl shadow-sm transition-all hover:shadow-md"
             >
-              <div className="flex h-32 items-center justify-center">
-                <span className="font-display text-lg font-semibold text-charcoal/60">
-                  {item.category}
-                </span>
-              </div>
+              <img
+                src={item.image}
+                alt=""
+                width={320}
+                height={220}
+                loading="lazy"
+                className="h-32 w-full object-cover transition-transform duration-500 group-hover:scale-105 sm:h-40"
+              />
+              <span className="absolute bottom-2 left-3 font-display text-sm font-semibold text-white drop-shadow-sm">
+                {item.category}
+              </span>
             </div>
           ))}
         </div>
@@ -105,9 +122,14 @@ export default function GalleryAndTestimonials() {
                   &ldquo;{testimonial.content}&rdquo;
                 </p>
                 <div className="mt-6 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rosegold-gradient text-sm font-semibold text-white">
-                    {testimonial.name.charAt(0)}
-                  </div>
+                  <img
+                    src={AVATARS[i % AVATARS.length]}
+                    alt=""
+                    width={40}
+                    height={40}
+                    loading="lazy"
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
                   <div>
                     <p className="text-sm font-semibold text-charcoal">{testimonial.name}</p>
                     <p className="text-xs text-charcoal-light">{testimonial.role}</p>

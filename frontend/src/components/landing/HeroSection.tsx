@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { reviewsApi } from "../../api/client";
-import BrandLogo from "../icons/BrandLogo";
+import heroCharacter from "../../assets/landing/hero-character.webp";
+import botanicalBranch from "../../assets/landing/botanical-branch.webp";
+import avatar1 from "../../assets/landing/avatar-1.webp";
+import avatar2 from "../../assets/landing/avatar-2.webp";
+import avatar3 from "../../assets/landing/avatar-3.webp";
+import avatar4 from "../../assets/landing/avatar-4.webp";
+
+const AVATARS = [avatar1, avatar2, avatar3, avatar4];
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -26,7 +33,6 @@ export default function HeroSection() {
   const [ratingSummary, setRatingSummary] = useState<{
     average: number;
     count: number;
-    initials: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -36,10 +42,7 @@ export default function HeroSection() {
         const { count, results } = res.data;
         if (count === 0 || results.length === 0) return;
         const average = results.reduce((sum, r) => sum + r.rating, 0) / results.length;
-        const initials = results
-          .slice(0, 4)
-          .map((r) => (r.customer_name || "?").charAt(0).toUpperCase());
-        setRatingSummary({ average, count, initials });
+        setRatingSummary({ average, count });
       })
       .catch(() => setRatingSummary(null));
   }, []);
@@ -94,18 +97,20 @@ export default function HeroSection() {
               )}
             </div>
 
-            {ratingSummary && (
-              <div className="mt-8 flex items-center justify-center gap-3 lg:justify-start">
-                <div className="flex -space-x-2" aria-hidden="true">
-                  {ratingSummary.initials.map((initial, i) => (
-                    <span
-                      key={i}
-                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-cream bg-coral/20 text-xs font-semibold text-coral-dark"
-                    >
-                      {initial}
-                    </span>
-                  ))}
-                </div>
+            <div className="mt-8 flex items-center justify-center gap-3 lg:justify-start">
+              <div className="flex -space-x-2" aria-hidden="true">
+                {AVATARS.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-full border-2 border-cream object-cover"
+                  />
+                ))}
+              </div>
+              {ratingSummary ? (
                 <div>
                   <StarRow rating={ratingSummary.average} />
                   <span className="text-sm font-medium text-charcoal-light">
@@ -113,39 +118,39 @@ export default function HeroSection() {
                     {ratingSummary.count === 1 ? "" : "s"}
                   </span>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div>
+                  <StarRow rating={5} />
+                  <span className="text-sm font-medium text-charcoal-light">Loved by our clients</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Visual side */}
           <div className="relative flex items-center justify-center">
             <div className="relative h-80 w-80 sm:h-96 sm:w-96 lg:h-[480px] lg:w-[480px]">
-              {/* Decorative circles */}
+              {/* Decorative arch */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-coral/15 to-blush/50" />
               <div className="absolute inset-4 rounded-full bg-gradient-to-br from-coral/10 to-blush/30" />
 
               {/* Botanical accent */}
-              <svg
-                className="absolute -right-4 top-4 h-20 w-20 text-coral/30"
-                viewBox="0 0 64 64"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <path d="M32 6C20 14 16 28 24 42c4-10 14-16 20-14-2 12-12 20-24 20" />
-                <path d="M32 6v50" />
-              </svg>
+              <img
+                src={botanicalBranch}
+                alt=""
+                width={140}
+                height={76}
+                className="absolute -right-6 top-6 w-32 opacity-80 sm:w-36"
+              />
 
-              {/* Center logo */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                  <BrandLogo size={160} className="opacity-90" />
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm">
-                    <span className="text-xs font-semibold text-coral-dark">Est. 2024</span>
-                  </div>
-                </div>
-              </div>
+              {/* Hero character */}
+              <img
+                src={heroCharacter}
+                alt="BloomFlow stylist preparing a client for a beauty treatment"
+                width={380}
+                height={472}
+                className="absolute inset-x-0 bottom-0 mx-auto h-[92%] w-auto object-contain object-bottom"
+              />
 
               {/* Floating badges */}
               <div className="absolute top-8 right-0 rounded-xl bg-white/80 px-3 py-2 shadow-sm backdrop-blur-sm">

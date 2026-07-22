@@ -2,14 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { servicesApi, type Service } from "../../api/client";
 import SectionHeading from "../ui/SectionHeading";
-import { iconForService } from "../../utils/serviceIcon";
-
-const TINTS = [
-  "bg-gradient-to-br from-blush to-coral/20",
-  "bg-gradient-to-br from-champagne/25 to-blush-light",
-  "bg-gradient-to-br from-coral/15 to-blush",
-  "bg-gradient-to-br from-blush-light to-champagne/20",
-];
+import { imageForService } from "../../utils/serviceImage";
 
 export default function ServicesGrid() {
   const [services, setServices] = useState<Service[] | null>(null);
@@ -48,15 +41,22 @@ export default function ServicesGrid() {
               </div>
             ))}
 
-          {services?.map((service, i) => {
-            const Icon = iconForService(service.name);
+          {services?.map((service) => {
+            const image = imageForService(service.name);
             return (
               <div
                 key={service.id}
                 className="group overflow-hidden rounded-2xl bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.01]"
               >
-                <Link to={`/book?service=${service.id}`} className={`flex h-36 items-center justify-center ${TINTS[i % TINTS.length]}`}>
-                  <Icon className="h-12 w-12 text-white/90 drop-shadow-sm" />
+                <Link to={`/book?service=${service.id}`} className="block h-36 overflow-hidden">
+                  <img
+                    src={image}
+                    alt=""
+                    width={350}
+                    height={144}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                 </Link>
                 <div className="p-5">
                   <h3 className="font-display text-base font-semibold text-charcoal">

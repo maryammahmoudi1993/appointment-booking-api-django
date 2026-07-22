@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { servicesApi, type Service } from "../api/client";
-import GradientIcon from "../components/icons/GradientIcon";
 import SectionHeading from "../components/ui/SectionHeading";
-import { iconForService } from "../utils/serviceIcon";
-
-const TINTS = ["bg-blush-light", "bg-champagne/10", "bg-blush", "bg-cream"];
+import { imageForService } from "../utils/serviceImage";
 
 export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
@@ -36,36 +33,45 @@ export default function Services() {
         />
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
-          {services.map((s, i) => {
-            const Icon = iconForService(s.name);
+          {services.map((s) => {
+            const image = imageForService(s.name);
             return (
               <div
                 key={s.id}
-                className={`flex flex-col rounded-2xl border border-champagne/20 ${TINTS[i % TINTS.length]} p-7 shadow-sm transition-all hover:shadow-md hover:scale-[1.01]`}
+                className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.01]"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <GradientIcon size="md">
-                    <Icon />
-                  </GradientIcon>
-                  <span className="whitespace-nowrap font-display text-xl font-bold text-coral-dark">
-                    ${s.price}
-                  </span>
+                <div className="flex">
+                  <img
+                    src={image}
+                    alt=""
+                    width={160}
+                    height={160}
+                    loading="lazy"
+                    className="h-40 w-40 shrink-0 object-cover"
+                  />
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="font-display text-lg font-semibold text-charcoal">
+                        {s.name}
+                      </h3>
+                      <span className="whitespace-nowrap font-display text-lg font-bold text-coral-dark">
+                        ${s.price}
+                      </span>
+                    </div>
+                    <span className="mt-1 text-xs font-medium uppercase tracking-wide text-charcoal-light/70">
+                      {s.duration_minutes} min
+                    </span>
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-charcoal-light line-clamp-3">
+                      {s.description}
+                    </p>
+                    <Link
+                      to={`/book?service=${s.id}`}
+                      className="mt-3 inline-flex w-fit items-center justify-center rounded-full bg-coral px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-coral-dark hover:shadow-md"
+                    >
+                      Book
+                    </Link>
+                  </div>
                 </div>
-                <h3 className="mt-5 font-display text-lg font-semibold text-charcoal">
-                  {s.name}
-                </h3>
-                <span className="mt-1 text-xs font-medium uppercase tracking-wide text-charcoal-light/70">
-                  {s.duration_minutes} min
-                </span>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-charcoal-light">
-                  {s.description}
-                </p>
-                <Link
-                  to={`/book?service=${s.id}`}
-                  className="mt-5 inline-flex w-fit items-center justify-center rounded-full bg-rosegold-gradient px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Book
-                </Link>
               </div>
             );
           })}

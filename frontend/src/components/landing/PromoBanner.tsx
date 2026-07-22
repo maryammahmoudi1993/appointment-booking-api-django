@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { promotionsApi, type PromoCode } from "../../api/client";
-import { GiftIcon } from "../icons/ServiceIcons";
-import GradientIcon from "../icons/GradientIcon";
+import promoProducts from "../../assets/landing/promo-products.webp";
 
 function formatDiscount(promo: PromoCode): string {
   return promo.discount_type === "percent"
@@ -26,12 +25,17 @@ export default function PromoBanner() {
   return (
     <section className="py-10" aria-label="Promotion">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center gap-6 rounded-3xl border border-champagne/25 bg-gradient-to-br from-blush-light via-blush to-coral/10 p-8 shadow-sm sm:flex-row sm:justify-between">
+        <div className="flex flex-col items-center gap-6 overflow-hidden rounded-3xl border border-champagne/25 bg-gradient-to-br from-blush-light via-blush to-coral/10 shadow-sm sm:flex-row sm:justify-between">
           <div className="flex items-center gap-5">
-            <GradientIcon size="lg">
-              <GiftIcon />
-            </GradientIcon>
-            <div>
+            <img
+              src={promoProducts}
+              alt=""
+              width={160}
+              height={160}
+              loading="lazy"
+              className="h-32 w-32 shrink-0 object-cover sm:h-40 sm:w-40"
+            />
+            <div className="py-6 pr-4 sm:py-8">
               <span className="text-xs font-semibold uppercase tracking-widest text-coral-dark">
                 Special Offer
               </span>
@@ -57,7 +61,7 @@ export default function PromoBanner() {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-5">
+          <div className="flex shrink-0 items-center gap-5 py-6 pr-8 sm:py-8">
             {promo && (
               <div
                 className="flex h-20 w-20 shrink-0 rotate-6 items-center justify-center rounded-full bg-coral text-center shadow-md"
