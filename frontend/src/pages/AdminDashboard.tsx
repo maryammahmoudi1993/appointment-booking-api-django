@@ -7,12 +7,13 @@ import {
   type Service,
   type StaffProfile,
 } from "../api/client";
-import StaffManager from "../components/admin/StaffManager";
+import AdminCopilotPanel from "../components/admin/AdminCopilotPanel";
+import InboxPanel from "../components/admin/InboxPanel";
 import PromotionsPanel from "../components/admin/PromotionsPanel";
 import RevenuePanel from "../components/admin/RevenuePanel";
-import InboxPanel from "../components/admin/InboxPanel";
+import StaffManager from "../components/admin/StaffManager";
 
-type Tab = "appointments" | "services" | "staff" | "marketing" | "revenue" | "inbox";
+type Tab = "appointments" | "services" | "staff" | "marketing" | "revenue" | "inbox" | "analytics";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "appointments", label: "Appointments" },
@@ -21,6 +22,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "marketing", label: "Marketing" },
   { key: "revenue", label: "Revenue" },
   { key: "inbox", label: "Inbox" },
+  { key: "analytics", label: "Analytics AI" },
 ];
 
 export default function AdminDashboard() {
@@ -53,6 +55,7 @@ export default function AdminDashboard() {
         {tab === "marketing" && <PromotionsPanel />}
         {tab === "revenue" && <RevenuePanel />}
         {tab === "inbox" && <InboxPanel />}
+        {tab === "analytics" && <AnalyticsPanel />}
       </div>
     </div>
   );
@@ -552,6 +555,72 @@ function EditServiceForm({
         </button>
       </div>
     </form>
+  );
+}
+
+function AnalyticsPanel() {
+  const [bookingStats, setBookingStats] = useState<{
+    total: number;
+    completion_rate: number;
+    cancellation_rate: number;
+  } | null>(null);
+
+  useEffect(() => {
+    import("../api/client").then(({ analyticsApi }) =>
+      analyticsApi.bookings().then((res) => setBookingStats(res.data))
+    );
+  }, []);
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div>
+        <h3 className="mb-4 font-display text-lg font-bold text-gray-900">
+          Business Overview
+        </h3>
+        {bookingStats ? (
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            <StatCard label="Total Bookings" value={bookingStats.total} tone="brand" />
+            <StatCard label="Completion Rate" value={Math.round(bookingStats.completion_rate)} tone="gray" />
+            <StatCard label="Cancellation Rate" value={Math.round(bookingStats.cancellation_rate)} tone="amber" />
+          </div>
+        ) : (
+          <div className="flex justify-center py-8">
+            <div className="h-6 w-6 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+          </div>
+        )}
+        <AdminCopilotPanel />
+      </div>
+      <div>
+        <h3 className="mb-4 font-display text-lg font-bold text-gray-900">
+          AI Assistant
+        </h3>
+        <p className="mb-4 text-sm text-gray-600">
+          Ask the AI copilot about your business performance. Try:
+        </p>
+        <ul className="space-y-2 text-sm text-gray-600">
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+            &ldquo;Show me this month&apos;s revenue breakdown&rdquo;
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+            &ldquo;Who is our top-performing staff member?&rdquo;
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+            &ldquo;What are our most popular services?&rdquo;
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+            &ldquo;Forecast revenue for the next 30 days&rdquo;
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+            &ldquo;What is our appointment completion rate?&rdquo;
+          </li>
+        </ul>
+      </div>
+    </div>
   );
 }
 
