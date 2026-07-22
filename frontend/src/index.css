@@ -1,24 +1,73 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", "Bodoni MT", Georgia, serif;
 
-  --color-brand-50: #eefaf4;
-  --color-brand-100: #d6f2e3;
-  --color-brand-200: #ade6c9;
-  --color-brand-300: #79d3aa;
-  --color-brand-400: #48b988;
-  --color-brand-500: #279c6c;
-  --color-brand-600: #1a7d57;
-  --color-brand-700: #166448;
-  --color-brand-800: #144f3b;
-  --color-brand-900: #103e30;
+  --color-blush: #F8E8E8;
+  --color-blush-light: #FDF5F5;
+  --color-champagne: #D4AF37;
+  --color-champagne-light: #E8D48B;
+  --color-champagne-dark: #B8860B;
+  --color-cream: #FAF9F6;
+  --color-charcoal: #2C3539;
+  --color-charcoal-light: #4A5568;
+  --color-rosegold-start: #E8C39E;
+  --color-rosegold-mid: #D4AF37;
+  --color-rosegold-end: #B8860B;
+
+  --color-brand-50: #FDF5F5;
+  --color-brand-100: #F8E8E8;
+  --color-brand-200: #F0D4D4;
+  --color-brand-300: #E8C39E;
+  --color-brand-400: #D4AF37;
+  --color-brand-500: #C9A028;
+  --color-brand-600: #B8860B;
+  --color-brand-700: #8B6508;
+  --color-brand-800: #5E4506;
+  --color-brand-900: #2C3539;
 }
 
-body {
-  font-family: var(--font-sans);
-  background-color: #f7faf8;
-  color: #1c2b24;
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-cream);
+    color: var(--color-charcoal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #E8C39E 0%, #D4AF37 50%, #B8860B 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-border {
+    border-image: linear-gradient(135deg, #E8C39E 0%, #D4AF37 50%, #B8860B 100%) 1;
+  }
+
+  .bg-rosegold-gradient {
+    background: linear-gradient(135deg, #E8C39E 0%, #D4AF37 50%, #B8860B 100%);
+  }
+
+  .bg-blush-gradient {
+    background: linear-gradient(180deg, #FAF9F6 0%, #F8E8E8 100%);
+  }
+
+  .text-rosegold {
+    color: #D4AF37;
+  }
+
+  .border-rosegold {
+    border-color: #D4AF37;
+  }
 }
