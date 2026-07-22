@@ -92,7 +92,7 @@ export default function PromotionsPanel() {
           </p>
           <p className="mt-1 font-display text-3xl font-bold">{liveCampaigns}</p>
         </div>
-        <div className="rounded-2xl bg-gray-50 p-5 text-gray-800">
+        <div className="rounded-2xl bg-cream p-5 text-charcoal">
           <p className="text-xs font-medium uppercase tracking-wide opacity-70">
             Total redemptions
           </p>
@@ -121,7 +121,7 @@ export default function PromotionsPanel() {
           className="mb-6 rounded-2xl border border-brand-100 bg-white p-6 shadow-sm"
         >
           {error && (
-            <p className="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">
+            <p className="mb-3 rounded-lg bg-rose-50 p-2 text-xs text-rose-700">
               {error}
             </p>
           )}
@@ -131,20 +131,20 @@ export default function PromotionsPanel() {
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm uppercase focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <input
               placeholder="Description"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <select
               value={form.discount_type}
               onChange={(e) =>
                 setForm({ ...form, discount_type: e.target.value as "percent" | "fixed" })
               }
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="percent">Percent off</option>
               <option value="fixed">Fixed amount off</option>
@@ -156,13 +156,13 @@ export default function PromotionsPanel() {
               value={form.discount_value}
               onChange={(e) => setForm({ ...form, discount_value: e.target.value })}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
 
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-700">Applies to</p>
-            <p className="text-xs text-gray-400">
+            <p className="text-sm font-medium text-charcoal">Applies to</p>
+            <p className="text-xs text-charcoal-light/70">
               Leave all unchecked to apply this code to every service.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -172,7 +172,7 @@ export default function PromotionsPanel() {
                   className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition ${
                     serviceIds.includes(sv.id)
                       ? "border-brand-600 bg-brand-50 text-brand-700"
-                      : "border-gray-200 text-gray-600 hover:border-brand-300"
+                      : "border-champagne/20 text-charcoal-light hover:border-brand-300"
                   }`}
                 >
                   <input
@@ -197,9 +197,9 @@ export default function PromotionsPanel() {
       )}
 
       <div className="overflow-x-auto rounded-2xl border border-brand-100 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-100 text-sm">
+        <table className="min-w-full divide-y divide-champagne/15 text-sm">
           <thead>
-            <tr className="text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+            <tr className="text-left text-xs font-medium uppercase tracking-wide text-charcoal-light">
               <th className="px-4 py-3">Promotion</th>
               <th className="px-4 py-3">Code</th>
               <th className="px-4 py-3">Discount</th>
@@ -208,31 +208,31 @@ export default function PromotionsPanel() {
               <th className="px-4 py-3">Active</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-champagne/10">
             {promos.map((p) => (
               <tr key={p.id}>
-                <td className="px-4 py-3 text-gray-700">{p.description || "—"}</td>
+                <td className="px-4 py-3 text-charcoal">{p.description || "—"}</td>
                 <td className="px-4 py-3">
-                  <code className="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold">
+                  <code className="rounded bg-blush-light px-2 py-0.5 text-xs font-semibold">
                     {p.code}
                   </code>
                 </td>
-                <td className="px-4 py-3 text-gray-700">
+                <td className="px-4 py-3 text-charcoal">
                   {p.discount_type === "percent"
                     ? `${p.discount_value}% off`
                     : `$${p.discount_value} off`}
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-600">
+                <td className="px-4 py-3 text-xs text-charcoal-light">
                   {p.service_names.length === 0
                     ? "All services"
                     : p.service_names.join(", ")}
                 </td>
-                <td className="px-4 py-3 text-gray-700">{p.times_redeemed}</td>
+                <td className="px-4 py-3 text-charcoal">{p.times_redeemed}</td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => toggleActive(p)}
                     className={`relative h-6 w-11 rounded-full transition ${
-                      p.is_active ? "bg-brand-600" : "bg-gray-200"
+                      p.is_active ? "bg-brand-600" : "bg-blush"
                     }`}
                   >
                     <span
@@ -247,7 +247,7 @@ export default function PromotionsPanel() {
           </tbody>
         </table>
         {promos.length === 0 && (
-          <p className="p-6 text-center text-sm text-gray-500">
+          <p className="p-6 text-center text-sm text-charcoal-light">
             No campaigns yet — create one above.
           </p>
         )}

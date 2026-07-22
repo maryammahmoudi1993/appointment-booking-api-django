@@ -154,7 +154,7 @@ export default function BookAppointment() {
       </h2>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
           {error}
         </p>
       )}
@@ -171,14 +171,14 @@ export default function BookAppointment() {
                         ? "bg-brand-600 text-white"
                         : i === stepIndex
                           ? "bg-brand-600 text-white ring-4 ring-brand-100"
-                          : "bg-gray-100 text-gray-400"
+                          : "bg-blush-light text-charcoal-light/70"
                     }`}
                   >
                     {i < stepIndex ? "✓" : i + 1}
                   </span>
                   <span
                     className={`text-xs font-medium ${
-                      i <= stepIndex ? "text-brand-800" : "text-gray-400"
+                      i <= stepIndex ? "text-brand-800" : "text-charcoal-light/70"
                     }`}
                   >
                     {s.label}
@@ -187,7 +187,7 @@ export default function BookAppointment() {
                 {i < STEPS.length - 1 && (
                   <div
                     className={`mx-2 h-0.5 flex-1 ${
-                      i < stepIndex ? "bg-brand-600" : "bg-gray-200"
+                      i < stepIndex ? "bg-brand-600" : "bg-blush"
                     }`}
                   />
                 )}
@@ -208,12 +208,12 @@ export default function BookAppointment() {
                 className="rounded-xl border border-brand-100 bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-gray-900">{s.name}</span>
+                  <span className="font-semibold text-charcoal">{s.name}</span>
                   <span className="font-display font-bold text-brand-600">
                     ${s.price}
                   </span>
                 </div>
-                <div className="mt-1 text-sm text-gray-500">
+                <div className="mt-1 text-sm text-charcoal-light">
                   {s.duration_minutes} min
                 </div>
               </button>
@@ -232,8 +232,8 @@ export default function BookAppointment() {
                 }}
                 className="rounded-xl border border-brand-100 bg-white p-4 text-left shadow-sm transition hover:border-brand-400 hover:shadow-md"
               >
-                <div className="font-semibold text-gray-900">{s.full_name}</div>
-                <div className="mt-1 text-sm text-gray-600">{s.bio}</div>
+                <div className="font-semibold text-charcoal">{s.full_name}</div>
+                <div className="mt-1 text-sm text-charcoal-light">{s.bio}</div>
               </button>
             ))}
           </div>
@@ -242,7 +242,7 @@ export default function BookAppointment() {
         {step === "datetime" && (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-charcoal">
                 Date
               </label>
               <input
@@ -253,16 +253,16 @@ export default function BookAppointment() {
                   setSelectedDate(e.target.value);
                   setSelectedSlot(null);
                 }}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-lg border border-champagne/30 px-3 py-2.5 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             {selectedDate && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-charcoal">
                   Available Times
                 </label>
                 {slots.length === 0 ? (
-                  <p className="mt-2 text-sm text-gray-500">
+                  <p className="mt-2 text-sm text-charcoal-light">
                     No available slots for this date.
                   </p>
                 ) : (
@@ -274,10 +274,10 @@ export default function BookAppointment() {
                         onClick={() => setSelectedSlot(slot)}
                         className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
                           !slot.available
-                            ? "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-300 line-through"
+                            ? "cursor-not-allowed border-champagne/15 bg-cream text-charcoal-light/50 line-through"
                             : selectedSlot?.start === slot.start
                               ? "border-brand-600 bg-brand-50 text-brand-700"
-                              : "border-gray-200 bg-white text-gray-700 hover:border-brand-300"
+                              : "border-champagne/20 bg-white text-charcoal hover:border-brand-300"
                         }`}
                       >
                         {slot.start.slice(0, 5)}
@@ -290,18 +290,18 @@ export default function BookAppointment() {
             {selectedSlot && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-charcoal">
                     Notes (optional)
                   </label>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2.5 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="mt-1 block w-full rounded-lg border border-champagne/30 px-3 py-2.5 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-charcoal">
                     Promo code (optional)
                   </label>
                   {appliedPromo ? (
@@ -329,7 +329,7 @@ export default function BookAppointment() {
                         value={promoInput}
                         onChange={(e) => setPromoInput(e.target.value)}
                         placeholder="e.g. WELCOME15"
-                        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm uppercase focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        className="block w-full rounded-lg border border-champagne/30 px-3 py-2 text-sm uppercase focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                       />
                       <button
                         onClick={handleApplyPromo}
@@ -341,7 +341,7 @@ export default function BookAppointment() {
                     </div>
                   )}
                   {promoError && (
-                    <p className="mt-1 text-xs text-red-700">{promoError}</p>
+                    <p className="mt-1 text-xs text-rose-700">{promoError}</p>
                   )}
                 </div>
                 <button
@@ -389,15 +389,15 @@ export default function BookAppointment() {
                 ...(notes ? [["Notes", notes]] : []),
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-4">
-                  <dt className="font-medium text-gray-500">{label}</dt>
-                  <dd className="text-right text-gray-900">{value}</dd>
+                  <dt className="font-medium text-charcoal-light">{label}</dt>
+                  <dd className="text-right text-charcoal">{value}</dd>
                 </div>
               ))}
             </dl>
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep("datetime")}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-full border border-champagne/30 bg-white px-4 py-2 text-sm font-medium text-charcoal hover:bg-cream"
               >
                 Back
               </button>

@@ -141,7 +141,7 @@ function AddStaffForm({
         New staff member
       </h3>
       {error && (
-        <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <p className="mt-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
           {error}
         </p>
       )}
@@ -151,7 +151,7 @@ function AddStaffForm({
           value={form.username}
           onChange={(e) => setForm({ ...form, username: e.target.value })}
           required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <input
           placeholder="Password"
@@ -160,44 +160,44 @@ function AddStaffForm({
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
           minLength={8}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <input
           placeholder="First name"
           value={form.first_name}
           onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <input
           placeholder="Last name"
           value={form.last_name}
           onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <input
           placeholder="Email"
           type="email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <input
           placeholder="Phone"
           value={form.phone_number}
           onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <textarea
           placeholder="Bio"
           value={form.bio}
           onChange={(e) => setForm({ ...form, bio: e.target.value })}
           rows={2}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:col-span-2"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 sm:col-span-2"
         />
       </div>
 
       <div className="mt-4">
-        <p className="text-sm font-medium text-gray-700">Abilities</p>
+        <p className="text-sm font-medium text-charcoal">Abilities</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {services.map((sv) => (
             <label
@@ -205,7 +205,7 @@ function AddStaffForm({
               className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition ${
                 serviceIds.includes(sv.id)
                   ? "border-brand-600 bg-brand-50 text-brand-700"
-                  : "border-gray-200 text-gray-600 hover:border-brand-300"
+                  : "border-champagne/20 text-charcoal-light hover:border-brand-300"
               }`}
             >
               <input
@@ -403,12 +403,12 @@ function StaffCard({
     <div className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">{staff.full_name}</h3>
-          <p className="text-xs text-gray-400">@{staff.username}</p>
+          <h3 className="font-semibold text-charcoal">{staff.full_name}</h3>
+          <p className="text-xs text-charcoal-light/70">@{staff.username}</p>
         </div>
       </div>
 
-      <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-gray-500">
+      <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-charcoal-light">
         Bio
       </label>
       <textarea
@@ -418,10 +418,10 @@ function StaffCard({
           setBio(e.target.value);
         }}
         rows={2}
-        className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        className="mt-1 block w-full rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
       />
 
-      <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-gray-500">
+      <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-charcoal-light">
         Abilities
       </label>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -431,7 +431,7 @@ function StaffCard({
             className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition ${
               serviceIds.includes(sv.id)
                 ? "border-brand-600 bg-brand-50 text-brand-700"
-                : "border-gray-200 text-gray-600 hover:border-brand-300"
+                : "border-champagne/20 text-charcoal-light hover:border-brand-300"
             }`}
           >
             <input
@@ -446,7 +446,7 @@ function StaffCard({
       </div>
 
       {profileError && (
-        <p className="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">
+        <p className="mt-3 rounded-lg bg-rose-50 p-2 text-xs text-rose-700">
           {profileError}
         </p>
       )}
@@ -463,7 +463,7 @@ function StaffCard({
         )}
       </div>
 
-      <div className="mt-5 border-t border-gray-100 pt-4">
+      <div className="mt-5 border-t border-champagne/15 pt-4">
         {!hoursOpen ? (
           <button
             onClick={loadHours}
@@ -477,7 +477,7 @@ function StaffCard({
           </div>
         ) : (
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-charcoal-light">
               Working hours
             </p>
             <div className="mt-2 space-y-2">
@@ -490,30 +490,30 @@ function StaffCard({
                       onChange={(e) =>
                         updateDay(i, { enabled: e.target.checked })
                       }
-                      className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      className="h-4 w-4 rounded border-champagne/30 text-brand-600 focus:ring-brand-500"
                     />
-                    <span className="text-gray-700">{label}</span>
+                    <span className="text-charcoal">{label}</span>
                   </label>
                   <input
                     type="time"
                     value={days[i].start}
                     disabled={!days[i].enabled}
                     onChange={(e) => updateDay(i, { start: e.target.value })}
-                    className="rounded-md border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-50 disabled:text-gray-400"
+                    className="rounded-md border border-champagne/30 px-2 py-1 text-xs disabled:bg-cream disabled:text-charcoal-light/70"
                   />
-                  <span className="text-gray-400">–</span>
+                  <span className="text-charcoal-light/70">–</span>
                   <input
                     type="time"
                     value={days[i].end}
                     disabled={!days[i].enabled}
                     onChange={(e) => updateDay(i, { end: e.target.value })}
-                    className="rounded-md border border-gray-300 px-2 py-1 text-xs disabled:bg-gray-50 disabled:text-gray-400"
+                    className="rounded-md border border-champagne/30 px-2 py-1 text-xs disabled:bg-cream disabled:text-charcoal-light/70"
                   />
                 </div>
               ))}
             </div>
             {hoursError && (
-              <p className="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">
+              <p className="mt-3 rounded-lg bg-rose-50 p-2 text-xs text-rose-700">
                 {hoursError}
               </p>
             )}
@@ -535,7 +535,7 @@ function StaffCard({
         )}
       </div>
 
-      <div className="mt-4 border-t border-gray-100 pt-4">
+      <div className="mt-4 border-t border-champagne/15 pt-4">
         {!timeOffOpen ? (
           <button
             onClick={loadTimeOff}
@@ -549,17 +549,17 @@ function StaffCard({
           </div>
         ) : (
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-charcoal-light">
               Time off
             </p>
             {timeOffs.length === 0 ? (
-              <p className="mt-2 text-sm text-gray-400">No time off scheduled.</p>
+              <p className="mt-2 text-sm text-charcoal-light/70">No time off scheduled.</p>
             ) : (
               <div className="mt-2 space-y-1.5">
                 {timeOffs.map((t) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-600"
+                    className="flex items-center justify-between rounded-lg bg-cream px-3 py-1.5 text-xs text-charcoal-light"
                   >
                     <span>
                       {new Date(t.start_datetime).toLocaleString()} –{" "}
@@ -568,7 +568,7 @@ function StaffCard({
                     </span>
                     <button
                       onClick={() => removeTimeOff(t.id)}
-                      className="font-medium text-red-600 hover:text-red-800"
+                      className="font-medium text-rose-600 hover:text-rose-800"
                     >
                       Remove
                     </button>
@@ -584,7 +584,7 @@ function StaffCard({
                 onChange={(e) =>
                   setTimeOffForm({ ...timeOffForm, start: e.target.value })
                 }
-                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+                className="rounded-md border border-champagne/30 px-2 py-1.5 text-xs"
               />
               <input
                 type="datetime-local"
@@ -592,7 +592,7 @@ function StaffCard({
                 onChange={(e) =>
                   setTimeOffForm({ ...timeOffForm, end: e.target.value })
                 }
-                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+                className="rounded-md border border-champagne/30 px-2 py-1.5 text-xs"
               />
               <input
                 placeholder="Reason (optional)"
@@ -600,11 +600,11 @@ function StaffCard({
                 onChange={(e) =>
                   setTimeOffForm({ ...timeOffForm, reason: e.target.value })
                 }
-                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs"
+                className="rounded-md border border-champagne/30 px-2 py-1.5 text-xs"
               />
             </div>
             {timeOffError && (
-              <p className="mt-2 text-xs text-red-700">{timeOffError}</p>
+              <p className="mt-2 text-xs text-rose-700">{timeOffError}</p>
             )}
             <button
               onClick={addTimeOff}

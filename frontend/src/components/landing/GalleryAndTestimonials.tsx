@@ -1,4 +1,8 @@
-const testimonials = [
+import { useEffect, useState } from "react";
+import { reviewsApi, type Review } from "../../api/client";
+import SectionHeading from "../ui/SectionHeading";
+
+const FALLBACK_TESTIMONIALS = [
   {
     name: "Sarah Mitchell",
     role: "Regular Client",
@@ -46,21 +50,30 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function GalleryAndTestimonials() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  useEffect(() => {
+    reviewsApi
+      .list()
+      .then((res) => setReviews(res.data.results.slice(0, 3)))
+      .catch(() => setReviews([]));
+  }, []);
+
+  const testimonials =
+    reviews.length > 0
+      ? reviews.map((r) => ({
+          name: r.customer_name || "Verified Client",
+          role: r.service_name,
+          content: r.comment,
+          rating: r.rating,
+        }))
+      : FALLBACK_TESTIMONIALS;
+
   return (
     <section className="py-20 bg-cream" aria-labelledby="gallery-heading">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Gallery */}
-        <div className="text-center">
-          <span className="inline-flex items-center rounded-full border border-champagne/30 bg-champagne/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-champagne-dark">
-            Our Work
-          </span>
-          <h2
-            id="gallery-heading"
-            className="mt-4 font-display text-3xl font-bold text-charcoal sm:text-4xl"
-          >
-            Transformations That Inspire
-          </h2>
-        </div>
+        <SectionHeading eyebrow="Our Work" id="gallery-heading" title="Transformations That Inspire" />
 
         <div className="mt-12 columns-2 gap-4 sm:columns-3 lg:columns-3">
           {galleryItems.map((item) => (
@@ -79,19 +92,12 @@ export default function GalleryAndTestimonials() {
 
         {/* Testimonials */}
         <div className="mt-20">
-          <div className="text-center">
-            <span className="inline-flex items-center rounded-full border border-champagne/30 bg-champagne/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-champagne-dark">
-              Client Love
-            </span>
-            <h2 className="mt-4 font-display text-3xl font-bold text-charcoal sm:text-4xl">
-              What Our Clients Say
-            </h2>
-          </div>
+          <SectionHeading eyebrow="Client Love" title="What Our Clients Say" />
 
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {testimonials.map((testimonial) => (
+            {testimonials.map((testimonial, i) => (
               <div
-                key={testimonial.name}
+                key={`${testimonial.name}-${i}`}
                 className="rounded-xl border border-champagne/20 bg-white p-8 shadow-sm transition-all hover:shadow-md"
               >
                 <StarRating rating={testimonial.rating} />

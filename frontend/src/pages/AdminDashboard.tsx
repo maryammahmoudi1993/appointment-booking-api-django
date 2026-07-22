@@ -41,7 +41,7 @@ export default function AdminDashboard() {
             className={`rounded-t-lg px-4 py-2.5 text-sm font-medium transition ${
               tab === t.key
                 ? "border-b-2 border-brand-600 text-brand-700"
-                : "text-gray-500 hover:text-brand-700"
+                : "text-charcoal-light hover:text-brand-700"
             }`}
           >
             {t.label}
@@ -62,10 +62,10 @@ export default function AdminDashboard() {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
+  pending: "bg-champagne/20 text-champagne-dark",
   confirmed: "bg-brand-100 text-brand-800",
-  completed: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
+  completed: "bg-champagne/20 text-blue-800",
+  cancelled: "bg-rose-100 text-rose-800",
 };
 
 function isSameDay(iso: string, ref: Date) {
@@ -94,8 +94,8 @@ function StatCard({
 }) {
   const toneClasses = {
     brand: "bg-brand-50 text-brand-800",
-    amber: "bg-amber-50 text-amber-800",
-    gray: "bg-gray-50 text-gray-800",
+    amber: "bg-champagne/10 text-champagne-dark",
+    gray: "bg-cream text-charcoal",
   }[tone];
   return (
     <div className={`rounded-2xl p-5 ${toneClasses}`}>
@@ -182,7 +182,7 @@ function AppointmentsPanel() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
@@ -193,7 +193,7 @@ function AppointmentsPanel() {
         <select
           value={staffFilter}
           onChange={(e) => setStaffFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
           <option value="">All staff</option>
           {staffList.map((s) => (
@@ -205,7 +205,7 @@ function AppointmentsPanel() {
       </div>
 
       {appointments.length === 0 ? (
-        <p className="text-sm text-gray-500">No appointments match these filters.</p>
+        <p className="text-sm text-charcoal-light">No appointments match these filters.</p>
       ) : (
       <div className="space-y-4">
         {appointments.map((a) => (
@@ -215,20 +215,20 @@ function AppointmentsPanel() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-gray-900">
+                <p className="font-semibold text-charcoal">
                   #{a.id} &middot; {a.service_name}
                 </p>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-charcoal-light">
                   {a.customer_name} with {a.staff_name}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-charcoal-light">
                   {new Date(a.start_datetime).toLocaleString()} -{" "}
                   {new Date(a.end_datetime).toLocaleTimeString()}
                 </p>
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                  STATUS_COLORS[a.status] || "bg-gray-100 text-gray-800"
+                  STATUS_COLORS[a.status] || "bg-blush-light text-charcoal"
                 }`}
               >
                 {a.status}
@@ -244,7 +244,7 @@ function AppointmentsPanel() {
                 </button>
                 <button
                   onClick={() => handleAction(a.id, "cancel")}
-                  className="rounded-full border border-red-200 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  className="rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
                 >
                   Cancel
                 </button>
@@ -254,13 +254,13 @@ function AppointmentsPanel() {
               <div className="mt-4 flex gap-2">
                 <button
                   onClick={() => handleAction(a.id, "complete")}
-                  className="rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                  className="rounded-full bg-champagne-dark px-4 py-1.5 text-xs font-semibold text-white hover:bg-champagne-dark/90"
                 >
                   Complete
                 </button>
                 <button
                   onClick={() => handleAction(a.id, "cancel")}
-                  className="rounded-full border border-red-200 px-4 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  className="rounded-full border border-rose-200 px-4 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
                 >
                   Cancel
                 </button>
@@ -352,7 +352,7 @@ function ServicesPanel() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <input
               placeholder="Price"
@@ -361,7 +361,7 @@ function ServicesPanel() {
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <input
               placeholder="Duration (minutes)"
@@ -371,7 +371,7 @@ function ServicesPanel() {
                 setForm({ ...form, duration_minutes: Number(e.target.value) })
               }
               required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <input
               placeholder="Description"
@@ -379,7 +379,7 @@ function ServicesPanel() {
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <button
@@ -409,8 +409,8 @@ function ServicesPanel() {
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{s.name}</h3>
-                  <p className="mt-1 text-sm text-gray-600">{s.description}</p>
+                  <h3 className="font-semibold text-charcoal">{s.name}</h3>
+                  <p className="mt-1 text-sm text-charcoal-light">{s.description}</p>
                 </div>
                 <div className="flex gap-3">
                   <button
@@ -421,7 +421,7 @@ function ServicesPanel() {
                   </button>
                   <button
                     onClick={() => handleDelete(s.id)}
-                    className="text-sm text-red-600 hover:text-red-800"
+                    className="text-sm text-rose-600 hover:text-rose-800"
                   >
                     Delete
                   </button>
@@ -431,12 +431,12 @@ function ServicesPanel() {
                 <span className="font-display font-semibold text-brand-600">
                   ${s.price}
                 </span>
-                <span className="text-gray-500">{s.duration_minutes} min</span>
+                <span className="text-charcoal-light">{s.duration_minutes} min</span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                     s.is_active
                       ? "bg-brand-100 text-brand-800"
-                      : "bg-gray-100 text-gray-800"
+                      : "bg-blush-light text-charcoal"
                   }`}
                 >
                   {s.is_active ? "Active" : "Inactive"}
@@ -492,7 +492,7 @@ function EditServiceForm({
       className="rounded-2xl border border-brand-300 bg-white p-6 shadow-sm"
     >
       {error && (
-        <p className="mb-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">
+        <p className="mb-3 rounded-lg bg-rose-50 p-2 text-xs text-rose-700">
           {error}
         </p>
       )}
@@ -501,13 +501,13 @@ function EditServiceForm({
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <textarea
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           rows={2}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         <div className="grid grid-cols-2 gap-3">
           <input
@@ -516,7 +516,7 @@ function EditServiceForm({
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             required
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <input
             type="number"
@@ -525,15 +525,15 @@ function EditServiceForm({
               setForm({ ...form, duration_minutes: Number(e.target.value) })
             }
             required
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-sm text-charcoal">
           <input
             type="checkbox"
             checked={form.is_active}
             onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            className="h-4 w-4 rounded border-champagne/30 text-brand-600 focus:ring-brand-500"
           />
           Active (visible to customers)
         </label>
@@ -549,7 +549,7 @@ function EditServiceForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-gray-300 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+          className="rounded-full border border-champagne/30 px-4 py-1.5 text-xs font-medium text-charcoal-light hover:bg-cream"
         >
           Cancel
         </button>
@@ -574,7 +574,7 @@ function AnalyticsPanel() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div>
-        <h3 className="mb-4 font-display text-lg font-bold text-gray-900">
+        <h3 className="mb-4 font-display text-lg font-bold text-charcoal">
           Business Overview
         </h3>
         {bookingStats ? (
@@ -591,13 +591,13 @@ function AnalyticsPanel() {
         <AdminCopilotPanel />
       </div>
       <div>
-        <h3 className="mb-4 font-display text-lg font-bold text-gray-900">
+        <h3 className="mb-4 font-display text-lg font-bold text-charcoal">
           AI Assistant
         </h3>
-        <p className="mb-4 text-sm text-gray-600">
+        <p className="mb-4 text-sm text-charcoal-light">
           Ask the AI copilot about your business performance. Try:
         </p>
-        <ul className="space-y-2 text-sm text-gray-600">
+        <ul className="space-y-2 text-sm text-charcoal-light">
           <li className="flex items-start gap-2">
             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
             &ldquo;Show me this month&apos;s revenue breakdown&rdquo;

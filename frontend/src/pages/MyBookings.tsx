@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { appointmentsApi, reviewsApi, type Appointment } from "../api/client";
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800",
+  pending: "bg-champagne/15 text-champagne-dark",
   confirmed: "bg-brand-100 text-brand-800",
-  completed: "bg-blue-100 text-blue-800",
-  cancelled: "bg-red-100 text-red-800",
+  completed: "bg-blush text-charcoal",
+  cancelled: "bg-rose-100 text-rose-800",
 };
 
 const POLL_INTERVAL_MS = 20000;
@@ -62,7 +62,7 @@ export default function MyBookings() {
       </div>
 
       {appointments.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-brand-200 bg-brand-50/40 p-10 text-center text-gray-500">
+        <div className="mt-8 rounded-2xl border border-dashed border-brand-200 bg-brand-50/40 p-10 text-center text-charcoal-light">
           You don&apos;t have any bookings yet.
         </div>
       ) : (
@@ -77,10 +77,10 @@ export default function MyBookings() {
                   <h3 className="font-display font-semibold text-brand-900">
                     {a.service_name}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="mt-1 text-sm text-charcoal-light">
                     with {a.staff_name}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-charcoal-light">
                     {new Date(a.start_datetime).toLocaleDateString("en-US", {
                       weekday: "long",
                       year: "numeric",
@@ -99,7 +99,7 @@ export default function MyBookings() {
                     })}
                   </p>
                   {a.notes && (
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-charcoal-light">
                       Notes: {a.notes}
                     </p>
                   )}
@@ -117,7 +117,7 @@ export default function MyBookings() {
                 <div className="flex flex-col items-end gap-2">
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                      STATUS_COLORS[a.status] || "bg-gray-100 text-gray-800"
+                      STATUS_COLORS[a.status] || "bg-blush-light text-charcoal"
                     }`}
                   >
                     {a.status}
@@ -125,7 +125,7 @@ export default function MyBookings() {
                   {a.status === "pending" && (
                     <button
                       onClick={() => handleCancel(a.id)}
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                      className="rounded-full border border-rose-200 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
                     >
                       Cancel
                     </button>
@@ -139,7 +139,7 @@ export default function MyBookings() {
                     </button>
                   )}
                   {a.status === "completed" && a.has_review && (
-                    <span className="text-xs text-gray-400">Reviewed ✓</span>
+                    <span className="text-xs text-charcoal-light/70">Reviewed ✓</span>
                   )}
                 </div>
               </div>
@@ -195,7 +195,7 @@ function ReviewForm({
 
   return (
     <div className="mt-4 rounded-xl border border-brand-100 bg-brand-50/40 p-4">
-      <p className="text-sm font-medium text-gray-700">
+      <p className="text-sm font-medium text-charcoal">
         Rate your visit for {appointment.service_name} with {appointment.staff_name}
       </p>
       <div className="mt-2 flex gap-1">
@@ -205,7 +205,7 @@ function ReviewForm({
             type="button"
             onClick={() => setRating(n)}
             className={`text-2xl leading-none ${
-              n <= rating ? "text-amber-500" : "text-gray-300"
+              n <= rating ? "text-champagne-dark" : "text-charcoal-light/50"
             }`}
             aria-label={`${n} star`}
           >
@@ -218,9 +218,9 @@ function ReviewForm({
         onChange={(e) => setComment(e.target.value)}
         placeholder="Optional comment"
         rows={2}
-        className="mt-3 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        className="mt-3 block w-full rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
       />
-      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
+      {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
       <div className="mt-3 flex gap-2">
         <button
           onClick={handleSubmit}
@@ -231,7 +231,7 @@ function ReviewForm({
         </button>
         <button
           onClick={onCancel}
-          className="rounded-full border border-gray-300 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+          className="rounded-full border border-champagne/30 px-4 py-1.5 text-xs font-medium text-charcoal-light hover:bg-cream"
         >
           Cancel
         </button>

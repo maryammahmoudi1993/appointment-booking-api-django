@@ -78,7 +78,7 @@ export default function RevenuePanel() {
             ${weekRevenue.toFixed(0)}
           </p>
         </div>
-        <div className="rounded-2xl bg-gray-50 p-5 text-gray-800">
+        <div className="rounded-2xl bg-cream p-5 text-charcoal">
           <p className="text-xs font-medium uppercase tracking-wide opacity-70">
             Booked revenue (all)
           </p>
@@ -86,13 +86,13 @@ export default function RevenuePanel() {
             ${bookedRevenue.toFixed(0)}
           </p>
         </div>
-        <div className="rounded-2xl bg-blue-50 p-5 text-blue-800">
+        <div className="rounded-2xl bg-champagne/10 p-5 text-blue-800">
           <p className="text-xs font-medium uppercase tracking-wide opacity-70">
             Completed visits
           </p>
           <p className="mt-1 font-display text-2xl font-bold">{completed.length}</p>
         </div>
-        <div className="rounded-2xl bg-red-50 p-5 text-red-800">
+        <div className="rounded-2xl bg-rose-50 p-5 text-rose-800">
           <p className="text-xs font-medium uppercase tracking-wide opacity-70">
             Avg. ticket price
           </p>
@@ -104,22 +104,22 @@ export default function RevenuePanel() {
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-charcoal-light">
             Revenue by service
           </h3>
           <div className="mt-4 space-y-3">
             {serviceEntries.length === 0 && (
-              <p className="text-sm text-gray-400">No completed visits yet.</p>
+              <p className="text-sm text-charcoal-light/70">No completed visits yet.</p>
             )}
             {serviceEntries.map(([name, total]) => (
               <div key={name}>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-700">{name}</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-charcoal">{name}</span>
+                  <span className="font-medium text-charcoal">
                     ${total.toFixed(0)}
                   </span>
                 </div>
-                <div className="mt-1 h-1.5 rounded-full bg-gray-100">
+                <div className="mt-1 h-1.5 rounded-full bg-blush-light">
                   <div
                     className="h-1.5 rounded-full bg-brand-600"
                     style={{ width: `${(total / maxServiceRevenue) * 100}%` }}
@@ -131,20 +131,20 @@ export default function RevenuePanel() {
         </div>
 
         <div className="rounded-2xl border border-brand-100 bg-white p-6 shadow-sm">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-charcoal-light">
             Revenue by staff
           </h3>
           <div className="mt-4 space-y-3">
             {staffEntries.length === 0 && (
-              <p className="text-sm text-gray-400">No completed visits yet.</p>
+              <p className="text-sm text-charcoal-light/70">No completed visits yet.</p>
             )}
             {staffEntries.map(([name, { total, count }]) => (
               <div key={name} className="flex items-center justify-between text-sm">
                 <div>
-                  <p className="text-gray-700">{name}</p>
-                  <p className="text-xs text-gray-400">{count} bookings</p>
+                  <p className="text-charcoal">{name}</p>
+                  <p className="text-xs text-charcoal-light/70">{count} bookings</p>
                 </div>
-                <span className="font-medium text-gray-900">${total.toFixed(0)}</span>
+                <span className="font-medium text-charcoal">${total.toFixed(0)}</span>
               </div>
             ))}
           </div>

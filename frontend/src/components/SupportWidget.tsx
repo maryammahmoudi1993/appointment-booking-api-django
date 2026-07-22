@@ -101,7 +101,7 @@ export default function SupportWidget() {
                 key={i}
                 className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                   m.from === "bot"
-                    ? "bg-gray-100 text-gray-800"
+                    ? "bg-blush-light text-charcoal"
                     : "ml-auto bg-brand-600 text-white"
                 }`}
               >
@@ -110,7 +110,7 @@ export default function SupportWidget() {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2 border-t border-gray-100 px-4 py-2">
+          <div className="flex flex-wrap gap-2 border-t border-champagne/15 px-4 py-2">
             {QUICK_REPLIES.map((q) => (
               <button
                 key={q.label}
@@ -122,13 +122,13 @@ export default function SupportWidget() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 border-t border-gray-100 p-3">
+          <div className="flex items-center gap-2 border-t border-champagne/15 p-3">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Message the admin..."
-              className="flex-1 rounded-full border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="flex-1 rounded-full border border-champagne/20 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
               onClick={handleSend}
