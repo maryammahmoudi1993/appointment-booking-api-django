@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from apps.appointments.models import Appointment
+from apps.engagement.models import Review
 from apps.services.models import Service
 from apps.staff.models import StaffProfile, TimeOff, WorkingHours
 from core.business import get_default_business
@@ -98,3 +99,15 @@ class AppointmentFactory(factory.django.DjangoModelFactory):
     )
     status = "pending"
     notes = factory.Faker("sentence")
+
+
+class ReviewFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Review
+
+    appointment = factory.SubFactory(AppointmentFactory)
+    customer = factory.SubFactory(CustomerFactory)
+    staff = factory.SubFactory(StaffFactory)
+    business = factory.LazyFunction(get_default_business)
+    rating = 4
+    comment = factory.Faker("sentence")

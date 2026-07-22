@@ -632,6 +632,40 @@ def execute_confirm_cancellation(**kwargs):
 
 
 # ────────────────────────────────────────────────────────────────────
+# Recommendations
+# ────────────────────────────────────────────────────────────────────
+
+
+def execute_recommend_services(user, **kwargs):
+    """Recommend services to a customer using hybrid weighted scoring."""
+    from apps.ai.recommender import recommend_services
+
+    business = _get_business(user)
+    top_n = min(int(kwargs.get("top_n", 5)), 20)
+    customer_id = user.id if user and user.is_authenticated else None
+
+    results = recommend_services(
+        customer_id=customer_id,
+        business_id=business.id if business else None,
+        top_n=top_n,
+    )
+
+    return {
+        "recommendations": [
+            {
+                "service_id": r.service_id,
+                "service_name": r.service_name,
+                "score": r.total_score,
+                "factors": r.factors,
+                "explanation": r.explanation,
+            }
+            for r in results
+        ],
+        "count": len(results),
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
 # Registry
 # ────────────────────────────────────────────────────────────────────
 
@@ -821,6 +855,25 @@ TOOL_DEFINITIONS = [
             "required": ["draft_id"],
         },
         "execute": execute_confirm_cancellation,
+    },
+    {
+        "name": "recommend_services",
+        "description": (
+            "Recommend services to a customer based on their booking history, "
+            "reviews, availability, and popularity. Returns ranked services "
+            "with explanations for each recommendation."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "top_n": {
+                    "type": "integer",
+                    "description": "Number of recommendations to return (default 5).",
+                },
+            },
+            "required": [],
+        },
+        "execute": execute_recommend_services,
     },
 ]
 

@@ -19,6 +19,7 @@ from apps.ai.tools import (
     execute_get_booking_draft,
     execute_get_business_info,
     execute_get_service_details,
+    execute_recommend_services,
     execute_search_services,
     execute_suggest_staff,
     execute_tool,
@@ -28,6 +29,7 @@ from apps.staff.models import StaffProfile
 from tests.factories import (
     AppointmentFactory,
     CustomerFactory,
+    ReviewFactory,
     ServiceFactory,
     StaffFactory,
     StaffProfileFactory,
@@ -46,13 +48,14 @@ class TestToolRegistry:
         "create_booking_draft", "get_booking_draft", "confirm_booking_draft",
         "create_reschedule_draft", "confirm_reschedule",
         "create_cancellation_draft", "confirm_cancellation",
+        "recommend_services",
     }
 
     def test_all_tools_registered(self):
         assert set(TOOL_MAP.keys()) == self.EXPECTED_TOOLS
 
     def test_tool_count(self):
-        assert len(TOOL_DEFINITIONS) == 14
+        assert len(TOOL_DEFINITIONS) == 15
 
     def test_every_tool_has_required_keys(self):
         for tool in TOOL_DEFINITIONS:
@@ -64,7 +67,7 @@ class TestToolRegistry:
 
     def test_get_openai_tools_format(self):
         tools = get_openai_tools()
-        assert len(tools) == 14
+        assert len(tools) == 15
         for t in tools:
             assert t["type"] == "function"
             assert "name" in t["function"]
@@ -687,6 +690,273 @@ class TestCopilotView:
             "/api/copilot/", {"message": "x" * 2001}, format="json"
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+# ────────────────────────────────────────────────────────────────
+# Service Recommendation Engine
+# ────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestRecommenderHistoryScore:
+    def test_no_history_returns_zero(self):
+        from apps.ai.recommender import _history_scores
+
+        customer = CustomerFactory()
+        svc = ServiceFactory()
+        scores = _history_scores(customer.id, svc.business_id)
+        assert scores.get(svc.id, 0.0) == 0.0
+
+    def test_booked_service_scores_higher(self):
+        from apps.ai.recommender import _history_scores
+
+        customer = CustomerFactory()
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            customer=customer,
+            staff=staff_user,
+            service=svc,
+            status="completed",
+        )
+        scores = _history_scores(customer.id, svc.business_id)
+        assert scores.get(svc.id, 0.0) > 0.0
+
+    def test_multiple_bookings_normalised(self):
+        from apps.ai.recommender import _history_scores
+
+        customer = CustomerFactory()
+        svc_a = ServiceFactory()
+        svc_b = ServiceFactory(business=svc_a.business)
+        staff_user = StaffFactory()
+
+        for _ in range(3):
+            AppointmentFactory(
+                customer=customer, staff=staff_user, service=svc_a, status="completed"
+            )
+        AppointmentFactory(
+            customer=customer, staff=staff_user, service=svc_b, status="completed"
+        )
+
+        scores = _history_scores(customer.id, svc_a.business_id)
+        assert scores[svc_a.id] == 1.0
+        assert scores[svc_b.id] == pytest.approx(1 / 3, abs=0.01)
+
+
+@pytest.mark.django_db
+class TestRecommenderRatingScore:
+    def test_no_reviews_returns_zero(self):
+        from apps.ai.recommender import _rating_scores
+
+        svc = ServiceFactory()
+        scores = _rating_scores(svc.business_id)
+        assert scores.get(svc.id, 0.0) == 0.0
+
+    def test_reviewed_service_scores_higher(self):
+        from apps.ai.recommender import _rating_scores
+
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        appt = AppointmentFactory(staff=staff_user, service=svc, status="completed")
+        ReviewFactory(appointment=appt, staff=staff_user, rating=4)
+
+        scores = _rating_scores(svc.business_id)
+        assert scores[svc.id] == pytest.approx(4 / 5, abs=0.01)
+
+
+@pytest.mark.django_db
+class TestRecommenderPopularityScore:
+    def test_more_bookings_higher_score(self):
+        from apps.ai.recommender import _popularity_scores
+
+        svc_a = ServiceFactory()
+        svc_b = ServiceFactory(business=svc_a.business)
+        staff_user = StaffFactory()
+
+        for _ in range(5):
+            AppointmentFactory(
+                staff=staff_user, service=svc_a, status="completed"
+            )
+        AppointmentFactory(
+            staff=staff_user, service=svc_b, status="completed"
+        )
+
+        scores = _popularity_scores(svc_a.business_id)
+        assert scores[svc_a.id] == 1.0
+        assert scores[svc_b.id] == pytest.approx(0.2, abs=0.01)
+
+
+@pytest.mark.django_db
+class TestRecommenderRecencyScore:
+    def test_recent_booking_scores_higher(self):
+        from apps.ai.recommender import _recency_scores
+
+        customer = CustomerFactory()
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            customer=customer,
+            staff=staff_user,
+            service=svc,
+            status="completed",
+            start_datetime=timezone.now() - timedelta(days=1),
+        )
+
+        scores = _recency_scores(customer.id, svc.business_id)
+        assert scores.get(svc.id, 0.0) > 0.8
+
+    def test_old_booking_scores_lower(self):
+        from apps.ai.recommender import _recency_scores
+
+        customer = CustomerFactory()
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            customer=customer,
+            staff=staff_user,
+            service=svc,
+            status="completed",
+            start_datetime=timezone.now() - timedelta(days=60),
+        )
+
+        scores = _recency_scores(customer.id, svc.business_id)
+        assert 0.0 < scores.get(svc.id, 0.0) < 0.5
+
+
+@pytest.mark.django_db
+class TestRecommendServices:
+    def test_returns_empty_when_no_services(self):
+        from apps.ai.recommender import recommend_services
+
+        results = recommend_services(business_id=99999)
+        assert results == []
+
+    def test_returns_active_services_only(self):
+        from apps.ai.recommender import recommend_services
+
+        svc = ServiceFactory(is_active=True)
+        ServiceFactory(is_active=False, business=svc.business)
+        results = recommend_services(business_id=svc.business_id, top_n=10)
+        assert len(results) == 1
+        assert results[0].service_id == svc.id
+
+    def test_top_n_limits_results(self):
+        from apps.ai.recommender import recommend_services
+
+        for _ in range(10):
+            ServiceFactory()
+        results = recommend_services(top_n=3)
+        assert len(results) == 3
+
+    def test_sorted_by_score_desc(self):
+        from apps.ai.recommender import recommend_services
+
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(staff=staff_user, service=svc, status="completed")
+        AppointmentFactory(staff=staff_user, service=svc, status="completed")
+        ServiceFactory(business=svc.business)
+
+        results = recommend_services(business_id=svc.business_id)
+        scores = [r.total_score for r in results]
+        assert scores == sorted(scores, reverse=True)
+
+    def test_explanation_included(self):
+        from apps.ai.recommender import recommend_services
+
+        svc = ServiceFactory()
+        results = recommend_services(business_id=svc.business_id, top_n=1)
+        assert len(results) == 1
+        assert isinstance(results[0].explanation, str)
+        assert len(results[0].explanation) > 0
+
+    def test_factors_present(self):
+        from apps.ai.recommender import recommend_services
+
+        svc = ServiceFactory()
+        results = recommend_services(business_id=svc.business_id, top_n=1)
+        factors = results[0].factors
+        assert "history" in factors
+        assert "rating" in factors
+        assert "availability" in factors
+        assert "popularity" in factors
+        assert "recency" in factors
+
+    def test_guest_user_no_history_recency(self):
+        from apps.ai.recommender import recommend_services
+
+        svc = ServiceFactory()
+        results = recommend_services(customer_id=None, business_id=svc.business_id, top_n=1)
+        assert len(results) == 1
+        assert results[0].factors["history"] == 0.0
+        assert results[0].factors["recency"] == 0.0
+
+    def test_customer_with_bookings_gets_history_score(self):
+        from apps.ai.recommender import recommend_services
+
+        customer = CustomerFactory()
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            customer=customer, staff=staff_user, service=svc, status="completed"
+        )
+        results = recommend_services(
+            customer_id=customer.id, business_id=svc.business_id, top_n=5
+        )
+        svc_result = next((r for r in results if r.service_id == svc.id), None)
+        assert svc_result is not None
+        assert svc_result.factors["history"] > 0.0
+
+    def test_custom_weights_affect_score(self):
+        from apps.ai.recommender import recommend_services
+
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            staff=staff_user, service=svc, status="completed"
+        )
+
+        results_default = recommend_services(business_id=svc.business_id, top_n=1)
+        results_custom = recommend_services(
+            business_id=svc.business_id,
+            top_n=1,
+            weights={"popularity": 1.0, "history": 0, "rating": 0, "availability": 0, "recency": 0},
+        )
+        assert results_default[0].total_score != results_custom[0].total_score
+
+
+@pytest.mark.django_db
+class TestExecuteRecommendServices:
+    def test_returns_recommendations(self):
+        ServiceFactory()
+        result = execute_recommend_services(user=None, top_n=3)
+        assert "recommendations" in result
+        assert result["count"] <= 3
+
+    def test_authenticated_user(self, customer):
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            customer=customer, staff=staff_user, service=svc, status="completed"
+        )
+        result = execute_recommend_services(user=customer, top_n=5)
+        assert result["count"] >= 1
+        rec = result["recommendations"][0]
+        assert "service_id" in rec
+        assert "score" in rec
+        assert "explanation" in rec
+
+    def test_top_n_capped_at_20(self):
+        result = execute_recommend_services(user=None, top_n=100)
+        assert result["count"] <= 20
+
+    def test_tool_in_registry(self):
+        from apps.ai.tools import TOOL_MAP
+
+        assert "recommend_services" in TOOL_MAP
+        tool = TOOL_MAP["recommend_services"]
+        assert "execute" in tool
+        assert callable(tool["execute"])
 
 
 # ────────────────────────────────────────────────────────────────
