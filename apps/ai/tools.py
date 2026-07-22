@@ -708,6 +708,291 @@ def execute_forecast_revenue(user, **kwargs):
 
 
 # ────────────────────────────────────────────────────────────────────
+# Admin Analytics Tools
+# ────────────────────────────────────────────────────────────────────
+
+
+def execute_get_revenue_analytics(user, **kwargs):
+    """Get revenue analytics: total revenue, average ticket, monthly breakdown."""
+    from decimal import Decimal
+
+    from django.db.models import Count, Sum
+    from django.db.models.functions import TruncMonth
+
+    from apps.appointments.models import Appointment
+
+    business = _get_business(user)
+    qs = Appointment.objects.filter(status="completed")
+    if business:
+        qs = qs.filter(business=business)
+
+    qs = qs.select_related("service")
+
+    total_revenue = qs.aggregate(total=Sum("service__price"))["total"] or Decimal("0.00")
+    total_bookings = qs.count()
+    average_ticket = total_revenue / total_bookings if total_bookings else Decimal("0.00")
+
+    monthly = (
+        qs.annotate(period=TruncMonth("start_datetime"))
+        .values("period")
+        .annotate(revenue=Sum("service__price"), bookings=Count("id"))
+        .order_by("period")
+    )
+
+    return {
+        "total_revenue": str(total_revenue),
+        "total_bookings": total_bookings,
+        "average_ticket": str(round(average_ticket, 2)),
+        "revenue_by_period": [
+            {
+                "period": p["period"].strftime("%Y-%m") if p["period"] else "unknown",
+                "revenue": str(p["revenue"]),
+                "bookings": p["bookings"],
+            }
+            for p in monthly
+        ],
+    }
+
+
+def execute_get_staff_analytics(user, **kwargs):
+    """Get staff analytics: booking counts, revenue, and ratings per staff member."""
+    from decimal import Decimal
+
+    from django.db.models import Avg, Count, Q, Sum
+
+    from apps.appointments.models import Appointment
+    from apps.engagement.models import Review
+    from apps.staff.models import StaffProfile
+
+    business = _get_business(user)
+    qs = Appointment.objects.all()
+    if business:
+        qs = qs.filter(business=business)
+
+    staff_ids = StaffProfile.objects.filter(business=business).values_list(
+        "user_id", flat=True
+    ) if business else StaffProfile.objects.all().values_list("user_id", flat=True)
+
+    staff_data = (
+        qs.filter(staff_id__in=staff_ids)
+        .values("staff_id", "staff__first_name", "staff__last_name", "staff__username")
+        .annotate(
+            total_bookings=Count("id"),
+            completed=Count("id", filter=Q(status="completed")),
+            revenue=Sum("service__price", filter=Q(status="completed")),
+        )
+        .order_by("-total_bookings")
+    )
+
+    review_map = {}
+    if business:
+        for r in (
+            Review.objects.filter(staff_id__in=list(staff_ids), business=business)
+            .values("staff_id")
+            .annotate(avg_rating=Avg("rating"), count=Count("id"))
+        ):
+            review_map[r["staff_id"]] = r
+
+    return {
+        "staff": [
+            {
+                "staff_id": s["staff_id"],
+                "name": f"{s['staff__first_name']} {s['staff__last_name']}".strip() or s["staff__username"],
+                "total_bookings": s["total_bookings"],
+                "completed": s["completed"],
+                "revenue": str(s["revenue"] or Decimal("0.00")),
+                "average_rating": round(
+                    review_map.get(s["staff_id"], {}).get("avg_rating", 0) or 0, 2
+                ),
+                "review_count": review_map.get(s["staff_id"], {}).get("count", 0),
+            }
+            for s in staff_data
+        ]
+    }
+
+
+def execute_get_service_analytics(user, **kwargs):
+    """Get service analytics: booking counts, revenue, ratings per service."""
+    from decimal import Decimal
+
+    from django.db.models import Avg, Count, Q, Sum
+
+    from apps.appointments.models import Appointment
+    from apps.engagement.models import Review
+
+    business = _get_business(user)
+    qs = Appointment.objects.all()
+    if business:
+        qs = qs.filter(business=business)
+
+    service_data = (
+        qs.values("service_id", "service__name", "service__duration_minutes")
+        .annotate(
+            total_bookings=Count("id"),
+            completed=Count("id", filter=Q(status="completed")),
+            revenue=Sum("service__price", filter=Q(status="completed")),
+        )
+        .order_by("-total_bookings")
+    )
+
+    service_ids = [s["service_id"] for s in service_data]
+    review_map = {}
+    if business:
+        for r in (
+            Review.objects.filter(
+                appointment__service_id__in=service_ids, business=business
+            )
+            .values("appointment__service_id")
+            .annotate(avg_rating=Avg("rating"), count=Count("id"))
+        ):
+            review_map[r["appointment__service_id"]] = r
+
+    return {
+        "services": [
+            {
+                "service_id": s["service_id"],
+                "name": s["service__name"],
+                "total_bookings": s["total_bookings"],
+                "completed": s["completed"],
+                "revenue": str(s["revenue"] or Decimal("0.00")),
+                "average_rating": round(
+                    review_map.get(s["service_id"], {}).get("avg_rating", 0) or 0, 2
+                ),
+                "duration_minutes": s["service__duration_minutes"],
+            }
+            for s in service_data
+        ]
+    }
+
+
+def execute_get_booking_analytics(user, **kwargs):
+    """Get aggregate booking stats: totals, completion/cancellation rates."""
+    from django.db.models import Count
+
+    from apps.appointments.models import Appointment
+
+    business = _get_business(user)
+    qs = Appointment.objects.all()
+    if business:
+        qs = qs.filter(business=business)
+
+    total = qs.count()
+    status_counts = dict(
+        qs.values_list("status").annotate(c=Count("id")).values_list("status", "c")
+    )
+    completed = status_counts.get("completed", 0)
+    cancelled = status_counts.get("cancelled", 0)
+    completion_rate = round((completed / total * 100) if total else 0, 2)
+    cancellation_rate = round((cancelled / total * 100) if total else 0, 2)
+
+    return {
+        "total": total,
+        "pending": status_counts.get("pending", 0),
+        "confirmed": status_counts.get("confirmed", 0),
+        "cancelled": cancelled,
+        "completed": completed,
+        "completion_rate": completion_rate,
+        "cancellation_rate": cancellation_rate,
+    }
+
+
+def execute_get_top_services(user, **kwargs):
+    """Get top services ranked by booking count or revenue."""
+    from django.db.models import Count, Sum
+
+    from apps.appointments.models import Appointment
+
+    business = _get_business(user)
+    qs = Appointment.objects.filter(status="completed")
+    if business:
+        qs = qs.filter(business=business)
+
+    top_n = min(int(kwargs.get("top_n", 5)), 20)
+    rank_by = kwargs.get("rank_by", "bookings")
+    if rank_by not in ("bookings", "revenue"):
+        rank_by = "bookings"
+
+    order = "-total_bookings" if rank_by == "bookings" else "-total_revenue"
+
+    services = (
+        qs.values("service_id", "service__name")
+        .annotate(
+            total_bookings=Count("id"),
+            total_revenue=Sum("service__price"),
+        )
+        .order_by(order)[:top_n]
+    )
+
+    return {
+        "services": [
+            {
+                "service_id": s["service_id"],
+                "name": s["service__name"],
+                "total_bookings": s["total_bookings"],
+                "total_revenue": str(s["total_revenue"] or Decimal("0.00")),
+            }
+            for s in services
+        ]
+    }
+
+
+def execute_get_staff_performance(user, **kwargs):
+    """Get detailed performance comparison for a specific staff member."""
+    from decimal import Decimal
+
+    from django.db.models import Avg, Count, Sum
+
+    from apps.appointments.models import Appointment
+    from apps.engagement.models import Review
+
+    staff_id = kwargs.get("staff_id")
+    if not staff_id:
+        return {"error": "staff_id is required."}
+
+    business = _get_business(user)
+    qs = Appointment.objects.filter(staff_id=staff_id)
+    if business:
+        qs = qs.filter(business=business)
+
+    total = qs.count()
+    completed = qs.filter(status="completed").count()
+    cancelled = qs.filter(status="cancelled").count()
+    revenue = qs.filter(status="completed").aggregate(
+        total=Sum("service__price")
+    )["total"] or Decimal("0.00")
+
+    review_qs = Review.objects.filter(staff_id=staff_id)
+    if business:
+        review_qs = review_qs.filter(business=business)
+
+    review_stats = review_qs.aggregate(
+        avg_rating=Avg("rating"), count=Count("id")
+    )
+
+    service_breakdown = (
+        qs.filter(status="completed")
+        .values("service__name")
+        .annotate(count=Count("id"), rev=Sum("service__price"))
+        .order_by("-count")
+    )
+
+    return {
+        "staff_id": staff_id,
+        "total_bookings": total,
+        "completed": completed,
+        "cancelled": cancelled,
+        "completion_rate": round((completed / total * 100) if total else 0, 2),
+        "total_revenue": str(revenue),
+        "average_rating": round(review_stats.get("avg_rating", 0) or 0, 2),
+        "review_count": review_stats.get("count", 0),
+        "top_services": [
+            {"name": s["service__name"], "bookings": s["count"], "revenue": str(s["rev"] or Decimal("0.00"))}
+            for s in service_breakdown[:5]
+        ],
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
 # Recommendations
 # ────────────────────────────────────────────────────────────────────
 
@@ -991,6 +1276,99 @@ TOOL_DEFINITIONS = [
             "required": [],
         },
         "execute": execute_forecast_revenue,
+    },
+    {
+        "name": "get_revenue_analytics",
+        "description": (
+            "Get revenue analytics including total revenue, average ticket size, "
+            "and monthly breakdown. Admin-only tool for business analytics."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        "execute": execute_get_revenue_analytics,
+    },
+    {
+        "name": "get_staff_analytics",
+        "description": (
+            "Get staff analytics including booking counts, revenue per staff, "
+            "and average ratings. Admin-only tool for staff performance tracking."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        "execute": execute_get_staff_analytics,
+    },
+    {
+        "name": "get_service_analytics",
+        "description": (
+            "Get service analytics including booking counts, revenue per service, "
+            "and average ratings. Admin-only tool for service performance tracking."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        "execute": execute_get_service_analytics,
+    },
+    {
+        "name": "get_booking_analytics",
+        "description": (
+            "Get aggregate booking statistics including totals, completion rates, "
+            "and cancellation rates. Admin-only tool for booking overview."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        },
+        "execute": execute_get_booking_analytics,
+    },
+    {
+        "name": "get_top_services",
+        "description": (
+            "Get top services ranked by booking count or revenue. "
+            "Admin-only tool for identifying most popular or profitable services."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "top_n": {
+                    "type": "integer",
+                    "description": "Number of services to return (default 5, max 20).",
+                },
+                "rank_by": {
+                    "type": "string",
+                    "enum": ["bookings", "revenue"],
+                    "description": "Rank by bookings or revenue (default bookings).",
+                },
+            },
+            "required": [],
+        },
+        "execute": execute_get_top_services,
+    },
+    {
+        "name": "get_staff_performance",
+        "description": (
+            "Get detailed performance for a specific staff member including "
+            "bookings, revenue, ratings, and top services."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "staff_id": {
+                    "type": "integer",
+                    "description": "The staff member's user ID.",
+                },
+            },
+            "required": ["staff_id"],
+        },
+        "execute": execute_get_staff_performance,
     },
 ]
 

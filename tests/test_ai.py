@@ -50,13 +50,15 @@ class TestToolRegistry:
         "create_reschedule_draft", "confirm_reschedule",
         "create_cancellation_draft", "confirm_cancellation",
         "recommend_services", "predict_no_show", "forecast_revenue",
+        "get_revenue_analytics", "get_staff_analytics", "get_service_analytics",
+        "get_booking_analytics", "get_top_services", "get_staff_performance",
     }
 
     def test_all_tools_registered(self):
         assert set(TOOL_MAP.keys()) == self.EXPECTED_TOOLS
 
     def test_tool_count(self):
-        assert len(TOOL_DEFINITIONS) == 17
+        assert len(TOOL_DEFINITIONS) == 23
 
     def test_every_tool_has_required_keys(self):
         for tool in TOOL_DEFINITIONS:
@@ -68,7 +70,7 @@ class TestToolRegistry:
 
     def test_get_openai_tools_format(self):
         tools = get_openai_tools()
-        assert len(tools) == 17
+        assert len(tools) == 23
         for t in tools:
             assert t["type"] == "function"
             assert "name" in t["function"]
@@ -694,6 +696,36 @@ class TestCopilotView:
 
 
 # ────────────────────────────────────────────────────────────────
+# Admin Copilot View
+# ────────────────────────────────────────────────────────────────
+
+
+class TestAdminCopilotView:
+    def test_unauthenticated_gets_401(self, client):
+        response = client.post("/api/admin/copilot/", {"message": "Hi"}, format="json")
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_non_admin_gets_403(self, auth_client):
+        response = auth_client.post("/api/admin/copilot/", {"message": "Hi"}, format="json")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    @patch("apps.ai.views.admin_chat")
+    def test_admin_post_returns_reply(self, mock_chat, admin_client):
+        from apps.ai.admin_copilot import AdminCopilotResponse
+
+        mock_chat.return_value = AdminCopilotResponse(reply="Revenue is up", tool_calls_made=[])
+        response = admin_client.post("/api/admin/copilot/", {"message": "Show revenue"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert "reply" in response.json()
+        mock_chat.assert_called_once()
+
+    @patch("apps.ai.views.admin_chat")
+    def test_empty_message_rejected(self, mock_chat, admin_client):
+        response = admin_client.post("/api/admin/copilot/", {"message": ""}, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+# ────────────────────────────────────────────────────────────────
 # Service Recommendation Engine
 # ────────────────────────────────────────────────────────────────
 
@@ -1211,6 +1243,112 @@ class TestExecuteForecastRevenue:
         tool = TOOL_MAP["forecast_revenue"]
         assert "execute" in tool
         assert callable(tool["execute"])
+
+
+# ────────────────────────────────────────────────────────────────
+# Admin Analytics Tools
+# ────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestAdminTools:
+    def test_revenue_analytics_empty(self):
+        from apps.ai.tools import execute_get_revenue_analytics
+
+        result = execute_get_revenue_analytics(user=None)
+        assert result["total_bookings"] == 0
+        assert result["total_revenue"] == "0.00"
+        assert result["average_ticket"] == "0.00"
+
+    def test_staff_analytics_empty(self):
+        from apps.ai.tools import execute_get_staff_analytics
+
+        result = execute_get_staff_analytics(user=None)
+        assert result["staff"] == []
+
+    def test_service_analytics_empty(self):
+        from apps.ai.tools import execute_get_service_analytics
+
+        result = execute_get_service_analytics(user=None)
+        assert result["services"] == []
+
+    def test_booking_analytics_empty(self):
+        from apps.ai.tools import execute_get_booking_analytics
+
+        result = execute_get_booking_analytics(user=None)
+        assert result["total"] == 0
+
+    def test_top_services_empty(self):
+        from apps.ai.tools import execute_get_top_services
+
+        result = execute_get_top_services(user=None)
+        assert result["services"] == []
+
+    def test_staff_performance_requires_staff_id(self):
+        from apps.ai.tools import execute_get_staff_performance
+
+        result = execute_get_staff_performance(user=None)
+        assert "error" in result
+
+    def test_staff_performance_not_found(self):
+        from apps.ai.tools import execute_get_staff_performance
+
+        result = execute_get_staff_performance(user=None, staff_id=99999)
+        assert result["total_bookings"] == 0
+
+
+@pytest.mark.django_db
+class TestAdminToolsWithData:
+    def test_revenue_analytics_with_data(self, staff_user):
+        from decimal import Decimal
+
+        from apps.ai.tools import execute_get_revenue_analytics
+
+        service = ServiceFactory(price=Decimal("50.00"))
+        AppointmentFactory(
+            status="completed",
+            service=service,
+            business=service.business,
+        )
+        result = execute_get_revenue_analytics(user=None)
+        assert result["total_bookings"] == 1
+
+    def test_staff_analytics_with_data(self):
+        from apps.ai.tools import execute_get_staff_analytics
+
+        staff = StaffFactory()
+        StaffProfileFactory(user=staff)
+        AppointmentFactory(
+            status="completed",
+            staff=staff,
+            business=staff.staff_profile.business,
+        )
+        result = execute_get_staff_analytics(user=staff)
+        assert len(result["staff"]) >= 1
+
+    def test_booking_analytics_with_data(self):
+        from apps.ai.tools import execute_get_booking_analytics
+
+        AppointmentFactory(status="completed")
+        result = execute_get_booking_analytics(user=None)
+        assert result["total"] == 1
+        assert result["completed"] == 1
+
+    def test_top_services_with_data(self):
+        from apps.ai.tools import execute_get_top_services
+
+        service = ServiceFactory()
+        AppointmentFactory(status="completed", service=service, business=service.business)
+        result = execute_get_top_services(user=None, top_n=3)
+        assert len(result["services"]) == 1
+
+    def test_staff_performance_with_data(self):
+        from apps.ai.tools import execute_get_staff_performance
+
+        staff = StaffFactory()
+        AppointmentFactory(status="completed", staff=staff)
+        result = execute_get_staff_performance(user=None, staff_id=staff.id)
+        assert result["total_bookings"] == 1
 
 
 # ────────────────────────────────────────────────────────────────
