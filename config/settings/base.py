@@ -136,6 +136,8 @@ REST_FRAMEWORK = {
         "anon": "200/hour",
         "user": "1000/hour",
         "auth": "10/minute",
+        "copilot": "30/hour",
+        "admin-copilot": "60/hour",
     },
 }
 
