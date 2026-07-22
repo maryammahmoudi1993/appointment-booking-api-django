@@ -21,6 +21,7 @@ class CopilotView(generics.GenericAPIView):
         result = chat(
             user_message=serializer.validated_data["message"],
             user=request.user,
+            conversation_id=serializer.validated_data.get("conversation_id"),
         )
 
         return Response(
@@ -28,6 +29,7 @@ class CopilotView(generics.GenericAPIView):
                 {
                     "reply": result.reply,
                     "tool_calls_made": result.tool_calls_made,
+                    "conversation_id": result.conversation_id,
                 }
             ).data
         )

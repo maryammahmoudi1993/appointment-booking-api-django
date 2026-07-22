@@ -11,16 +11,20 @@ The LLM never touches Django models directly — it only sees the data
 these functions return.
 """
 
-from datetime import date
+from datetime import date, timedelta
+from decimal import Decimal
+
+from django.utils import timezone
 
 
 def _get_business(user):
     """Resolve the business for the current user."""
     from apps.business.models import BusinessMembership
 
-    membership = BusinessMembership.objects.filter(user=user).first()
-    if membership:
-        return membership.business
+    if user and user.is_authenticated:
+        membership = BusinessMembership.objects.filter(user=user).first()
+        if membership:
+            return membership.business
     from apps.business.models import Business
 
     return Business.objects.filter(is_active=True).first()
@@ -46,20 +50,37 @@ def _serialize_staff(sp):
 
 
 # ────────────────────────────────────────────────────────────────────
-# Tool implementations
+# Informational tools (read-only)
 # ────────────────────────────────────────────────────────────────────
 
 
-def execute_get_services(**kwargs):
+def execute_search_services(**kwargs):
     from apps.services.models import Service
 
     business = _get_business(kwargs.get("user"))
     qs = Service.objects.filter(is_active=True)
     if business:
         qs = qs.filter(business=business)
-    if kwargs.get("category"):
-        qs = qs.filter(category=kwargs["category"])
-    return {"services": [_serialize_service(s) for s in qs[:20]]}
+    query = kwargs.get("query", "")
+    if query:
+        qs = qs.filter(name__icontains=query)
+    category = kwargs.get("category")
+    if category:
+        qs = qs.filter(category__icontains=category)
+    return {"services": [_serialize_service(s) for s in qs[:10]]}
+
+
+def execute_get_service_details(**kwargs):
+    from apps.services.models import Service
+
+    service_id = kwargs.get("service_id")
+    if not service_id:
+        return {"error": "service_id is required."}
+    try:
+        s = Service.objects.get(id=service_id, is_active=True)
+    except Service.DoesNotExist:
+        return {"error": f"Service {service_id} not found."}
+    return _serialize_service(s)
 
 
 def execute_get_staff(**kwargs):
@@ -69,17 +90,37 @@ def execute_get_staff(**kwargs):
     qs = StaffProfile.objects.select_related("user").all()
     if business:
         qs = qs.filter(business=business)
-    if kwargs.get("service_name"):
-        qs = qs.filter(services_offered__name__icontains=kwargs["service_name"])
+    service_name = kwargs.get("service_name")
+    if service_name:
+        qs = qs.filter(services_offered__name__icontains=service_name)
     return {"staff": [_serialize_staff(sp) for sp in qs[:20]]}
 
 
-def execute_get_available_slots(**kwargs):
+def execute_suggest_staff(**kwargs):
+    from apps.staff.models import StaffProfile
+
+    service_id = kwargs.get("service_id")
+    if not service_id:
+        return {"error": "service_id is required."}
+    business = _get_business(kwargs.get("user"))
+    qs = StaffProfile.objects.select_related("user").filter(
+        services_offered__id=service_id
+    )
+    if business:
+        qs = qs.filter(business=business)
+    return {"staff": [_serialize_staff(sp) for sp in qs[:10]]}
+
+
+def execute_find_available_slots(**kwargs):
     from apps.staff.models import StaffProfile
     from apps.staff.services import get_available_slots
 
-    staff_id = kwargs["staff_id"]
-    target = kwargs["date"]
+    service_id = kwargs.get("service_id")
+    target = kwargs.get("date")
+    staff_id = kwargs.get("staff_id")
+
+    if not service_id or not target:
+        return {"error": "service_id and date are required."}
 
     if isinstance(target, str):
         try:
@@ -87,21 +128,49 @@ def execute_get_available_slots(**kwargs):
         except ValueError:
             return {"error": f"Invalid date format: {target}. Use YYYY-MM-DD."}
 
-    sp = StaffProfile.objects.filter(user_id=staff_id).first()
-    business = sp.business if sp else None
-    business_settings = getattr(business, "settings", None) if business else None
+    from apps.services.models import Service
 
-    slots = get_available_slots(staff_id, target, business_settings)
-    available = [s for s in slots if s["available"]]
-    return {
-        "date": target.isoformat(),
-        "staff_id": staff_id,
-        "available_slots": [
-            {"start": s["start"].strftime("%H:%M"), "end": s["end"].strftime("%H:%M")}
-            for s in available
-        ],
-        "total_available": len(available),
-    }
+    try:
+        service = Service.objects.get(id=service_id, is_active=True)
+    except Service.DoesNotExist:
+        return {"error": f"Service {service_id} not found."}
+
+    staff_ids = []
+    if staff_id:
+        staff_ids = [staff_id]
+    else:
+        staff_ids = list(
+            StaffProfile.objects.filter(services_offered__id=service_id).values_list(
+                "user_id", flat=True
+            )
+        )
+
+    results = []
+    for sid in staff_ids:
+        sp = StaffProfile.objects.filter(user_id=sid).first()
+        business = sp.business if sp else None
+        bs = getattr(business, "settings", None) if business else None
+        slots = get_available_slots(sid, target, bs)
+        available = [s for s in slots if s["available"]]
+        staff_name = ""
+        if sp:
+            staff_name = sp.user.get_full_name() or sp.user.username
+        results.append(
+            {
+                "staff_id": sid,
+                "staff_name": staff_name,
+                "date": target.isoformat(),
+                "available_slots": [
+                    {
+                        "start": s["start"].strftime("%H:%M"),
+                        "end": s["end"].strftime("%H:%M"),
+                    }
+                    for s in available
+                ],
+                "total_available": len(available),
+            }
+        )
+    return {"results": results, "service": _serialize_service(service)}
 
 
 def execute_get_appointments(**kwargs):
@@ -138,7 +207,6 @@ def execute_get_business_info(**kwargs):
     business = _get_business(kwargs.get("user"))
     if not business:
         return {"error": "No business information available."}
-
     return {
         "name": business.name,
         "type": business.get_business_type_display(),
@@ -151,82 +219,500 @@ def execute_get_business_info(**kwargs):
 
 
 # ────────────────────────────────────────────────────────────────────
+# Side-effecting tools (create drafts, confirm, cancel)
+# ────────────────────────────────────────────────────────────────────
+
+
+DRAFT_EXPIRY_MINUTES = 15
+
+
+def execute_create_booking_draft(**kwargs):
+    from apps.ai.models import BookingDraft, Conversation
+    from apps.services.models import Service
+    from apps.staff.models import StaffProfile
+
+    user = kwargs.get("user")
+    if not user or not user.is_authenticated:
+        return {"error": "Authentication required to create a booking draft."}
+
+    service_id = kwargs.get("service_id")
+    staff_id = kwargs.get("staff_id")
+    date_str = kwargs.get("date")
+    start_time = kwargs.get("start_time")
+
+    if not all([service_id, staff_id, date_str, start_time]):
+        return {
+            "error": "service_id, staff_id, date, and start_time are required."
+        }
+
+    try:
+        service = Service.objects.get(id=service_id, is_active=True)
+    except Service.DoesNotExist:
+        return {"error": f"Service {service_id} not found."}
+
+    if not StaffProfile.objects.filter(user_id=staff_id).exists():
+        return {"error": f"Staff {staff_id} not found."}
+
+    try:
+        target_date = date.fromisoformat(date_str)
+    except ValueError:
+        return {"error": f"Invalid date format: {date_str}. Use YYYY-MM-DD."}
+
+    parts = start_time.split(":")
+    hour, minute = int(parts[0]), int(parts[1])
+    start_dt = timezone.make_aware(
+        timezone.datetime.combine(target_date, timezone.datetime.min.time().replace(hour=hour, minute=minute))
+    )
+    end_dt = start_dt + timedelta(minutes=service.duration_minutes)
+
+    business = _get_business(user)
+
+    conversation_id = kwargs.get("conversation_id")
+    conversation = None
+    if conversation_id:
+        try:
+            conversation = Conversation.objects.get(
+                id=conversation_id, user=user
+            )
+        except Conversation.DoesNotExist:
+            pass
+
+    draft = BookingDraft.objects.create(
+        conversation=conversation,
+        user=user,
+        business=business,
+        service=service,
+        staff_id=staff_id,
+        start_datetime=start_dt,
+        end_datetime=end_dt,
+        price=service.price,
+        expires_at=timezone.now() + timedelta(minutes=DRAFT_EXPIRY_MINUTES),
+    )
+
+    staff_sp = StaffProfile.objects.filter(user_id=staff_id).select_related("user").first()
+    staff_name = staff_sp.user.get_full_name() or staff_sp.user.username if staff_sp else "Unknown"
+
+    return {
+        "draft_id": str(draft.id),
+        "service": service.name,
+        "staff": staff_name,
+        "staff_id": staff_id,
+        "date": target_date.isoformat(),
+        "start_time": start_time,
+        "end_time": end_dt.strftime("%H:%M"),
+        "price": str(service.price),
+        "expires_in_minutes": DRAFT_EXPIRY_MINUTES,
+        "message": (
+            f"Booking proposal created. Please confirm: "
+            f"{service.name} with {staff_name} on {target_date.isoformat()} "
+            f"at {start_time}-{end_dt.strftime('%H:%M')} for ${service.price}. "
+            f"This proposal expires in {DRAFT_EXPIRY_MINUTES} minutes."
+        ),
+    }
+
+
+def execute_get_booking_draft(**kwargs):
+    from apps.ai.models import BookingDraft
+
+    draft_id = kwargs.get("draft_id")
+    if not draft_id:
+        return {"error": "draft_id is required."}
+
+    try:
+        draft = BookingDraft.objects.select_related(
+            "service", "staff", "user"
+        ).get(id=draft_id)
+    except BookingDraft.DoesNotExist:
+        return {"error": "Draft not found."}
+
+    if draft.is_expired() and draft.status == "pending":
+        draft.status = "expired"
+        draft.save(update_fields=["status"])
+
+    staff_name = draft.staff.get_full_name() or draft.staff.username
+
+    return {
+        "draft_id": str(draft.id),
+        "service": draft.service.name,
+        "staff": staff_name,
+        "staff_id": draft.staff_id,
+        "date": draft.start_datetime.date().isoformat(),
+        "start_time": draft.start_datetime.strftime("%H:%M"),
+        "end_time": draft.end_datetime.strftime("%H:%M"),
+        "price": str(draft.price),
+        "status": draft.status,
+        "is_expired": draft.is_expired(),
+    }
+
+
+def execute_confirm_booking_draft(**kwargs):
+    from apps.ai.models import BookingDraft
+
+    draft_id = kwargs.get("draft_id")
+    if not draft_id:
+        return {"error": "draft_id is required."}
+
+    user = kwargs.get("user")
+    if not user or not user.is_authenticated:
+        return {"error": "Authentication required."}
+
+    try:
+        draft = BookingDraft.objects.select_related(
+            "service", "staff"
+        ).get(id=draft_id, user=user)
+    except BookingDraft.DoesNotExist:
+        return {"error": "Draft not found."}
+
+    if draft.is_expired():
+        draft.status = "expired"
+        draft.save(update_fields=["status"])
+        return {"error": "This booking draft has expired. Please start a new booking."}
+
+    if draft.status != "pending":
+        return {"error": f"Draft is already {draft.status}."}
+
+    appointment, error = draft.confirm()
+    if error:
+        return {"error": error}
+
+    staff_name = draft.staff.get_full_name() or draft.staff.username
+    return {
+        "success": True,
+        "appointment_id": appointment.id,
+        "service": draft.service.name,
+        "staff": staff_name,
+        "date": appointment.start_datetime.date().isoformat(),
+        "start_time": appointment.start_datetime.strftime("%H:%M"),
+        "end_time": appointment.end_datetime.strftime("%H:%M"),
+        "status": appointment.status,
+        "message": (
+            f"Booking confirmed! Your appointment #{appointment.id}: "
+            f"{draft.service.name} with {staff_name} on "
+            f"{appointment.start_datetime.date().isoformat()} at "
+            f"{appointment.start_datetime.strftime('%H:%M')}."
+        ),
+    }
+
+
+def execute_create_reschedule_draft(**kwargs):
+    from apps.ai.models import BookingDraft, Conversation
+    from apps.appointments.models import Appointment
+
+    user = kwargs.get("user")
+    if not user or not user.is_authenticated:
+        return {"error": "Authentication required."}
+
+    appointment_id = kwargs.get("appointment_id")
+    new_date = kwargs.get("new_date")
+    new_start_time = kwargs.get("new_start_time")
+
+    if not all([appointment_id, new_date, new_start_time]):
+        return {"error": "appointment_id, new_date, and new_start_time are required."}
+
+    try:
+        appt = Appointment.objects.select_related("service", "staff").get(
+            id=appointment_id, customer=user, status__in=["pending", "confirmed"]
+        )
+    except Appointment.DoesNotExist:
+        return {"error": "Appointment not found or not reschedulable."}
+
+    try:
+        target_date = date.fromisoformat(new_date)
+    except ValueError:
+        return {"error": f"Invalid date: {new_date}. Use YYYY-MM-DD."}
+
+    parts = new_start_time.split(":")
+    hour, minute = int(parts[0]), int(parts[1])
+    new_start = timezone.make_aware(
+        timezone.datetime.combine(target_date, timezone.datetime.min.time().replace(hour=hour, minute=minute))
+    )
+    new_end = new_start + timedelta(minutes=appt.service.duration_minutes)
+
+    conversation_id = kwargs.get("conversation_id")
+    conversation = None
+    if conversation_id:
+        try:
+            conversation = Conversation.objects.get(id=conversation_id, user=user)
+        except Conversation.DoesNotExist:
+            pass
+
+    draft = BookingDraft.objects.create(
+        conversation=conversation,
+        user=user,
+        business=appt.business,
+        service=appt.service,
+        staff=appt.staff,
+        start_datetime=new_start,
+        end_datetime=new_end,
+        price=appt.service.price,
+        expires_at=timezone.now() + timedelta(minutes=DRAFT_EXPIRY_MINUTES),
+        notes=f"Reschedule of appointment #{appointment_id}",
+    )
+
+    staff_name = appt.staff.get_full_name() or appt.staff.username
+    return {
+        "draft_id": str(draft.id),
+        "original_appointment_id": appointment_id,
+        "service": appt.service.name,
+        "staff": staff_name,
+        "new_date": new_date,
+        "new_start_time": new_start_time,
+        "new_end_time": new_end.strftime("%H:%M"),
+        "message": (
+            f"Reschedule proposal: {appt.service.name} with {staff_name} moved to "
+            f"{new_date} at {new_start_time}-{new_end.strftime('%H:%M')}. "
+            f"Please confirm to reschedule."
+        ),
+    }
+
+
+def execute_confirm_reschedule(**kwargs):
+    from apps.ai.models import BookingDraft
+    from apps.appointments.validators import update_appointment_atomic
+
+    draft_id = kwargs.get("draft_id")
+    if not draft_id:
+        return {"error": "draft_id is required."}
+
+    user = kwargs.get("user")
+    if not user or not user.is_authenticated:
+        return {"error": "Authentication required."}
+
+    try:
+        draft = BookingDraft.objects.get(id=draft_id, user=user)
+    except BookingDraft.DoesNotExist:
+        return {"error": "Draft not found."}
+
+    if draft.is_expired():
+        draft.status = "expired"
+        draft.save(update_fields=["status"])
+        return {"error": "Reschedule draft has expired."}
+
+    if draft.status != "pending":
+        return {"error": f"Draft is already {draft.status}."}
+
+    original_id = int(draft.notes.split("#")[-1]) if "#" in draft.notes else None
+    if not original_id:
+        return {"error": "Cannot determine original appointment."}
+
+    try:
+        appointment = update_appointment_atomic(
+            appointment_id=original_id,
+            staff_id=draft.staff_id,
+            service_id=draft.service_id,
+            start_datetime=draft.start_datetime,
+            end_datetime=draft.end_datetime,
+            changed_by=user,
+        )
+    except Exception as e:
+        return {"error": f"Reschedule failed: {e}"}
+
+    draft.status = "confirmed"
+    draft.confirmed_at = timezone.now()
+    draft.appointment = appointment
+    draft.save(update_fields=["status", "confirmed_at", "appointment_id"])
+
+    appointment.staff.get_full_name() or appointment.staff.username
+    return {
+        "success": True,
+        "appointment_id": appointment.id,
+        "message": (
+            f"Appointment #{appointment.id} rescheduled to "
+            f"{appointment.start_datetime.date().isoformat()} at "
+            f"{appointment.start_datetime.strftime('%H:%M')}."
+        ),
+    }
+
+
+def execute_create_cancellation_draft(**kwargs):
+    from apps.ai.models import BookingDraft, Conversation
+    from apps.appointments.models import Appointment
+
+    user = kwargs.get("user")
+    if not user or not user.is_authenticated:
+        return {"error": "Authentication required."}
+
+    appointment_id = kwargs.get("appointment_id")
+    if not appointment_id:
+        return {"error": "appointment_id is required."}
+
+    try:
+        appt = Appointment.objects.select_related("service", "staff").get(
+            id=appointment_id, customer=user, status__in=["pending", "confirmed"]
+        )
+    except Appointment.DoesNotExist:
+        return {"error": "Appointment not found or not cancellable."}
+
+    conversation_id = kwargs.get("conversation_id")
+    conversation = None
+    if conversation_id:
+        try:
+            conversation = Conversation.objects.get(id=conversation_id, user=user)
+        except Conversation.DoesNotExist:
+            pass
+
+    draft = BookingDraft.objects.create(
+        conversation=conversation,
+        user=user,
+        business=appt.business,
+        service=appt.service,
+        staff=appt.staff,
+        start_datetime=appt.start_datetime,
+        end_datetime=appt.end_datetime,
+        price=Decimal("0"),
+        expires_at=timezone.now() + timedelta(minutes=DRAFT_EXPIRY_MINUTES),
+        notes=f"Cancel appointment #{appointment_id}",
+    )
+
+    staff_name = appt.staff.get_full_name() or appt.staff.username
+    return {
+        "draft_id": str(draft.id),
+        "appointment_id": appointment_id,
+        "service": appt.service.name,
+        "staff": staff_name,
+        "date": appt.start_datetime.date().isoformat(),
+        "start_time": appt.start_datetime.strftime("%H:%M"),
+        "message": (
+            f"Cancel appointment #{appointment_id}: {appt.service.name} with "
+            f"{staff_name} on {appt.start_datetime.date().isoformat()} at "
+            f"{appt.start_datetime.strftime('%H:%M')}? Please confirm."
+        ),
+    }
+
+
+def execute_confirm_cancellation(**kwargs):
+    from apps.ai.models import BookingDraft
+    from apps.appointments.models import Appointment
+
+    draft_id = kwargs.get("draft_id")
+    if not draft_id:
+        return {"error": "draft_id is required."}
+
+    user = kwargs.get("user")
+    if not user or not user.is_authenticated:
+        return {"error": "Authentication required."}
+
+    try:
+        draft = BookingDraft.objects.get(id=draft_id, user=user)
+    except BookingDraft.DoesNotExist:
+        return {"error": "Draft not found."}
+
+    if draft.is_expired():
+        draft.status = "expired"
+        draft.save(update_fields=["status"])
+        return {"error": "Cancellation draft has expired."}
+
+    if draft.status != "pending":
+        return {"error": f"Draft is already {draft.status}."}
+
+    original_id = int(draft.notes.split("#")[-1]) if "#" in draft.notes else None
+    if not original_id:
+        return {"error": "Cannot determine original appointment."}
+
+    try:
+        appt = Appointment.objects.get(
+            id=original_id, customer=user, status__in=["pending", "confirmed"]
+        )
+    except Appointment.DoesNotExist:
+        return {"error": "Appointment not found."}
+
+    appt._changed_by = user
+    appt.status = "cancelled"
+    appt.save(update_fields=["status", "updated_at"])
+
+    draft.status = "confirmed"
+    draft.confirmed_at = timezone.now()
+    draft.save(update_fields=["status", "confirmed_at"])
+
+    return {
+        "success": True,
+        "appointment_id": appt.id,
+        "message": f"Appointment #{appt.id} has been cancelled.",
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
 # Registry
 # ────────────────────────────────────────────────────────────────────
 
 TOOL_DEFINITIONS = [
     {
-        "name": "get_services",
-        "description": (
-            "List available services offered by the business. "
-            "Returns name, description, duration, price, and category."
-        ),
+        "name": "search_services",
+        "description": "Search for services by name or category. Returns matching services with details.",
         "parameters": {
             "type": "object",
             "properties": {
-                "category": {
-                    "type": "string",
-                    "description": "Optional filter by service category.",
-                }
+                "query": {"type": "string", "description": "Search term for service name."},
+                "category": {"type": "string", "description": "Filter by service category."},
             },
             "required": [],
         },
-        "execute": execute_get_services,
+        "execute": execute_search_services,
     },
     {
-        "name": "get_staff",
-        "description": (
-            "List staff members. Optionally filter by service name. "
-            "Returns staff ID (for booking), name, and services offered."
-        ),
+        "name": "get_service_details",
+        "description": "Get full details for a specific service by ID.",
         "parameters": {
             "type": "object",
             "properties": {
-                "service_name": {
-                    "type": "string",
-                    "description": "Optional: filter staff who offer this service (fuzzy match).",
-                }
+                "service_id": {"type": "integer", "description": "The service ID."},
+            },
+            "required": ["service_id"],
+        },
+        "execute": execute_get_service_details,
+    },
+    {
+        "name": "get_staff",
+        "description": "List staff members. Optionally filter by service name.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "service_name": {"type": "string", "description": "Filter staff who offer this service."},
             },
             "required": [],
         },
         "execute": execute_get_staff,
     },
     {
-        "name": "get_available_slots",
+        "name": "suggest_staff",
+        "description": "Suggest staff members who offer a specific service. Use service_id.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "service_id": {"type": "integer", "description": "The service ID to find staff for."},
+            },
+            "required": ["service_id"],
+        },
+        "execute": execute_suggest_staff,
+    },
+    {
+        "name": "find_available_slots",
         "description": (
-            "Get available time slots for a specific staff member on a given date. "
-            "Returns ISO time slots (HH:MM). Use staff ID from get_staff."
+            "Find available time slots for a service on a given date. "
+            "Optionally filter by staff_id. Returns structured slot data."
         ),
         "parameters": {
             "type": "object",
             "properties": {
-                "staff_id": {
-                    "type": "integer",
-                    "description": "The staff member's user ID (from get_staff).",
-                },
-                "date": {
-                    "type": "string",
-                    "description": "The date to check availability, format YYYY-MM-DD.",
-                },
+                "service_id": {"type": "integer", "description": "The service ID."},
+                "date": {"type": "string", "description": "Date in YYYY-MM-DD format."},
+                "staff_id": {"type": "integer", "description": "Optional: specific staff member ID."},
             },
-            "required": ["staff_id", "date"],
+            "required": ["service_id", "date"],
         },
-        "execute": execute_get_available_slots,
+        "execute": execute_find_available_slots,
     },
     {
         "name": "get_appointments",
-        "description": (
-            "Get the current customer's upcoming appointments. "
-            "Returns service, staff, datetime, and status."
-        ),
+        "description": "Get the current customer's upcoming appointments.",
         "parameters": {
             "type": "object",
             "properties": {
                 "status": {
                     "type": "string",
                     "enum": ["pending", "confirmed", "cancelled", "completed"],
-                    "description": "Optional filter by appointment status.",
-                }
+                    "description": "Optional filter by status.",
+                },
             },
             "required": [],
         },
@@ -234,12 +720,107 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_business_info",
-        "description": (
-            "Get basic business information: name, type, phone, email, address, "
-            "timezone, and currency."
-        ),
+        "description": "Get business information: name, type, phone, email, timezone.",
         "parameters": {"type": "object", "properties": {}, "required": []},
         "execute": execute_get_business_info,
+    },
+    {
+        "name": "create_booking_draft",
+        "description": (
+            "Create a booking proposal (draft). This does NOT create an appointment. "
+            "The user must explicitly confirm before the booking is finalized."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "service_id": {"type": "integer", "description": "The service ID."},
+                "staff_id": {"type": "integer", "description": "The staff member's user ID."},
+                "date": {"type": "string", "description": "Date in YYYY-MM-DD format."},
+                "start_time": {"type": "string", "description": "Start time in HH:MM format."},
+                "conversation_id": {"type": "string", "description": "Optional conversation UUID."},
+            },
+            "required": ["service_id", "staff_id", "date", "start_time"],
+        },
+        "execute": execute_create_booking_draft,
+    },
+    {
+        "name": "get_booking_draft",
+        "description": "Check the status and details of an existing booking draft.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "draft_id": {"type": "string", "description": "The draft UUID."},
+            },
+            "required": ["draft_id"],
+        },
+        "execute": execute_get_booking_draft,
+    },
+    {
+        "name": "confirm_booking_draft",
+        "description": (
+            "Confirm a booking draft to create the actual appointment. "
+            "This is the ONLY way to create an appointment through the AI."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "draft_id": {"type": "string", "description": "The draft UUID to confirm."},
+            },
+            "required": ["draft_id"],
+        },
+        "execute": execute_confirm_booking_draft,
+    },
+    {
+        "name": "create_reschedule_draft",
+        "description": "Propose rescheduling an existing appointment to a new date/time.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "appointment_id": {"type": "integer", "description": "The appointment to reschedule."},
+                "new_date": {"type": "string", "description": "New date in YYYY-MM-DD format."},
+                "new_start_time": {"type": "string", "description": "New start time in HH:MM format."},
+                "conversation_id": {"type": "string", "description": "Optional conversation UUID."},
+            },
+            "required": ["appointment_id", "new_date", "new_start_time"],
+        },
+        "execute": execute_create_reschedule_draft,
+    },
+    {
+        "name": "confirm_reschedule",
+        "description": "Confirm a reschedule draft to finalize the reschedule.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "draft_id": {"type": "string", "description": "The reschedule draft UUID."},
+            },
+            "required": ["draft_id"],
+        },
+        "execute": execute_confirm_reschedule,
+    },
+    {
+        "name": "create_cancellation_draft",
+        "description": "Propose cancelling an existing appointment. Requires confirmation.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "appointment_id": {"type": "integer", "description": "The appointment to cancel."},
+                "conversation_id": {"type": "string", "description": "Optional conversation UUID."},
+            },
+            "required": ["appointment_id"],
+        },
+        "execute": execute_create_cancellation_draft,
+    },
+    {
+        "name": "confirm_cancellation",
+        "description": "Confirm a cancellation draft to finalize the cancellation.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "draft_id": {"type": "string", "description": "The cancellation draft UUID."},
+            },
+            "required": ["draft_id"],
+        },
+        "execute": execute_confirm_cancellation,
     },
 ]
 
@@ -249,7 +830,14 @@ TOOL_MAP = {t["name"]: t for t in TOOL_DEFINITIONS}
 def get_openai_tools():
     """Return tool definitions formatted for the OpenAI chat completions API."""
     return [
-        {"type": "function", "function": {"name": t["name"], "description": t["description"], "parameters": t["parameters"]}}
+        {
+            "type": "function",
+            "function": {
+                "name": t["name"],
+                "description": " ".join(t["description"].split()),
+                "parameters": t["parameters"],
+            },
+        }
         for t in TOOL_DEFINITIONS
     ]
 
