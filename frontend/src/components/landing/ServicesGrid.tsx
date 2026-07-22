@@ -8,24 +8,28 @@ const services = [
     description: "From precision cuts to vibrant color transformations, our master stylists bring your vision to life.",
     icon: ScissorsIcon,
     link: "/services",
+    tint: "bg-blush-light",
   },
   {
     title: "Facial & Skincare",
     description: "Rejuvenate your complexion with our organic facials, peels, and personalized skincare routines.",
     icon: SparklesIcon,
     link: "/services",
+    tint: "bg-champagne/10",
   },
   {
     title: "Nail Art & Manicure",
     description: "Express yourself with stunning nail art, classic manicures, and luxurious pedicure treatments.",
     icon: HandIcon,
     link: "/services",
+    tint: "bg-blush",
   },
   {
     title: "Massage & Relaxation",
     description: "Melt away stress with our therapeutic massages, aromatherapy, and holistic wellness rituals.",
     icon: LotusIcon,
     link: "/services",
+    tint: "bg-cream",
   },
 ];
 
@@ -54,10 +58,10 @@ export default function ServicesGrid() {
             <Link
               key={service.title}
               to={service.link}
-              className="group relative rounded-xl border border-champagne/20 bg-white p-8 shadow-sm transition-all hover:shadow-md hover:border-champagne/40 hover:scale-[1.02]"
+              className={`group relative rounded-xl border border-champagne/20 ${service.tint} p-8 shadow-sm transition-all hover:shadow-md hover:border-champagne/40 hover:scale-[1.02]`}
             >
               <GradientIcon size="lg">
-                <service.icon className="h-8 w-8" />
+                <service.icon />
               </GradientIcon>
               <h3 className="mt-6 font-display text-lg font-semibold text-charcoal group-hover:text-champagne-dark transition-colors">
                 {service.title}

@@ -3,19 +3,13 @@
 import django.db.models.deletion
 from django.db import migrations, models
 
-BUSINESS_QUERY = "SELECT id FROM business_business WHERE is_active = 1 ORDER BY id LIMIT 1"
-
 
 def populate_business(apps, schema_editor):
-    business_id = None
-    with schema_editor.connection.cursor() as cursor:
-        cursor.execute(BUSINESS_QUERY)
-        row = cursor.fetchone()
-        if row:
-            business_id = row[0]
-
-    if business_id is None:
+    Business = apps.get_model("business", "Business")
+    business = Business.objects.filter(is_active=True).order_by("id").first()
+    if business is None:
         return
+    business_id = business.id
 
     models_to_update = [
         "LoyaltyRedemption",

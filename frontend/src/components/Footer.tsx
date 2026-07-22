@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import BrandLogo from "./icons/BrandLogo";
 
 const hours = [
@@ -31,9 +32,16 @@ function TwitterIcon() {
 }
 
 const socialLinks = [
-  { name: "Instagram", href: "#", Icon: InstagramIcon },
-  { name: "Facebook", href: "#", Icon: FacebookIcon },
-  { name: "Twitter", href: "#", Icon: TwitterIcon },
+  { name: "Instagram", href: "https://instagram.com/bloomflowai", Icon: InstagramIcon },
+  { name: "Facebook", href: "https://facebook.com/bloomflowai", Icon: FacebookIcon },
+  { name: "Twitter", href: "https://twitter.com/bloomflowai", Icon: TwitterIcon },
+];
+
+const quickLinks = [
+  { label: "Services", to: "/services" },
+  { label: "Stylists", to: "/staff" },
+  { label: "Book Now", to: "/book" },
+  { label: "Loyalty", to: "/loyalty" },
 ];
 
 export default function Footer() {
@@ -56,6 +64,8 @@ export default function Footer() {
                 <a
                   key={social.name}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-400 transition-colors hover:bg-champagne hover:text-white"
                   aria-label={social.name}
                 >
@@ -69,11 +79,11 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-champagne">Quick Links</h3>
             <ul className="mt-4 space-y-3">
-              {["Services", "Stylists", "Book Now", "Loyalty"].map((link) => (
-                <li key={link}>
-                  <a href={`/${link.toLowerCase().replace(" ", "-")}`} className="text-sm text-gray-400 transition-colors hover:text-white">
-                    {link}
-                  </a>
+              {quickLinks.map((link) => (
+                <li key={link.label}>
+                  <Link to={link.to} className="text-sm text-gray-400 transition-colors hover:text-white">
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>

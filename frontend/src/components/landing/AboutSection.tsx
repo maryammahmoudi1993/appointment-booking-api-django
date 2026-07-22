@@ -1,10 +1,12 @@
 import BrandLogo from "../icons/BrandLogo";
+import GradientIcon from "../icons/GradientIcon";
+import { UsersIcon, FaceIcon, FlameIcon, StarIcon } from "../icons/ServiceIcons";
 
 const stats = [
-  { value: "500+", label: "Happy Clients" },
-  { value: "15+", label: "Expert Stylists" },
-  { value: "50+", label: "Signature Treatments" },
-  { value: "4.9", label: "Average Rating" },
+  { value: "500+", label: "Happy Clients", icon: UsersIcon },
+  { value: "15+", label: "Expert Stylists", icon: FaceIcon },
+  { value: "50+", label: "Signature Treatments", icon: FlameIcon },
+  { value: "4.9", label: "Average Rating", icon: StarIcon },
 ];
 
 export default function AboutSection() {
@@ -46,12 +48,15 @@ export default function AboutSection() {
               your comfort and every treatment is crafted for excellence.
             </p>
 
-            {/* Stats */}
-            <div className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {/* Stats band */}
+            <div className="mt-10 grid grid-cols-2 gap-4 rounded-2xl bg-charcoal p-6 sm:grid-cols-4">
               {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="font-display text-2xl font-bold gradient-text">{stat.value}</p>
-                  <p className="mt-1 text-xs font-medium text-charcoal-light uppercase tracking-wide">{stat.label}</p>
+                <div key={stat.label} className="flex flex-col items-center text-center">
+                  <GradientIcon size="sm" className="mb-3">
+                    <stat.icon />
+                  </GradientIcon>
+                  <p className="font-display text-xl font-bold text-white">{stat.value}</p>
+                  <p className="mt-1 text-[11px] font-medium text-champagne-light uppercase tracking-wide">{stat.label}</p>
                 </div>
               ))}
             </div>

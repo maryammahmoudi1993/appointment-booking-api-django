@@ -63,7 +63,7 @@ export default function GalleryAndTestimonials() {
         </div>
 
         <div className="mt-12 columns-2 gap-4 sm:columns-3 lg:columns-3">
-          {galleryItems.map((item, i) => (
+          {galleryItems.map((item) => (
             <div
               key={item.category}
               className={`mb-4 break-inside-avoid rounded-xl bg-gradient-to-br ${item.color} p-8 transition-all hover:shadow-md hover:scale-[1.02]`}
