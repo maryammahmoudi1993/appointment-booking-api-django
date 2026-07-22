@@ -10,9 +10,9 @@ export default function Layout() {
       <svg width="0" height="0" className="absolute" aria-hidden="true">
         <defs>
           <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#E8C39E" />
-            <stop offset="50%" stopColor="#D4AF37" />
-            <stop offset="100%" stopColor="#B8860B" />
+            <stop offset="0%" stopColor="#E8A798" />
+            <stop offset="50%" stopColor="#C97B6E" />
+            <stop offset="100%" stopColor="#A8574B" />
           </linearGradient>
         </defs>
       </svg>

@@ -47,7 +47,7 @@ export default function Services() {
                   <GradientIcon size="md">
                     <Icon />
                   </GradientIcon>
-                  <span className="whitespace-nowrap font-display text-xl font-bold text-champagne-dark">
+                  <span className="whitespace-nowrap font-display text-xl font-bold text-coral-dark">
                     ${s.price}
                   </span>
                 </div>

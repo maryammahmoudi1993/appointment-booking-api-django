@@ -18,7 +18,7 @@ export default function BookingWidgetSection() {
     <section className="py-20 bg-blush" aria-labelledby="booking-heading">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center rounded-full border border-champagne/30 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-champagne-dark">
+          <span className="inline-flex items-center rounded-full border border-champagne/30 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-coral-dark">
             Book Now
           </span>
           <h2

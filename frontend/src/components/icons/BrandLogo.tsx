@@ -17,13 +17,13 @@ export default function BrandLogo({ className = "", size = 40 }: BrandLogoProps)
     >
       <defs>
         <linearGradient id="brandPetalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#F3D9B8" />
-          <stop offset="55%" stopColor="#D4AF37" />
-          <stop offset="100%" stopColor="#B8860B" />
+          <stop offset="0%" stopColor="#F0BDB0" />
+          <stop offset="55%" stopColor="#C97B6E" />
+          <stop offset="100%" stopColor="#A8574B" />
         </linearGradient>
         <radialGradient id="brandCenterGradient" cx="35%" cy="35%" r="70%">
-          <stop offset="0%" stopColor="#FFF6E5" />
-          <stop offset="100%" stopColor="#D4AF37" />
+          <stop offset="0%" stopColor="#FFF1EC" />
+          <stop offset="100%" stopColor="#C97B6E" />
         </radialGradient>
       </defs>
 

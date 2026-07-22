@@ -40,7 +40,7 @@ export default function Navbar() {
             <Link
               key={l.to}
               to={l.to}
-              className={`transition-colors hover:text-champagne-dark ${isActive(l.to) ? "text-champagne-dark font-semibold" : ""}`}
+              className={`transition-colors hover:text-coral-dark ${isActive(l.to) ? "text-coral-dark font-semibold" : ""}`}
               role="menuitem"
               aria-current={isActive(l.to) ? "page" : undefined}
             >
@@ -52,7 +52,7 @@ export default function Navbar() {
               {user.role === "customer" && (
                 <Link
                   to="/book"
-                  className={`transition-colors hover:text-champagne-dark ${isActive("/book") ? "text-champagne-dark font-semibold" : ""}`}
+                  className={`transition-colors hover:text-coral-dark ${isActive("/book") ? "text-coral-dark font-semibold" : ""}`}
                   role="menuitem"
                   aria-current={isActive("/book") ? "page" : undefined}
                 >
@@ -61,7 +61,7 @@ export default function Navbar() {
               )}
               <Link
                 to="/my-bookings"
-                className={`transition-colors hover:text-champagne-dark ${isActive("/my-bookings") ? "text-champagne-dark font-semibold" : ""}`}
+                className={`transition-colors hover:text-coral-dark ${isActive("/my-bookings") ? "text-coral-dark font-semibold" : ""}`}
                 role="menuitem"
                 aria-current={isActive("/my-bookings") ? "page" : undefined}
               >
@@ -70,7 +70,7 @@ export default function Navbar() {
               {user.role === "customer" && (
                 <Link
                   to="/loyalty"
-                  className={`transition-colors hover:text-champagne-dark ${isActive("/loyalty") ? "text-champagne-dark font-semibold" : ""}`}
+                  className={`transition-colors hover:text-coral-dark ${isActive("/loyalty") ? "text-coral-dark font-semibold" : ""}`}
                   role="menuitem"
                   aria-current={isActive("/loyalty") ? "page" : undefined}
                 >
@@ -80,7 +80,7 @@ export default function Navbar() {
               {user.role === "admin" && (
                 <Link
                   to="/admin"
-                  className={`transition-colors hover:text-champagne-dark ${location.pathname.startsWith("/admin") ? "text-champagne-dark font-semibold" : ""}`}
+                  className={`transition-colors hover:text-coral-dark ${location.pathname.startsWith("/admin") ? "text-coral-dark font-semibold" : ""}`}
                   role="menuitem"
                   aria-current={location.pathname.startsWith("/admin") ? "page" : undefined}
                 >
@@ -99,7 +99,7 @@ export default function Navbar() {
               </span>
               <button
                 onClick={handleLogout}
-                className="rounded-full border border-charcoal/20 px-4 py-1.5 text-sm font-medium text-charcoal transition-colors hover:border-champagne hover:text-champagne-dark"
+                className="rounded-full border border-charcoal/20 px-4 py-1.5 text-sm font-medium text-charcoal transition-colors hover:border-coral hover:text-coral-dark"
               >
                 Log out
               </button>
@@ -108,7 +108,7 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="text-sm font-medium text-charcoal-light hover:text-champagne-dark transition-colors"
+                className="text-sm font-medium text-charcoal-light hover:text-coral-dark transition-colors"
               >
                 Sign in
               </Link>

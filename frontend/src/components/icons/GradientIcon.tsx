@@ -32,7 +32,7 @@ export default function GradientIcon({
 
   return (
     <div
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-blush-light via-blush to-champagne/25 shadow-[0_10px_24px_-8px_rgba(184,134,11,0.4)] ${tileSizeClasses[size]} ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-blush-light via-blush to-coral/15 shadow-[0_10px_24px_-8px_rgba(168,87,75,0.4)] ${tileSizeClasses[size]} ${className}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/70 via-white/10 to-transparent" />
       <div className="pointer-events-none absolute -left-2 -top-2 h-8 w-8 rounded-full bg-white/50 blur-md" />

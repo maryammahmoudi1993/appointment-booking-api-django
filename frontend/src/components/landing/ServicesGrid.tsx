@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { servicesApi, type Service } from "../../api/client";
-import GradientIcon from "../icons/GradientIcon";
 import SectionHeading from "../ui/SectionHeading";
 import { iconForService } from "../../utils/serviceIcon";
 
-const TINTS = ["bg-blush-light", "bg-champagne/10", "bg-blush", "bg-cream"];
+const TINTS = [
+  "bg-gradient-to-br from-blush to-coral/20",
+  "bg-gradient-to-br from-champagne/25 to-blush-light",
+  "bg-gradient-to-br from-coral/15 to-blush",
+  "bg-gradient-to-br from-blush-light to-champagne/20",
+];
 
 export default function ServicesGrid() {
   const [services, setServices] = useState<Service[] | null>(null);
@@ -27,47 +31,56 @@ export default function ServicesGrid() {
           description="Discover our curated collection of premium beauty and wellness treatments, each designed to leave you feeling radiant and refreshed."
         />
 
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {services === null &&
             Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="animate-pulse rounded-xl border border-champagne/20 bg-white p-8"
+                className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-sm"
                 aria-hidden="true"
               >
-                <div className="h-16 w-16 rounded-2xl bg-blush" />
-                <div className="mt-6 h-4 w-2/3 rounded bg-blush" />
-                <div className="mt-3 h-3 w-full rounded bg-blush" />
-                <div className="mt-2 h-3 w-4/5 rounded bg-blush" />
+                <div className="h-36 bg-blush" />
+                <div className="p-5">
+                  <div className="h-4 w-2/3 rounded bg-blush" />
+                  <div className="mt-3 h-3 w-full rounded bg-blush" />
+                  <div className="mt-4 h-8 w-full rounded-full bg-blush" />
+                </div>
               </div>
             ))}
 
           {services?.map((service, i) => {
             const Icon = iconForService(service.name);
             return (
-              <Link
+              <div
                 key={service.id}
-                to={`/book?service=${service.id}`}
-                className={`group relative flex flex-col rounded-xl border border-champagne/20 ${TINTS[i % TINTS.length]} p-8 shadow-sm transition-all hover:shadow-md hover:border-champagne/40 hover:scale-[1.02]`}
+                className="group overflow-hidden rounded-2xl bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.01]"
               >
-                <GradientIcon size="lg">
-                  <Icon />
-                </GradientIcon>
-                <h3 className="mt-6 font-display text-lg font-semibold text-charcoal group-hover:text-champagne-dark transition-colors">
-                  {service.name}
-                </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-charcoal-light line-clamp-3">
-                  {service.description}
-                </p>
-                <div className="mt-6 flex items-center justify-between">
-                  <span className="text-xs font-medium uppercase tracking-wide text-charcoal-light/70">
-                    {service.duration_minutes} min
-                  </span>
-                  <span className="font-display text-lg font-bold text-champagne-dark">
-                    ${service.price}
-                  </span>
+                <Link to={`/book?service=${service.id}`} className={`flex h-36 items-center justify-center ${TINTS[i % TINTS.length]}`}>
+                  <Icon className="h-12 w-12 text-white/90 drop-shadow-sm" />
+                </Link>
+                <div className="p-5">
+                  <h3 className="font-display text-base font-semibold text-charcoal">
+                    {service.name}
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-charcoal-light line-clamp-2">
+                    {service.description}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-charcoal-light/70">
+                      {service.duration_minutes} min
+                    </span>
+                    <span className="font-display text-base font-bold text-coral-dark">
+                      ${service.price}
+                    </span>
+                  </div>
+                  <Link
+                    to={`/book?service=${service.id}`}
+                    className="mt-4 block w-full rounded-full bg-coral py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-coral-dark"
+                  >
+                    Book Now
+                  </Link>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
@@ -81,7 +94,7 @@ export default function ServicesGrid() {
         <div className="mt-12 text-center">
           <Link
             to="/services"
-            className="inline-flex items-center gap-2 rounded-full border border-charcoal/15 bg-white px-6 py-2.5 text-sm font-semibold text-charcoal transition-all hover:border-champagne hover:text-champagne-dark"
+            className="inline-flex items-center gap-2 rounded-full border border-charcoal/15 bg-white px-6 py-2.5 text-sm font-semibold text-charcoal transition-all hover:border-coral hover:text-coral-dark"
           >
             View All Services
           </Link>

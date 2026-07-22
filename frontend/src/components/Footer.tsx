@@ -46,7 +46,7 @@ const quickLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-champagne/20 bg-charcoal" role="contentinfo">
+    <footer className="border-t border-champagne/20 bg-rose-deep" role="contentinfo">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
@@ -55,7 +55,7 @@ export default function Footer() {
               <BrandLogo size={32} />
               <span className="font-display text-xl font-bold text-white">BloomFlow</span>
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-charcoal-light/70">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/65">
               Premium beauty and wellness experiences, crafted with care.
               Where luxury meets expertise.
             </p>
@@ -66,7 +66,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-charcoal-light/70 transition-colors hover:bg-champagne hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/65 transition-colors hover:bg-coral hover:text-white"
                   aria-label={social.name}
                 >
                   <social.Icon />
@@ -77,11 +77,11 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-champagne">Quick Links</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-coral-light">Quick Links</h3>
             <ul className="mt-4 space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.label}>
-                  <Link to={link.to} className="text-sm text-charcoal-light/70 transition-colors hover:text-white">
+                  <Link to={link.to} className="text-sm text-white/65 transition-colors hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -91,11 +91,11 @@ export default function Footer() {
 
           {/* Hours */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-champagne">Opening Hours</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-coral-light">Opening Hours</h3>
             <ul className="mt-4 space-y-3">
               {hours.map((h) => (
                 <li key={h.day} className="text-sm">
-                  <span className="text-charcoal-light/70">{h.day}</span>
+                  <span className="text-white/65">{h.day}</span>
                   <br />
                   <span className="text-white font-medium">{h.time}</span>
                 </li>
@@ -105,23 +105,23 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-champagne">Contact</h3>
-            <ul className="mt-4 space-y-3 text-sm text-charcoal-light/70">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-coral-light">Contact</h3>
+            <ul className="mt-4 space-y-3 text-sm text-white/65">
               <li className="flex items-start gap-2">
-                <svg className="mt-0.5 h-4 w-4 shrink-0 text-champagne" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mt-0.5 h-4 w-4 shrink-0 text-coral-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 123 Beauty Lane, Suite 100
               </li>
               <li className="flex items-start gap-2">
-                <svg className="mt-0.5 h-4 w-4 shrink-0 text-champagne" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mt-0.5 h-4 w-4 shrink-0 text-coral-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 hello@bloomflow.ai
               </li>
               <li className="flex items-start gap-2">
-                <svg className="mt-0.5 h-4 w-4 shrink-0 text-champagne" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mt-0.5 h-4 w-4 shrink-0 text-coral-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
                 (555) 123-4567
@@ -131,7 +131,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-8 text-center">
-          <p className="text-xs text-charcoal-light">
+          <p className="text-xs text-white/50">
             &copy; {new Date().getFullYear()} BloomFlow AI. All rights reserved. Built with Django, React, and OpenAI.
           </p>
         </div>

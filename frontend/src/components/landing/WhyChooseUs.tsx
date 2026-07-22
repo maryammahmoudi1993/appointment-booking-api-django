@@ -52,7 +52,7 @@ export default function WhyChooseUs() {
                   <reason.icon />
                 </GradientIcon>
                 <div>
-                  <span className="text-xs font-bold text-champagne-dark">{reason.number}</span>
+                  <span className="text-xs font-bold text-coral-dark">{reason.number}</span>
                   <h3 className="font-display text-base font-semibold text-charcoal">
                     {reason.title}
                   </h3>

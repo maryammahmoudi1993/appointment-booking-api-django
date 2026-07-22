@@ -22,37 +22,68 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="py-20 bg-blush" aria-labelledby="how-it-works-heading">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="How It Works"
-          id="how-it-works-heading"
-          title="Book in 3 Simple Steps"
-        />
+    <section className="py-20 bg-cream" aria-labelledby="how-it-works-heading">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-12 rounded-3xl bg-blush p-8 sm:p-12 lg:grid-cols-2 lg:items-center">
+          {/* Steps */}
+          <div>
+            <SectionHeading
+              align="left"
+              eyebrow="How It Works"
+              id="how-it-works-heading"
+              title="Book in 3 Simple Steps"
+            />
 
-        <div className="relative mt-16 grid gap-10 sm:grid-cols-3">
-          <div
-            className="absolute left-0 right-0 top-10 hidden h-px bg-gradient-to-r from-transparent via-champagne/50 to-transparent sm:block"
-            aria-hidden="true"
-          />
-          {steps.map((step, i) => (
-            <div key={step.title} className="relative flex flex-col items-center text-center">
-              <div className="relative">
-                <GradientIcon size="lg">
-                  <step.icon />
-                </GradientIcon>
-                <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-charcoal text-xs font-bold text-white">
-                  {i + 1}
-                </span>
-              </div>
-              <h3 className="mt-6 font-display text-lg font-semibold text-charcoal">
-                {step.title}
-              </h3>
-              <p className="mt-2 max-w-[220px] text-sm leading-relaxed text-charcoal-light">
-                {step.description}
-              </p>
+            <div className="relative mt-10 space-y-8">
+              <div
+                className="absolute left-6 top-2 bottom-2 hidden w-px bg-gradient-to-b from-coral/40 via-coral/20 to-transparent sm:block"
+                aria-hidden="true"
+              />
+              {steps.map((step, i) => (
+                <div key={step.title} className="relative flex items-start gap-4">
+                  <div className="relative shrink-0">
+                    <GradientIcon size="md">
+                      <step.icon />
+                    </GradientIcon>
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-charcoal text-[10px] font-bold text-white">
+                      {i + 1}
+                    </span>
+                  </div>
+                  <div className="pt-1">
+                    <h3 className="font-display text-base font-semibold text-charcoal">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-charcoal-light">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Phone mockup */}
+          <div className="flex justify-center" aria-hidden="true">
+            <div className="w-56 rounded-[2rem] border-[6px] border-charcoal bg-charcoal p-1.5 shadow-xl">
+              <div className="rounded-[1.5rem] bg-cream px-4 py-5">
+                <div className="flex items-center justify-between text-[10px] font-semibold text-charcoal-light">
+                  <span>9:41</span>
+                  <span>Book Appointment</span>
+                </div>
+                <div className="mt-4 rounded-xl bg-white p-3 shadow-sm">
+                  <p className="text-xs font-semibold text-charcoal">Hair Styling &amp; Coloring</p>
+                  <p className="mt-1 text-[11px] text-charcoal-light">Today &middot; 2:00 PM</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-[11px] text-charcoal-light">Total</span>
+                    <span className="text-sm font-bold text-coral-dark">$79.00</span>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-full bg-coral py-2 text-center text-xs font-semibold text-white">
+                  Confirm Booking
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

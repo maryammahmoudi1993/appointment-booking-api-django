@@ -57,7 +57,7 @@ export default function Staff() {
                     {s.full_name}
                   </h3>
                   {s.average_rating !== null && (
-                    <p className="text-xs text-champagne-dark">
+                    <p className="text-xs text-coral-dark">
                       ★ {s.average_rating.toFixed(1)} ({s.review_count} review
                       {s.review_count === 1 ? "" : "s"})
                     </p>
@@ -70,7 +70,7 @@ export default function Staff() {
                   {s.services_offered.map((id) => (
                     <span
                       key={id}
-                      className="rounded-full bg-champagne/10 px-2.5 py-0.5 text-xs font-medium text-champagne-dark"
+                      className="rounded-full bg-champagne/10 px-2.5 py-0.5 text-xs font-medium text-coral-dark"
                     >
                       {serviceName(id)}
                     </span>

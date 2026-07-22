@@ -20,7 +20,7 @@ export default function SectionHeading({
   return (
     <div className={`${alignment} ${className}`}>
       {eyebrow && (
-        <span className="inline-flex items-center rounded-full border border-champagne/30 bg-champagne/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-champagne-dark">
+        <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-coral-dark">
           {eyebrow}
         </span>
       )}

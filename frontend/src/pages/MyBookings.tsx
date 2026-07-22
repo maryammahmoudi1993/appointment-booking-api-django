@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { appointmentsApi, reviewsApi, type Appointment } from "../api/client";
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-champagne/15 text-champagne-dark",
+  pending: "bg-champagne/15 text-coral-dark",
   confirmed: "bg-brand-100 text-brand-800",
   completed: "bg-blush text-charcoal",
   cancelled: "bg-rose-100 text-rose-800",
@@ -205,7 +205,7 @@ function ReviewForm({
             type="button"
             onClick={() => setRating(n)}
             className={`text-2xl leading-none ${
-              n <= rating ? "text-champagne-dark" : "text-charcoal-light/50"
+              n <= rating ? "text-coral-dark" : "text-charcoal-light/50"
             }`}
             aria-label={`${n} star`}
           >

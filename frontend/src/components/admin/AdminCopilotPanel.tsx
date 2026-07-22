@@ -59,7 +59,7 @@ export default function AdminCopilotPanel() {
       <div className="border-b border-champagne/15 px-4 py-3 bg-gradient-to-r from-cream to-white">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-champagne/20 flex items-center justify-center">
-            <svg className="h-4 w-4 text-champagne-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 text-coral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
@@ -83,7 +83,7 @@ export default function AdminCopilotPanel() {
                   onClick={() => sendMessage(prompt)}
                   className="flex items-center gap-2 px-3 py-2.5 text-sm bg-white border border-champagne/20 hover:border-indigo-300 hover:bg-champagne/10 rounded-lg transition-colors text-left"
                 >
-                  <span className="h-5 w-5 rounded bg-champagne/20 text-champagne-dark flex items-center justify-center text-[10px] font-bold shrink-0">
+                  <span className="h-5 w-5 rounded bg-champagne/20 text-coral-dark flex items-center justify-center text-[10px] font-bold shrink-0">
                     {icon}
                   </span>
                   <span className="text-charcoal">{label}</span>
@@ -98,7 +98,7 @@ export default function AdminCopilotPanel() {
             <div
               className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
                 msg.role === "user"
-                  ? "bg-champagne-dark text-white rounded-br-md"
+                  ? "bg-coral-dark text-white rounded-br-md"
                   : "bg-white text-charcoal border border-champagne/20 rounded-bl-md shadow-sm"
               }`}
             >
@@ -106,7 +106,7 @@ export default function AdminCopilotPanel() {
               {msg.toolCalls && msg.toolCalls.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1">
                   {msg.toolCalls.map((tc) => (
-                    <span key={tc} className="text-[10px] px-1.5 py-0.5 rounded bg-champagne/20 text-champagne-dark font-mono">
+                    <span key={tc} className="text-[10px] px-1.5 py-0.5 rounded bg-champagne/20 text-coral-dark font-mono">
                       {tc}
                     </span>
                   ))}
@@ -120,9 +120,9 @@ export default function AdminCopilotPanel() {
           <div className="flex justify-start">
             <div className="bg-white border border-champagne/20 px-4 py-2 rounded-2xl rounded-bl-md shadow-sm">
               <div className="flex gap-1">
-                <span className="h-2 w-2 bg-champagne-dark/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="h-2 w-2 bg-champagne-dark/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="h-2 w-2 bg-champagne-dark/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="h-2 w-2 bg-coral-dark/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="h-2 w-2 bg-coral-dark/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="h-2 w-2 bg-coral-dark/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
@@ -143,7 +143,7 @@ export default function AdminCopilotPanel() {
           <button
             onClick={() => sendMessage()}
             disabled={loading || !input.trim()}
-            className="bg-champagne-dark text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-champagne-dark/90 disabled:opacity-50 transition-colors"
+            className="bg-coral-dark text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-coral-dark/90 disabled:opacity-50 transition-colors"
           >
             Ask
           </button>

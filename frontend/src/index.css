@@ -17,6 +17,11 @@
   --color-rosegold-mid: #D4AF37;
   --color-rosegold-end: #B8860B;
 
+  --color-coral: #C97B6E;
+  --color-coral-light: #E8A798;
+  --color-coral-dark: #A8574B;
+  --color-rose-deep: #9C5A50;
+
   --color-brand-50: #FDF5F5;
   --color-brand-100: #F8E8E8;
   --color-brand-200: #F0D4D4;
@@ -45,18 +50,18 @@
 
 @layer utilities {
   .gradient-text {
-    background: linear-gradient(135deg, #E8C39E 0%, #D4AF37 50%, #B8860B 100%);
+    background: linear-gradient(135deg, #E8A798 0%, #C97B6E 55%, #A8574B 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .gradient-border {
-    border-image: linear-gradient(135deg, #E8C39E 0%, #D4AF37 50%, #B8860B 100%) 1;
+    border-image: linear-gradient(135deg, #E8A798 0%, #C97B6E 55%, #A8574B 100%) 1;
   }
 
   .bg-rosegold-gradient {
-    background: linear-gradient(135deg, #E8C39E 0%, #D4AF37 50%, #B8860B 100%);
+    background: linear-gradient(135deg, #E8A798 0%, #C97B6E 55%, #A8574B 100%);
   }
 
   .bg-blush-gradient {
@@ -64,11 +69,11 @@
   }
 
   .text-rosegold {
-    color: #D4AF37;
+    color: #C97B6E;
   }
 
   .border-rosegold {
-    border-color: #D4AF37;
+    border-color: #C97B6E;
   }
 
   .reveal {

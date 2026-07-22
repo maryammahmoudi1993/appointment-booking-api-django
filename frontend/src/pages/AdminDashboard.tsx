@@ -62,7 +62,7 @@ export default function AdminDashboard() {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-champagne/20 text-champagne-dark",
+  pending: "bg-champagne/20 text-coral-dark",
   confirmed: "bg-brand-100 text-brand-800",
   completed: "bg-champagne/20 text-blue-800",
   cancelled: "bg-rose-100 text-rose-800",
@@ -94,7 +94,7 @@ function StatCard({
 }) {
   const toneClasses = {
     brand: "bg-brand-50 text-brand-800",
-    amber: "bg-champagne/10 text-champagne-dark",
+    amber: "bg-champagne/10 text-coral-dark",
     gray: "bg-cream text-charcoal",
   }[tone];
   return (
@@ -254,7 +254,7 @@ function AppointmentsPanel() {
               <div className="mt-4 flex gap-2">
                 <button
                   onClick={() => handleAction(a.id, "complete")}
-                  className="rounded-full bg-champagne-dark px-4 py-1.5 text-xs font-semibold text-white hover:bg-champagne-dark/90"
+                  className="rounded-full bg-coral-dark px-4 py-1.5 text-xs font-semibold text-white hover:bg-coral-dark/90"
                 >
                   Complete
                 </button>

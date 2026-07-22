@@ -28,7 +28,7 @@ export default function AboutSection() {
 
           {/* Content */}
           <div>
-            <span className="inline-flex items-center rounded-full border border-champagne/30 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-champagne-dark">
+            <span className="inline-flex items-center rounded-full border border-champagne/30 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-coral-dark">
               About BloomFlow
             </span>
             <h2

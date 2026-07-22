@@ -10,7 +10,7 @@ function StarRow({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <svg
           key={i}
-          className={`h-4 w-4 ${i < Math.round(rating) ? "text-champagne" : "text-champagne/30"}`}
+          className={`h-4 w-4 ${i < Math.round(rating) ? "text-coral" : "text-coral/25"}`}
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -23,7 +23,11 @@ function StarRow({ rating }: { rating: number }) {
 
 export default function HeroSection() {
   const { user } = useAuth();
-  const [ratingSummary, setRatingSummary] = useState<{ average: number; count: number } | null>(null);
+  const [ratingSummary, setRatingSummary] = useState<{
+    average: number;
+    count: number;
+    initials: string[];
+  } | null>(null);
 
   useEffect(() => {
     reviewsApi
@@ -32,7 +36,10 @@ export default function HeroSection() {
         const { count, results } = res.data;
         if (count === 0 || results.length === 0) return;
         const average = results.reduce((sum, r) => sum + r.rating, 0) / results.length;
-        setRatingSummary({ average, count });
+        const initials = results
+          .slice(0, 4)
+          .map((r) => (r.customer_name || "?").charAt(0).toUpperCase());
+        setRatingSummary({ average, count, initials });
       })
       .catch(() => setRatingSummary(null));
   }, []);
@@ -43,13 +50,13 @@ export default function HeroSection() {
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           {/* Text content */}
           <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 rounded-full border border-champagne/30 bg-champagne/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-champagne-dark">
-              <BrandLogo size={16} />
-              Premium Beauty &amp; Wellness
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-coral-dark">
+              Beauty, Care, Confidence.
             </span>
-            <h1 className="mt-6 font-display text-4xl font-bold leading-tight tracking-tight text-charcoal sm:text-5xl lg:text-6xl">
-              Redefine Your{" "}
-              <span className="gradient-text">Beauty &amp; Glow</span>
+            <h1 className="mt-4 font-display text-4xl font-bold leading-tight tracking-tight text-charcoal sm:text-5xl lg:text-6xl">
+              Your Beauty,
+              <br />
+              Our Passion.
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-charcoal-light max-w-lg mx-auto lg:mx-0">
               Premium hair, skin, and spa treatments tailored just for you.
@@ -59,7 +66,7 @@ export default function HeroSection() {
               {user ? (
                 <Link
                   to="/book"
-                  className="inline-flex items-center gap-2 rounded-full bg-rosegold-gradient px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                  className="inline-flex items-center gap-2 rounded-full bg-coral px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-coral-dark hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] motion-reduce:hover:scale-100"
                 >
                   Book an Appointment
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,7 +77,7 @@ export default function HeroSection() {
                 <>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-2 rounded-full bg-rosegold-gradient px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                    className="inline-flex items-center gap-2 rounded-full bg-coral px-8 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-coral-dark hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] motion-reduce:hover:scale-100"
                   >
                     Book an Appointment
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +86,7 @@ export default function HeroSection() {
                   </Link>
                   <Link
                     to="/services"
-                    className="inline-flex items-center gap-2 rounded-full border border-charcoal/20 bg-white px-8 py-3.5 text-sm font-semibold text-charcoal transition-all hover:border-champagne hover:text-champagne-dark"
+                    className="inline-flex items-center gap-2 rounded-full border border-charcoal/15 bg-blush-light px-8 py-3.5 text-sm font-semibold text-charcoal transition-all hover:border-coral hover:text-coral-dark"
                   >
                     Explore Services
                   </Link>
@@ -89,11 +96,23 @@ export default function HeroSection() {
 
             {ratingSummary && (
               <div className="mt-8 flex items-center justify-center gap-3 lg:justify-start">
-                <StarRow rating={ratingSummary.average} />
-                <span className="text-sm font-medium text-charcoal-light">
-                  {ratingSummary.average.toFixed(1)}/5 from {ratingSummary.count} review
-                  {ratingSummary.count === 1 ? "" : "s"}
-                </span>
+                <div className="flex -space-x-2" aria-hidden="true">
+                  {ratingSummary.initials.map((initial, i) => (
+                    <span
+                      key={i}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-cream bg-coral/20 text-xs font-semibold text-coral-dark"
+                    >
+                      {initial}
+                    </span>
+                  ))}
+                </div>
+                <div>
+                  <StarRow rating={ratingSummary.average} />
+                  <span className="text-sm font-medium text-charcoal-light">
+                    {ratingSummary.average.toFixed(1)}/5 from {ratingSummary.count} review
+                    {ratingSummary.count === 1 ? "" : "s"}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -102,15 +121,28 @@ export default function HeroSection() {
           <div className="relative flex items-center justify-center">
             <div className="relative h-80 w-80 sm:h-96 sm:w-96 lg:h-[480px] lg:w-[480px]">
               {/* Decorative circles */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-champagne/20 to-blush/40" />
-              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-champagne/10 to-blush/20" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-coral/15 to-blush/50" />
+              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-coral/10 to-blush/30" />
+
+              {/* Botanical accent */}
+              <svg
+                className="absolute -right-4 top-4 h-20 w-20 text-coral/30"
+                viewBox="0 0 64 64"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <path d="M32 6C20 14 16 28 24 42c4-10 14-16 20-14-2 12-12 20-24 20" />
+                <path d="M32 6v50" />
+              </svg>
 
               {/* Center logo */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="relative">
                   <BrandLogo size={160} className="opacity-90" />
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white/80 px-4 py-1.5 shadow-sm backdrop-blur-sm">
-                    <span className="text-xs font-semibold text-champagne-dark">Est. 2024</span>
+                    <span className="text-xs font-semibold text-coral-dark">Est. 2024</span>
                   </div>
                 </div>
               </div>
@@ -120,7 +152,7 @@ export default function HeroSection() {
                 <span className="text-xs font-semibold text-charcoal">5-Star Rated</span>
               </div>
               <div className="absolute bottom-16 left-0 rounded-xl bg-white/80 px-3 py-2 shadow-sm backdrop-blur-sm">
-                <span className="text-xs font-semibold text-champagne-dark">Expert Stylists</span>
+                <span className="text-xs font-semibold text-coral-dark">Expert Stylists</span>
               </div>
             </div>
           </div>

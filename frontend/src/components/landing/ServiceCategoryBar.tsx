@@ -38,7 +38,7 @@ export default function ServiceCategoryBar() {
             <GradientIcon size="sm" className="transition-transform group-hover:-translate-y-0.5">
               <cat.icon />
             </GradientIcon>
-            <span className="whitespace-nowrap text-xs font-medium text-charcoal-light group-hover:text-champagne-dark">
+            <span className="whitespace-nowrap text-xs font-medium text-charcoal-light group-hover:text-coral-dark">
               {cat.label}
             </span>
           </Link>
