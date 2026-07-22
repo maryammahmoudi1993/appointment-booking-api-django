@@ -24,7 +24,7 @@ export default function App() {
         <Route
           path="/book"
           element={
-            <PrivateRoute>
+            <PrivateRoute requiredRole="customer">
               <BookAppointment />
             </PrivateRoute>
           }

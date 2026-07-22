@@ -1,20 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="favGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E8C39E" />
-      <stop offset="50%" stop-color="#D4AF37" />
+    <linearGradient id="favPetalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F3D9B8" />
+      <stop offset="55%" stop-color="#D4AF37" />
       <stop offset="100%" stop-color="#B8860B" />
     </linearGradient>
+    <radialGradient id="favCenterGradient" cx="35%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#FFF6E5" />
+      <stop offset="100%" stop-color="#D4AF37" />
+    </radialGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="#FAF9F6" />
-  <g transform="translate(96 80)" fill="none" stroke="url(#favGradient)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Graceful face profile -->
-    <path d="M160 40C80 40 40 120 40 200C40 240 80 280 100 300C110 310 110 320 110 340V400" />
-    <!-- Lotus petals -->
-    <path d="M160 400C160 400 100 340 100 280C100 240 130 210 160 210C190 210 220 240 220 280C220 340 160 400 160 400Z" />
-    <path d="M70 320C40 290 40 220 70 180" />
-    <path d="M250 320C280 290 280 220 250 180" />
-    <!-- Hair wave -->
-    <path d="M40 120C10 90 10 30 40 0C70 -30 130 -30 160 -30C190 -30 250 -30 280 0C310 30 310 90 280 120" />
+  <g transform="translate(256 256)">
+    <ellipse cx="0" cy="-108" rx="58" ry="100" fill="url(#favPetalGradient)" transform="rotate(0)" />
+    <ellipse cx="0" cy="-108" rx="58" ry="100" fill="url(#favPetalGradient)" transform="rotate(72)" />
+    <ellipse cx="0" cy="-108" rx="58" ry="100" fill="url(#favPetalGradient)" transform="rotate(144)" />
+    <ellipse cx="0" cy="-108" rx="58" ry="100" fill="url(#favPetalGradient)" transform="rotate(216)" />
+    <ellipse cx="0" cy="-108" rx="58" ry="100" fill="url(#favPetalGradient)" transform="rotate(288)" />
+    <circle cx="0" cy="0" r="48" fill="url(#favCenterGradient)" />
+    <ellipse cx="-32" cy="-32" rx="26" ry="14" fill="white" opacity="0.55" transform="rotate(-30 -32 -32)" />
   </g>
 </svg>

@@ -49,14 +49,16 @@ export default function Navbar() {
           ))}
           {user && (
             <>
-              <Link
-                to="/book"
-                className={`transition-colors hover:text-champagne-dark ${isActive("/book") ? "text-champagne-dark font-semibold" : ""}`}
-                role="menuitem"
-                aria-current={isActive("/book") ? "page" : undefined}
-              >
-                Book Now
-              </Link>
+              {user.role === "customer" && (
+                <Link
+                  to="/book"
+                  className={`transition-colors hover:text-champagne-dark ${isActive("/book") ? "text-champagne-dark font-semibold" : ""}`}
+                  role="menuitem"
+                  aria-current={isActive("/book") ? "page" : undefined}
+                >
+                  Book Now
+                </Link>
+              )}
               <Link
                 to="/my-bookings"
                 className={`transition-colors hover:text-champagne-dark ${isActive("/my-bookings") ? "text-champagne-dark font-semibold" : ""}`}
@@ -145,9 +147,11 @@ export default function Navbar() {
             ))}
             {user ? (
               <>
-                <Link to="/book" onClick={() => setOpen(false)} role="menuitem" aria-current={isActive("/book") ? "page" : undefined}>
-                  Book Now
-                </Link>
+                {user.role === "customer" && (
+                  <Link to="/book" onClick={() => setOpen(false)} role="menuitem" aria-current={isActive("/book") ? "page" : undefined}>
+                    Book Now
+                  </Link>
+                )}
                 <Link to="/my-bookings" onClick={() => setOpen(false)} role="menuitem" aria-current={isActive("/my-bookings") ? "page" : undefined}>
                   My Bookings
                 </Link>

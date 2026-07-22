@@ -6,10 +6,10 @@ interface GradientIconProps {
   size?: "sm" | "md" | "lg";
 }
 
-const sizeClasses = {
-  sm: "h-10 w-10",
-  md: "h-14 w-14",
-  lg: "h-18 w-18",
+const tileSizeClasses = {
+  sm: "h-12 w-12 rounded-xl",
+  md: "h-16 w-16 rounded-2xl",
+  lg: "h-20 w-20 rounded-2xl",
 } as const;
 
 const iconSizeClasses = {
@@ -32,13 +32,11 @@ export default function GradientIcon({
 
   return (
     <div
-      className={`relative inline-flex items-center justify-center rounded-full bg-gradient-to-br from-[#E8C39E] via-[#D4AF37] to-[#B8860B] p-[2px] ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-blush-light via-blush to-champagne/25 shadow-[0_10px_24px_-8px_rgba(184,134,11,0.4)] ${tileSizeClasses[size]} ${className}`}
     >
-      <div
-        className={`flex items-center justify-center rounded-full bg-cream/80 backdrop-blur-sm ${sizeClasses[size]}`}
-      >
-        {icon}
-      </div>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/70 via-white/10 to-transparent" />
+      <div className="pointer-events-none absolute -left-2 -top-2 h-8 w-8 rounded-full bg-white/50 blur-md" />
+      <div className="relative">{icon}</div>
     </div>
   );
 }
