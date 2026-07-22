@@ -6,276 +6,279 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
+from apps.business.models import Business, BusinessMembership
 from apps.engagement.models import LoyaltyReward, PromoCode, Review
 from apps.services.models import Service
 from apps.staff.models import StaffProfile, TimeOff, WorkingHours
 
 
+BLOOM_STUDIO = {
+    "name": "Bloom Studio",
+    "slug": "bloom-studio",
+    "business_type": "beauty_salon",
+    "timezone": "America/New_York",
+    "currency": "USD",
+    "phone": "+1-555-0100",
+    "email": "hello@bloomstudio.com",
+    "address": "142 Spring Street, Suite 200, New York, NY 10012",
+}
+
+SERVICES_DATA = [
+    {"name": "Women's Haircut & Style", "description": "Precision cut with wash, conditioning treatment, and professional blow-dry styling", "duration_minutes": 60, "price": 85.00, "category": "Hair"},
+    {"name": "Men's Haircut", "description": "Classic or modern cut with hot towel finish", "duration_minutes": 30, "price": 45.00, "category": "Hair"},
+    {"name": "Balayage / Ombre", "description": "Hand-painted highlights for a natural, sun-kissed gradient effect", "duration_minutes": 150, "price": 220.00, "category": "Hair"},
+    {"name": "Gel Manicure", "description": "Long-lasting gel polish application with cuticle care and hand massage", "duration_minutes": 45, "price": 55.00, "category": "Nails"},
+    {"name": "Spa Pedicure", "description": "Luxurious pedicure with exfoliation, mask, hot stones, and polish", "duration_minutes": 60, "price": 70.00, "category": "Nails"},
+    {"name": "Classic Facial", "description": "Deep cleanse, exfoliation, extractions, and hydrating mask for glowing skin", "duration_minutes": 60, "price": 95.00, "category": "Skincare"},
+    {"name": "Deep Tissue Massage", "description": "Therapeutic 60-minute massage targeting muscle tension and knots", "duration_minutes": 60, "price": 110.00, "category": "Wellness"},
+    {"name": "Lash Extensions — Full Set", "description": "Individual semi-permanent lash extensions for a full, natural look", "duration_minutes": 120, "price": 180.00, "category": "Beauty"},
+    {"name": "Brow Lamination & Tint", "description": "Semi-permanent brow shaping with color tint for defined, fluffy brows", "duration_minutes": 45, "price": 75.00, "category": "Beauty"},
+    {"name": "Hair Coloring — Full", "description": "Single-process all-over color with gloss finish", "duration_minutes": 120, "price": 150.00, "category": "Hair"},
+]
+
+STAFF_DATA = [
+    {"username": "mia salon", "first_name": "Mia", "last_name": "Rodriguez", "email": "mia@bloomstudio.com", "services": ["Women's Haircut & Style", "Balayage / Ombre", "Hair Coloring — Full"]},
+    {"username": "james park", "first_name": "James", "last_name": "Park", "email": "james@bloomstudio.com", "services": ["Men's Haircut", "Women's Haircut & Style"]},
+    {"username": "sofia chen", "first_name": "Sofia", "last_name": "Chen", "email": "sofia@bloomstudio.com", "services": ["Gel Manicure", "Spa Pedicure"]},
+    {"username": "aria williams", "first_name": "Aria", "last_name": "Williams", "email": "aria@bloomstudio.com", "services": ["Classic Facial", "Deep Tissue Massage"]},
+    {"username": "noah kim", "first_name": "Noah", "last_name": "Kim", "email": "noah@bloomstudio.com", "services": ["Lash Extensions — Full Set", "Brow Lamination & Tint"]},
+]
+
+CUSTOMER_DATA = [
+    {"username": "emma.johnson", "first_name": "Emma", "last_name": "Johnson", "email": "emma.j@email.com", "phone": "+1-555-0201"},
+    {"username": "liam.martinez", "first_name": "Liam", "last_name": "Martinez", "email": "liam.m@email.com", "phone": "+1-555-0202"},
+    {"username": "olivia.brown", "first_name": "Olivia", "last_name": "Brown", "email": "olivia.b@email.com", "phone": "+1-555-0203"},
+    {"username": "noah.davis", "first_name": "Noah", "last_name": "Davis", "email": "noah.d@email.com", "phone": "+1-555-0204"},
+    {"username": "ava.garcia", "first_name": "Ava", "last_name": "Garcia", "email": "ava.g@email.com", "phone": "+1-555-0205"},
+    {"username": "ethan.wilson", "first_name": "Ethan", "last_name": "Wilson", "email": "ethan.w@email.com", "phone": "+1-555-0206"},
+    {"username": "sophia.anderson", "first_name": "Sophia", "last_name": "Anderson", "email": "sophia.a@email.com", "phone": "+1-555-0207"},
+    {"username": "mason.thomas", "first_name": "Mason", "last_name": "Thomas", "email": "mason.t@email.com", "phone": "+1-555-0208"},
+]
+
+REWARD_DATA = [
+    {"name": "10% Off Next Visit", "description": "Valid on any single service", "points_cost": 50},
+    {"name": "Free Scalp Treatment", "description": "Add-on during any hair service", "points_cost": 75},
+    {"name": "Free Gel Manicure", "description": "One complimentary manicure session", "points_cost": 120},
+    {"name": "Free Haircut", "description": "Complimentary haircut and style session", "points_cost": 200},
+    {"name": "Spa Day Package", "description": "Facial + massage combo (2 hours)", "points_cost": 350},
+]
+
+PROMO_DATA = [
+    {"code": "WELCOME20", "description": "New client welcome — 20% off first visit", "discount_type": "percent", "discount_value": 20},
+    {"code": "SPRING25", "description": "Spring special — $25 off any service over $100", "discount_type": "fixed", "discount_value": 25},
+    {"code": "REFERAFRIEND", "description": "Refer a friend — $15 credit for both", "discount_type": "fixed", "discount_value": 15},
+]
+
+APPOINTMENT_STATUSES = ["completed", "completed", "completed", "cancelled", "confirmed", "pending", "completed", "completed", "pending"]
+
+REVIEW_COMMENTS = [
+    (5, "Absolutely loved my balayage! Mia is a true artist."),
+    (5, "Best facial I've ever had. Sofia's hands are magic."),
+    (4, "Great massage, very professional. Will book again."),
+    (5, "Noah did an incredible job on my lashes. So natural!"),
+    (4, "Solid haircut, exactly what I asked for."),
+    (5, "The spa pedicure was heavenly. Perfect relaxation."),
+    (3, "Good service but had to wait 10 minutes past my appointment time."),
+    (5, "Brow lamination changed my life. Best brows ever!"),
+    (4, "Nice salon atmosphere, friendly staff."),
+]
+
+
 class Command(BaseCommand):
-    help = "Seed the database with demo data for portfolio demonstration."
+    help = "Seed Bloom Studio with 6 months of realistic demo data for portfolio demonstration."
 
     def handle(self, *args, **options):
-        self.stdout.write("Seeding demo data...")
+        self.stdout.write("Seeding Bloom Studio demo data...\n")
 
-        # Services
-        services_data = [
-            {
-                "name": "Haircut",
-                "description": "Standard haircut and styling",
-                "duration_minutes": 30,
-                "price": 25.00,
-            },
-            {
-                "name": "Beard Trim",
-                "description": "Beard shaping and trim",
-                "duration_minutes": 15,
-                "price": 15.00,
-            },
-            {
-                "name": "Hair Color",
-                "description": "Full hair coloring service",
-                "duration_minutes": 90,
-                "price": 75.00,
-            },
-            {
-                "name": "Manicure",
-                "description": "Classic manicure treatment",
-                "duration_minutes": 45,
-                "price": 35.00,
-            },
-            {
-                "name": "Massage",
-                "description": "60-minute relaxation massage",
-                "duration_minutes": 60,
-                "price": 60.00,
-            },
-        ]
+        business, _ = Business.objects.update_or_create(
+            slug=BLOOM_STUDIO["slug"], defaults=BLOOM_STUDIO
+        )
+        self.stdout.write(f"  Business: {business.name}")
+
         services = []
-        for s in services_data:
-            service, _ = Service.objects.get_or_create(name=s["name"], defaults=s)
-            services.append(service)
-            self.stdout.write(f"  Service: {service.name}")
+        for s in SERVICES_DATA:
+            svc, _ = Service.objects.update_or_create(
+                name=s["name"], defaults={**s, "business": business}
+            )
+            services.append(svc)
+        self.stdout.write(f"  Services: {len(services)}")
 
-        # Admin user
-        admin_user, _ = User.objects.get_or_create(
+        # Admin
+        admin_user, _ = User.objects.update_or_create(
             username="admin",
             defaults={
-                "email": "admin@demo.com",
+                "email": "admin@bloomstudio.com",
                 "role": "admin",
-                "first_name": "Admin",
-                "last_name": "User",
+                "first_name": "Bloom",
+                "last_name": "Admin",
                 "is_staff": True,
                 "is_superuser": True,
             },
         )
         admin_user.set_password("admin123")
         admin_user.save()
+        BusinessMembership.objects.get_or_create(
+            user=admin_user, business=business, defaults={"role": "admin"}
+        )
         self.stdout.write(f"  Admin: {admin_user.username}")
 
-        # Staff users
+        # Staff
         staff_users = []
-        staff_data = [
-            {
-                "username": "staff_alice",
-                "first_name": "Alice",
-                "last_name": "Johnson",
-                "email": "alice@demo.com",
-            },
-            {
-                "username": "staff_bob",
-                "first_name": "Bob",
-                "last_name": "Smith",
-                "email": "bob@demo.com",
-            },
-        ]
-        for s in staff_data:
-            user, _ = User.objects.get_or_create(
+        for s in STAFF_DATA:
+            user, _ = User.objects.update_or_create(
                 username=s["username"],
-                defaults={**s, "role": "staff"},
+                defaults={**{k: v for k, v in s.items() if k != "services"}, "role": "staff"},
             )
             user.set_password("staff123")
             user.save()
-            profile, _ = StaffProfile.objects.get_or_create(user=user)
-            profile.services_offered.set(
-                random.sample(services, k=min(3, len(services)))
+            profile, _ = StaffProfile.objects.update_or_create(
+                user=user, defaults={"business": business}
+            )
+            staff_svc = [svc for svc in services if svc.name in s["services"]]
+            profile.services_offered.set(staff_svc)
+            BusinessMembership.objects.get_or_create(
+                user=user, business=business, defaults={"role": "staff"}
             )
             staff_users.append(user)
-            self.stdout.write(f"  Staff: {user.username}")
+            self.stdout.write(f"  Staff: {user.first_name} {user.last_name}")
 
-        # Working hours (Mon-Fri, 9-17)
+        # Working hours — Mon-Fri 9-5, Sat 10-2
         for staff in staff_users:
             for weekday in range(5):
-                WorkingHours.objects.get_or_create(
-                    staff=staff,
-                    weekday=weekday,
+                WorkingHours.objects.update_or_create(
+                    staff=staff, weekday=weekday,
                     defaults={"start_time": "09:00", "end_time": "17:00"},
                 )
+            WorkingHours.objects.update_or_create(
+                staff=staff, weekday=5,
+                defaults={"start_time": "10:00", "end_time": "14:00"},
+            )
 
-        # Time off for first staff member next week
-        next_monday = timezone.now().date() + timedelta(
-            days=(7 - timezone.now().weekday())
-        )
-        TimeOff.objects.get_or_create(
-            staff=staff_users[0],
-            start_datetime=timezone.make_aware(
-                timezone.datetime.combine(
-                    next_monday, timezone.datetime.min.time().replace(hour=12)
-                )
-            ),
-            end_datetime=timezone.make_aware(
-                timezone.datetime.combine(
-                    next_monday, timezone.datetime.min.time().replace(hour=14)
-                )
-            ),
-            defaults={"reason": "Lunch meeting"},
-        )
-        self.stdout.write(f"  Time off created for {staff_users[0].username}")
-
-        # Customer users
+        # Customers
         customers = []
-        customer_data = [
-            {
-                "username": "customer_john",
-                "first_name": "John",
-                "last_name": "Doe",
-                "email": "john@demo.com",
-                "phone_number": "+1234567890",
-            },
-            {
-                "username": "customer_jane",
-                "first_name": "Jane",
-                "last_name": "Doe",
-                "email": "jane@demo.com",
-                "phone_number": "+0987654321",
-            },
-        ]
-        for c in customer_data:
-            user, _ = User.objects.get_or_create(
+        for c in CUSTOMER_DATA:
+            user, _ = User.objects.update_or_create(
                 username=c["username"],
-                defaults={**c, "role": "customer"},
+                defaults={
+                    "first_name": c["first_name"],
+                    "last_name": c["last_name"],
+                    "email": c["email"],
+                    "phone_number": c["phone"],
+                    "role": "customer",
+                },
             )
             user.set_password("customer123")
             user.save()
+            BusinessMembership.objects.get_or_create(
+                user=user, business=business, defaults={"role": "customer"}
+            )
             customers.append(user)
-            self.stdout.write(f"  Customer: {user.username}")
+        self.stdout.write(f"  Customers: {len(customers)}")
 
-        # Appointments
+        # Generate 6 months of appointments
         now = timezone.now()
-        appointment_data = [
-            {
-                "customer": customers[0],
-                "staff": staff_users[0],
-                "service": services[0],
-                "start_datetime": now.replace(
-                    hour=10, minute=0, second=0, microsecond=0
+        appointments = []
+        for month_offset in range(6):
+            base_date = now - timedelta(days=30 * month_offset)
+            num_bookings = random.randint(6, 12)
+            for _ in range(num_bookings):
+                day_offset = random.randint(0, 29)
+                hour = random.choice([9, 10, 10, 11, 11, 13, 14, 14, 15, 16])
+                staff = random.choice(staff_users)
+                service = random.choice(
+                    [s for s in services if s in staff.staff_profile.services_offered.all()]
+                    or services[:2]
                 )
-                + timedelta(days=1),
-                "status": "confirmed",
-            },
-            {
-                "customer": customers[1],
-                "staff": staff_users[1],
-                "service": services[1],
-                "start_datetime": now.replace(
-                    hour=11, minute=0, second=0, microsecond=0
+                start = timezone.make_aware(
+                    timezone.datetime.combine(
+                        (base_date - timedelta(days=day_offset)).date(),
+                        timezone.datetime.min.time().replace(hour=hour),
+                    )
                 )
-                + timedelta(days=1),
-                "status": "pending",
-            },
-            {
-                "customer": customers[0],
-                "staff": staff_users[0],
-                "service": services[2],
-                "start_datetime": now.replace(
-                    hour=14, minute=0, second=0, microsecond=0
-                )
-                + timedelta(days=2),
-                "status": "pending",
-            },
-            {
-                "customer": customers[0],
-                "staff": staff_users[0],
-                "service": services[0],
-                "start_datetime": now.replace(
-                    hour=10, minute=0, second=0, microsecond=0
-                )
-                - timedelta(days=5),
-                "status": "completed",
-            },
-            {
-                "customer": customers[1],
-                "staff": staff_users[1],
-                "service": services[4],
-                "start_datetime": now.replace(
-                    hour=15, minute=0, second=0, microsecond=0
-                )
-                - timedelta(days=3),
-                "status": "completed",
-            },
-        ]
-        completed_appointments = []
-        for a in appointment_data:
-            service = a["service"]
-            a["end_datetime"] = a["start_datetime"] + timedelta(
-                minutes=service.duration_minutes
-            )
-            appointment, created = Appointment.objects.get_or_create(
-                customer=a["customer"],
-                staff=a["staff"],
-                service=a["service"],
-                start_datetime=a["start_datetime"],
-                defaults={"end_datetime": a["end_datetime"], "status": a["status"]},
-            )
-            if created:
-                self.stdout.write(f"  Appointment: {appointment}")
-            if appointment.status == "completed" and appointment.points_earned == 0:
-                appointment.points_earned = int(appointment.service.price)
-                appointment.save(update_fields=["points_earned"])
-            if appointment.status == "completed":
-                completed_appointments.append(appointment)
+                end = start + timedelta(minutes=service.duration_minutes)
 
-        # Reviews for completed visits
-        review_data = [
-            {"appointment": completed_appointments[0], "rating": 5, "comment": "Great cut, will be back!"},
-            {"appointment": completed_appointments[1], "rating": 4, "comment": "Very relaxing massage."},
-        ]
-        for r in review_data:
-            appt = r["appointment"]
+                status = random.choice(APPOINTMENT_STATUSES)
+                if month_offset > 2:
+                    status = random.choice(["completed", "completed", "cancelled"])
+                if month_offset == 0 and day_offset < 0:
+                    status = random.choice(["confirmed", "pending"])
+
+                customer = random.choice(customers)
+                apt, created = Appointment.objects.get_or_create(
+                    customer=customer,
+                    staff=staff,
+                    service=service,
+                    start_datetime=start,
+                    defaults={
+                        "end_datetime": end,
+                        "status": status,
+                        "business": business,
+                    },
+                )
+                if created:
+                    if status == "completed":
+                        apt.points_earned = int(service.price)
+                        apt.save(update_fields=["points_earned"])
+                    appointments.append(apt)
+
+        completed = [a for a in appointments if a.status == "completed"]
+        self.stdout.write(f"  Appointments: {len(appointments)} ({len(completed)} completed)")
+
+        # Reviews — ~40% of completed appointments
+        reviewed = set()
+        for apt in random.sample(completed, k=min(int(len(completed) * 0.4), len(completed))):
+            if apt.id in reviewed:
+                continue
+            rating, comment = random.choice(REVIEW_COMMENTS)
             Review.objects.get_or_create(
-                appointment=appt,
+                appointment=apt,
                 defaults={
-                    "customer": appt.customer,
-                    "staff": appt.staff,
-                    "rating": r["rating"],
-                    "comment": r["comment"],
+                    "customer": apt.customer,
+                    "staff": apt.staff,
+                    "rating": rating,
+                    "comment": comment,
+                    "business": business,
                 },
             )
-        self.stdout.write(f"  Reviews created for {len(review_data)} completed visits")
+            reviewed.add(apt.id)
+        self.stdout.write(f"  Reviews: {len(reviewed)}")
 
-        # Loyalty rewards catalog
-        reward_data = [
-            {"name": "10% off next visit", "description": "Applies to any single service", "points_cost": 50},
-            {"name": "Free add-on treatment", "description": "Hot towel or scalp massage upgrade", "points_cost": 90},
-            {"name": "Free haircut", "description": "Redeem for a full complimentary service", "points_cost": 150},
-        ]
-        for r in reward_data:
-            LoyaltyReward.objects.get_or_create(name=r["name"], defaults=r)
-        self.stdout.write(f"  Loyalty rewards: {len(reward_data)}")
+        # Loyalty rewards
+        for r in REWARD_DATA:
+            LoyaltyReward.objects.update_or_create(
+                name=r["name"], defaults={**r, "business": business}
+            )
+        self.stdout.write(f"  Loyalty rewards: {len(REWARD_DATA)}")
 
-        # Promo campaigns
-        promo_data = [
-            {"code": "WELCOME15", "description": "New client welcome", "discount_type": "percent", "discount_value": 15},
-            {"code": "FRIEND20", "description": "Refer a friend credit", "discount_type": "fixed", "discount_value": 20},
-        ]
-        for p in promo_data:
-            PromoCode.objects.get_or_create(code=p["code"], defaults=p)
-        self.stdout.write(f"  Promo codes: {len(promo_data)}")
+        # Promo codes
+        for p in PROMO_DATA:
+            PromoCode.objects.update_or_create(
+                code=p["code"], defaults={**p, "business": business}
+            )
+        self.stdout.write(f"  Promo codes: {len(PROMO_DATA)}")
 
-        self.stdout.write(self.style.SUCCESS("Demo data seeded successfully!"))
+        # Time off — random staff member, 2 upcoming days
+        future = now + timedelta(days=random.randint(3, 10))
+        TimeOff.objects.get_or_create(
+            staff=random.choice(staff_users),
+            start_datetime=timezone.make_aware(
+                timezone.datetime.combine(future.date(), timezone.datetime.min.time().replace(hour=12))
+            ),
+            end_datetime=timezone.make_aware(
+                timezone.datetime.combine(future.date(), timezone.datetime.min.time().replace(hour=15))
+            ),
+            defaults={"reason": "Personal appointment"},
+        )
+        self.stdout.write(f"  Time off: 1 upcoming")
+
+        self.stdout.write(self.style.SUCCESS("\nBloom Studio seeded successfully!"))
         self.stdout.write("")
         self.stdout.write("Demo accounts:")
         self.stdout.write("  Admin:    admin / admin123")
-        self.stdout.write("  Staff:    staff_alice / staff123")
-        self.stdout.write("  Staff:    staff_bob / staff123")
-        self.stdout.write("  Customer: customer_john / customer123")
-        self.stdout.write("  Customer: customer_jane / customer123")
+        self.stdout.write("  Staff:    mia salon / staff123  (Hair specialist)")
+        self.stdout.write("  Staff:    james park / staff123  (Hair)")
+        self.stdout.write("  Staff:    sofia chen / staff123  (Nails)")
+        self.stdout.write("  Staff:    aria williams / staff123  (Wellness)")
+        self.stdout.write("  Staff:    noah kim / staff123  (Lashes & Brows)")
+        self.stdout.write("  Customer: emma.johnson / customer123")
+        self.stdout.write("  Customer: liam.martinez / customer123")

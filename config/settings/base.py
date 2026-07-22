@@ -151,16 +151,27 @@ SIMPLE_JWT = {
 
 # drf-spectacular
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Appointment Booking API",
-    "DESCRIPTION": "Production-grade appointment/booking system for small businesses",
+    "TITLE": "BloomFlow AI — Smart Booking API",
+    "DESCRIPTION": (
+        "Production-grade appointment booking and business management platform with "
+        "AI-powered copilot, scheduling engine, loyalty, promotions, analytics, "
+        "and webhook integrations."
+    ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "TAGS": [
         {"name": "Auth", "description": "JWT authentication endpoints"},
-        {"name": "Services", "description": "Service management"},
-        {"name": "Staff", "description": "Staff profiles and availability"},
-        {"name": "Appointments", "description": "Booking management"},
+        {"name": "Services", "description": "Service catalog management"},
+        {"name": "Staff", "description": "Staff profiles, availability, breaks, and time-off"},
+        {"name": "Appointments", "description": "Booking creation, lifecycle, reschedule, and audit log"},
+        {"name": "Reviews", "description": "Customer reviews for completed appointments"},
+        {"name": "Loyalty", "description": "Loyalty rewards, points balance, and redemptions"},
+        {"name": "Promotions", "description": "Promo codes, validation, and redemptions"},
+        {"name": "Support", "description": "Customer-to-admin support messaging"},
+        {"name": "Notifications", "description": "Notification outbox and delivery history"},
+        {"name": "Webhooks", "description": "Webhook subscriptions, delivery log, and event callbacks"},
+        {"name": "Analytics", "description": "Revenue, staff, service, and booking analytics"},
     ],
 }
 
