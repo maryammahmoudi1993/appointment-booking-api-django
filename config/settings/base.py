@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.analytics",
     "apps.business",
+    "apps.ai",
     "core",
 ]
 
@@ -224,3 +225,6 @@ LOGGING = {
         },
     },
 }
+
+# AI Copilot
+OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
