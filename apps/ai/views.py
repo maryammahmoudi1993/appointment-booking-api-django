@@ -1,7 +1,8 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
+from .admin_copilot import admin_chat
 from .copilot import chat
 from .serializers import CopilotRequestSerializer, CopilotResponseSerializer
 
@@ -33,3 +34,28 @@ class CopilotView(generics.GenericAPIView):
                 }
             ).data
         )
+
+
+class AdminCopilotView(generics.GenericAPIView):
+    """Admin-only analytics copilot endpoint."""
+
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CopilotRequestSerializer
+        return CopilotResponseSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        result = admin_chat(
+            message=serializer.validated_data["message"],
+            conversation_id=serializer.validated_data.get("conversation_id"),
+        )
+
+        return Response({
+            "reply": result.reply,
+            "tool_calls_made": result.tool_calls_made,
+        })
