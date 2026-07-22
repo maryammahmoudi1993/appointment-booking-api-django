@@ -56,6 +56,35 @@ export function FaceIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function CalendarIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 10h18" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+export function GiftIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="8" width="18" height="4" rx="1" />
+      <path d="M12 8v13M19 12v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6" />
+      <path d="M12 8c-1.5 0-4-1-4-3a2.5 2.5 0 015 0c0 2-1.5 3-1 3zM12 8c1.5 0 4-1 4-3a2.5 2.5 0 00-5 0c0 2 1.5 3 1 3z" />
+    </svg>
+  );
+}
+
 export function UsersIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
