@@ -19,6 +19,7 @@ from apps.ai.tools import (
     execute_get_booking_draft,
     execute_get_business_info,
     execute_get_service_details,
+    execute_predict_no_show,
     execute_recommend_services,
     execute_search_services,
     execute_suggest_staff,
@@ -48,14 +49,14 @@ class TestToolRegistry:
         "create_booking_draft", "get_booking_draft", "confirm_booking_draft",
         "create_reschedule_draft", "confirm_reschedule",
         "create_cancellation_draft", "confirm_cancellation",
-        "recommend_services",
+        "recommend_services", "predict_no_show",
     }
 
     def test_all_tools_registered(self):
         assert set(TOOL_MAP.keys()) == self.EXPECTED_TOOLS
 
     def test_tool_count(self):
-        assert len(TOOL_DEFINITIONS) == 15
+        assert len(TOOL_DEFINITIONS) == 16
 
     def test_every_tool_has_required_keys(self):
         for tool in TOOL_DEFINITIONS:
@@ -67,7 +68,7 @@ class TestToolRegistry:
 
     def test_get_openai_tools_format(self):
         tools = get_openai_tools()
-        assert len(tools) == 15
+        assert len(tools) == 16
         for t in tools:
             assert t["type"] == "function"
             assert "name" in t["function"]
@@ -955,6 +956,108 @@ class TestExecuteRecommendServices:
 
         assert "recommend_services" in TOOL_MAP
         tool = TOOL_MAP["recommend_services"]
+        assert "execute" in tool
+        assert callable(tool["execute"])
+
+
+# ────────────────────────────────────────────────────────────────
+# No-Show Prediction Engine
+# ────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestNoShowPredictor:
+    def test_build_feature_row(self):
+        from apps.ai.no_show import _build_feature_row
+
+        appt = AppointmentFactory(
+            start_datetime=timezone.now() + timedelta(days=3),
+        )
+        row = _build_feature_row(appt)
+        assert len(row) == 8
+        assert isinstance(row[0], float)
+
+    def test_synthetic_training_data_shape(self):
+        from apps.ai.no_show import _generate_synthetic_training_data
+
+        X, y = _generate_synthetic_training_data(n_samples=100)
+        assert X.shape == (100, 8)
+        assert y.shape == (100,)
+        assert set(y.tolist()).issubset({0.0, 1.0})
+
+    def test_predict_returns_prediction_result(self):
+        from apps.ai.no_show import PredictionResult, predict_no_show
+
+        appt = AppointmentFactory(
+            start_datetime=timezone.now() + timedelta(days=1),
+            status="confirmed",
+        )
+        result = predict_no_show(appt)
+        assert isinstance(result, PredictionResult)
+        assert 0.0 <= result.probability_no_show <= 1.0
+        assert result.risk_level in ("low", "medium", "high")
+        assert "lead_time_days" in result.feature_contributions
+        assert isinstance(result.explanation, str)
+
+    def test_risk_level_thresholds(self):
+        from apps.ai.no_show import predict_no_show
+
+        appt = AppointmentFactory(
+            start_datetime=timezone.now() + timedelta(days=14),
+            status="confirmed",
+        )
+        result = predict_no_show(appt)
+        assert result.risk_level in ("low", "medium", "high")
+
+    def test_cancelled_appointment_training(self):
+        from apps.ai.no_show import _build_training_data
+
+        AppointmentFactory(status="cancelled")
+        AppointmentFactory(status="completed")
+        AppointmentFactory(status="completed")
+        X, y = _build_training_data()
+        assert len(X) >= 3
+        assert 1.0 in y
+        assert 0.0 in y
+
+
+@pytest.mark.django_db
+class TestExecutePredictNoShow:
+    def test_returns_prediction(self):
+        appt = AppointmentFactory(
+            start_datetime=timezone.now() + timedelta(days=2),
+            status="confirmed",
+        )
+        result = execute_predict_no_show(user=None, appointment_id=appt.id)
+        assert "probability_no_show" in result
+        assert "risk_level" in result
+        assert "explanation" in result
+        assert result["appointment_id"] == appt.id
+
+    def test_nonexistent_appointment(self):
+        result = execute_predict_no_show(user=None, appointment_id=99999)
+        assert "error" in result
+
+    def test_missing_appointment_id(self):
+        result = execute_predict_no_show(user=None)
+        assert "error" in result
+
+    def test_includes_appointment_context(self):
+        appt = AppointmentFactory(
+            start_datetime=timezone.now() + timedelta(days=1),
+            status="confirmed",
+        )
+        result = execute_predict_no_show(user=None, appointment_id=appt.id)
+        assert result["customer"]
+        assert result["service"]
+        assert result["staff"]
+        assert "T" in result["appointment_time"]
+
+    def test_tool_in_registry(self):
+        from apps.ai.tools import TOOL_MAP
+
+        assert "predict_no_show" in TOOL_MAP
+        tool = TOOL_MAP["predict_no_show"]
         assert "execute" in tool
         assert callable(tool["execute"])
 

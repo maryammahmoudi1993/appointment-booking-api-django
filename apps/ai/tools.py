@@ -632,6 +632,43 @@ def execute_confirm_cancellation(**kwargs):
 
 
 # ────────────────────────────────────────────────────────────────────
+# No-show Prediction
+# ────────────────────────────────────────────────────────────────────
+
+
+def execute_predict_no_show(user, **kwargs):
+    """Predict no-show risk for a specific appointment."""
+    from apps.ai.no_show import predict_no_show
+
+    appointment_id = kwargs.get("appointment_id")
+    if not appointment_id:
+        return {"error": "appointment_id is required."}
+
+    try:
+        from apps.appointments.models import Appointment
+
+        appt = Appointment.objects.select_related(
+            "customer", "staff", "service"
+        ).get(id=appointment_id)
+    except Appointment.DoesNotExist:
+        return {"error": f"Appointment #{appointment_id} not found."}
+
+    result = predict_no_show(appt)
+
+    return {
+        "appointment_id": appt.id,
+        "customer": appt.customer.get_full_name() or appt.customer.username,
+        "service": appt.service.name,
+        "staff": appt.staff.get_full_name() or appt.staff.username,
+        "appointment_time": appt.start_datetime.isoformat(),
+        "probability_no_show": result.probability_no_show,
+        "risk_level": result.risk_level,
+        "feature_contributions": result.feature_contributions,
+        "explanation": result.explanation,
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
 # Recommendations
 # ────────────────────────────────────────────────────────────────────
 
@@ -874,6 +911,24 @@ TOOL_DEFINITIONS = [
             "required": [],
         },
         "execute": execute_recommend_services,
+    },
+    {
+        "name": "predict_no_show",
+        "description": (
+            "Predict whether a customer is likely to no-show for a specific appointment. "
+            "Returns a risk level, probability, and explainable factor contributions."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "appointment_id": {
+                    "type": "integer",
+                    "description": "The appointment ID to predict no-show risk for.",
+                },
+            },
+            "required": ["appointment_id"],
+        },
+        "execute": execute_predict_no_show,
     },
 ]
 
