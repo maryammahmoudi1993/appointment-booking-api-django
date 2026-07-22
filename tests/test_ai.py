@@ -49,14 +49,14 @@ class TestToolRegistry:
         "create_booking_draft", "get_booking_draft", "confirm_booking_draft",
         "create_reschedule_draft", "confirm_reschedule",
         "create_cancellation_draft", "confirm_cancellation",
-        "recommend_services", "predict_no_show",
+        "recommend_services", "predict_no_show", "forecast_revenue",
     }
 
     def test_all_tools_registered(self):
         assert set(TOOL_MAP.keys()) == self.EXPECTED_TOOLS
 
     def test_tool_count(self):
-        assert len(TOOL_DEFINITIONS) == 16
+        assert len(TOOL_DEFINITIONS) == 17
 
     def test_every_tool_has_required_keys(self):
         for tool in TOOL_DEFINITIONS:
@@ -68,7 +68,7 @@ class TestToolRegistry:
 
     def test_get_openai_tools_format(self):
         tools = get_openai_tools()
-        assert len(tools) == 16
+        assert len(tools) == 17
         for t in tools:
             assert t["type"] == "function"
             assert "name" in t["function"]
@@ -1058,6 +1058,157 @@ class TestExecutePredictNoShow:
 
         assert "predict_no_show" in TOOL_MAP
         tool = TOOL_MAP["predict_no_show"]
+        assert "execute" in tool
+        assert callable(tool["execute"])
+
+
+# ────────────────────────────────────────────────────────────────
+# Revenue Forecast Engine
+# ────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+class TestRevenueForecast:
+    def test_empty_data_returns_empty(self):
+        from apps.ai.revenue_forecast import forecast_revenue
+
+        result = forecast_revenue(business_id=99999)
+        assert result.forecast_points == []
+        assert result.total_forecast == 0.0
+        assert "No historical" in result.explanation
+
+    def test_with_completed_appointments(self):
+        from apps.ai.revenue_forecast import forecast_revenue
+
+        svc = ServiceFactory(price="100.00")
+        staff_user = StaffFactory()
+        for _ in range(5):
+            AppointmentFactory(
+                staff=staff_user,
+                service=svc,
+                status="completed",
+                start_datetime=timezone.now() - timedelta(days=10),
+            )
+        result = forecast_revenue(
+            business_id=svc.business_id,
+            forecast_days=7,
+            granularity="daily",
+        )
+        assert len(result.forecast_points) == 7
+        assert result.total_forecast > 0
+        assert result.historical_avg_daily > 0
+
+    def test_granularity_weekly(self):
+        from apps.ai.revenue_forecast import forecast_revenue
+
+        svc = ServiceFactory(price="50.00")
+        staff_user = StaffFactory()
+        for _ in range(3):
+            AppointmentFactory(
+                staff=staff_user,
+                service=svc,
+                status="completed",
+            )
+        result = forecast_revenue(
+            business_id=svc.business_id,
+            forecast_days=30,
+            granularity="weekly",
+        )
+        assert result.granularity == "weekly"
+        assert len(result.forecast_points) > 0
+
+    def test_forecast_days_capped(self):
+        from apps.ai.revenue_forecast import forecast_revenue
+
+        svc = ServiceFactory()
+        staff_user = StaffFactory()
+        AppointmentFactory(staff=staff_user, service=svc, status="completed")
+        result = forecast_revenue(
+            business_id=svc.business_id,
+            forecast_days=500,
+        )
+        assert len(result.forecast_points) <= 365
+
+    def test_trend_detection(self):
+        from apps.ai.revenue_forecast import forecast_revenue
+
+        svc = ServiceFactory(price="100.00")
+        staff_user = StaffFactory()
+        for i in range(20):
+            AppointmentFactory(
+                staff=staff_user,
+                service=svc,
+                status="completed",
+                start_datetime=timezone.now() - timedelta(days=20 - i),
+            )
+        result = forecast_revenue(
+            business_id=svc.business_id,
+            forecast_days=7,
+        )
+        assert result.trend in ("up", "down", "stable")
+        assert isinstance(result.explanation, str)
+
+    def test_bounds_increase_with_distance(self):
+        from apps.ai.revenue_forecast import forecast_revenue
+
+        svc = ServiceFactory(price="80.00")
+        staff_user = StaffFactory()
+        for _ in range(10):
+            AppointmentFactory(
+                staff=staff_user,
+                service=svc,
+                status="completed",
+            )
+        result = forecast_revenue(
+            business_id=svc.business_id,
+            forecast_days=14,
+        )
+        if len(result.forecast_points) >= 2:
+            first = result.forecast_points[0]
+            last = result.forecast_points[-1]
+            first_width = first.upper_bound - first.lower_bound
+            last_width = last.upper_bound - last.lower_bound
+            assert last_width >= first_width
+
+
+@pytest.mark.django_db
+class TestExecuteForecastRevenue:
+    def test_returns_forecast(self):
+        from apps.ai.tools import execute_forecast_revenue
+
+        result = execute_forecast_revenue(user=None)
+        assert "forecast_points" in result
+        assert "trend" in result
+        assert "total_forecast" in result
+
+    def test_with_completed_data(self):
+        from apps.ai.tools import execute_forecast_revenue
+
+        svc = ServiceFactory(price="120.00")
+        staff_user = StaffFactory()
+        AppointmentFactory(
+            staff=staff_user, service=svc, status="completed"
+        )
+        result = execute_forecast_revenue(user=None, forecast_days=7)
+        assert result["total_forecast"] > 0 or len(result["forecast_points"]) == 0
+
+    def test_custom_granularity(self):
+        from apps.ai.tools import execute_forecast_revenue
+
+        result = execute_forecast_revenue(user=None, granularity="monthly")
+        assert result["granularity"] == "monthly"
+
+    def test_invalid_granularity_defaults(self):
+        from apps.ai.tools import execute_forecast_revenue
+
+        result = execute_forecast_revenue(user=None, granularity="invalid")
+        assert result["granularity"] == "daily"
+
+    def test_tool_in_registry(self):
+        from apps.ai.tools import TOOL_MAP
+
+        assert "forecast_revenue" in TOOL_MAP
+        tool = TOOL_MAP["forecast_revenue"]
         assert "execute" in tool
         assert callable(tool["execute"])
 

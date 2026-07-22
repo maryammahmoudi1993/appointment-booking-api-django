@@ -669,6 +669,45 @@ def execute_predict_no_show(user, **kwargs):
 
 
 # ────────────────────────────────────────────────────────────────────
+# Revenue Forecast
+# ────────────────────────────────────────────────────────────────────
+
+
+def execute_forecast_revenue(user, **kwargs):
+    """Forecast future revenue using exponential smoothing."""
+    from apps.ai.revenue_forecast import forecast_revenue
+
+    business = _get_business(user)
+    forecast_days = min(int(kwargs.get("forecast_days", 30)), 365)
+    granularity = kwargs.get("granularity", "daily")
+    if granularity not in ("daily", "weekly", "monthly"):
+        granularity = "daily"
+
+    result = forecast_revenue(
+        business_id=business.id if business else None,
+        forecast_days=forecast_days,
+        granularity=granularity,
+    )
+
+    return {
+        "granularity": result.granularity,
+        "forecast_points": [
+            {
+                "date": p.date,
+                "predicted_revenue": p.predicted_revenue,
+                "lower_bound": p.lower_bound,
+                "upper_bound": p.upper_bound,
+            }
+            for p in result.forecast_points
+        ],
+        "historical_avg_daily": result.historical_avg_daily,
+        "total_forecast": result.total_forecast,
+        "trend": result.trend,
+        "explanation": result.explanation,
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
 # Recommendations
 # ────────────────────────────────────────────────────────────────────
 
@@ -929,6 +968,29 @@ TOOL_DEFINITIONS = [
             "required": ["appointment_id"],
         },
         "execute": execute_predict_no_show,
+    },
+    {
+        "name": "forecast_revenue",
+        "description": (
+            "Forecast future revenue based on historical completed appointment data. "
+            "Returns daily/weekly/monthly predictions with confidence intervals."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "forecast_days": {
+                    "type": "integer",
+                    "description": "Number of days to forecast (default 30, max 365).",
+                },
+                "granularity": {
+                    "type": "string",
+                    "enum": ["daily", "weekly", "monthly"],
+                    "description": "Forecast granularity (default daily).",
+                },
+            },
+            "required": [],
+        },
+        "execute": execute_forecast_revenue,
     },
 ]
 
