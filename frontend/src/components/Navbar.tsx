@@ -165,7 +165,7 @@ export default function Navbar() {
                     Admin
                   </Link>
                 )}
-                <button onClick={handleLogout} className="text-left text-red-600" role="menuitem">
+                <button onClick={handleLogout} className="text-left text-rose-600" role="menuitem">
                   Log out
                 </button>
               </>

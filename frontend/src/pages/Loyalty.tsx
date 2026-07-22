@@ -56,7 +56,7 @@ export default function Loyalty() {
   if (loadError || !summary) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8">
-        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
           {loadError || "Could not load your loyalty rewards."}
         </p>
       </div>
@@ -75,7 +75,7 @@ export default function Loyalty() {
       <h2 className="font-display text-2xl font-bold text-brand-900">
         Loyalty Rewards
       </h2>
-      <p className="mt-1 text-gray-600">Earn points with every visit.</p>
+      <p className="mt-1 text-charcoal-light">Earn points with every visit.</p>
 
       <div className="mt-6 rounded-2xl bg-brand-700 p-6 text-white">
         <p className="text-xs font-medium uppercase tracking-wide text-brand-100">
@@ -98,12 +98,12 @@ export default function Loyalty() {
       </div>
 
       {error && (
-        <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        <p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
           {error}
         </p>
       )}
 
-      <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-charcoal-light">
         Redeem a reward
       </h3>
       <div className="mt-3 space-y-3">
@@ -115,9 +115,9 @@ export default function Loyalty() {
               className="flex items-center justify-between rounded-2xl border border-brand-100 bg-white p-4 shadow-sm"
             >
               <div>
-                <p className="font-semibold text-gray-900">{r.name}</p>
+                <p className="font-semibold text-charcoal">{r.name}</p>
                 {r.description && (
-                  <p className="text-sm text-gray-500">{r.description}</p>
+                  <p className="text-sm text-charcoal-light">{r.description}</p>
                 )}
                 <p className="mt-1 text-sm font-medium text-brand-700">
                   {r.points_cost} pts
@@ -126,7 +126,7 @@ export default function Loyalty() {
               <button
                 onClick={() => handleRedeem(r)}
                 disabled={!canRedeem || redeemingId === r.id}
-                className="rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+                className="rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-blush disabled:text-charcoal-light/70"
               >
                 {redeemingId === r.id ? "Redeeming..." : "Redeem"}
               </button>
@@ -137,17 +137,17 @@ export default function Loyalty() {
 
       {summary.history.length > 0 && (
         <>
-          <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-charcoal-light">
             Points history
           </h3>
           <div className="mt-3 space-y-2">
             {summary.history.map((h, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm"
+                className="flex items-center justify-between rounded-xl border border-champagne/15 bg-white px-4 py-2.5 text-sm"
               >
-                <span className="text-gray-700">{h.service_name}</span>
-                <span className="text-xs text-gray-400">
+                <span className="text-charcoal">{h.service_name}</span>
+                <span className="text-xs text-charcoal-light/70">
                   {new Date(h.date).toLocaleDateString()}
                 </span>
                 <span className="font-medium text-brand-700">+{h.points} pts</span>
@@ -159,20 +159,20 @@ export default function Loyalty() {
 
       {summary.redemptions.length > 0 && (
         <>
-          <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-charcoal-light">
             Your redemptions
           </h3>
           <div className="mt-3 space-y-2">
             {summary.redemptions.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm"
+                className="flex items-center justify-between rounded-xl border border-champagne/15 bg-white px-4 py-2.5 text-sm"
               >
-                <span className="text-gray-700">{r.reward_name}</span>
-                <span className="text-xs text-gray-400">
+                <span className="text-charcoal">{r.reward_name}</span>
+                <span className="text-xs text-charcoal-light/70">
                   {new Date(r.created_at).toLocaleDateString()}
                 </span>
-                <span className="font-medium text-red-600">-{r.points_spent} pts</span>
+                <span className="font-medium text-rose-600">-{r.points_spent} pts</span>
               </div>
             ))}
           </div>

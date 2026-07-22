@@ -58,19 +58,19 @@ export default function InboxPanel() {
       </div>
 
       {messages.length === 0 ? (
-        <p className="text-sm text-gray-500">No messages yet.</p>
+        <p className="text-sm text-charcoal-light">No messages yet.</p>
       ) : (
         <div className="space-y-4">
           {messages.map((m) => (
             <div
               key={m.id}
               className={`rounded-2xl border bg-white p-6 shadow-sm ${
-                m.is_read ? "border-gray-100" : "border-brand-300"
+                m.is_read ? "border-champagne/15" : "border-brand-300"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-charcoal">
                     {m.customer_name}
                     {!m.is_read && (
                       <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
@@ -78,8 +78,8 @@ export default function InboxPanel() {
                       </span>
                     )}
                   </p>
-                  <p className="mt-1 text-sm text-gray-700">{m.message}</p>
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-sm text-charcoal">{m.message}</p>
+                  <p className="mt-1 text-xs text-charcoal-light/70">
                     {new Date(m.created_at).toLocaleString()}
                   </p>
                 </div>
@@ -101,7 +101,7 @@ export default function InboxPanel() {
                     }
                     onKeyDown={(e) => e.key === "Enter" && handleReply(m.id)}
                     placeholder="Type a reply..."
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="flex-1 rounded-lg border border-champagne/30 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                   <button
                     onClick={() => handleReply(m.id)}

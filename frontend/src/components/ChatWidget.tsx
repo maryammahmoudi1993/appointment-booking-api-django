@@ -77,7 +77,7 @@ export default function ChatWidget() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition-colors hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 bg-rosegold-gradient text-white rounded-full p-4 shadow-lg transition-all hover:shadow-xl hover:scale-105 active:scale-95 motion-reduce:hover:scale-100"
         aria-label="Toggle AI assistant"
       >
         {isOpen ? (
@@ -92,34 +92,34 @@ export default function ChatWidget() {
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-h-[520px] bg-white rounded-xl shadow-2xl border flex flex-col overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3">
+        <div className="fixed bottom-24 right-6 z-50 w-96 max-h-[520px] bg-white rounded-2xl shadow-2xl border border-champagne/20 flex flex-col overflow-hidden">
+          <div className="bg-rosegold-gradient text-white px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
                 B
               </div>
               <div>
                 <h3 className="font-semibold text-sm">BloomFlow Assistant</h3>
-                <p className="text-xs text-blue-100">Ask about services, book, or get help</p>
+                <p className="text-xs text-white/80">Ask about services, book, or get help</p>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[300px] max-h-[350px] bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[300px] max-h-[350px] bg-cream">
             {messages.length === 0 && (
               <div className="mt-12 text-center">
-                <div className="h-12 w-12 mx-auto mb-3 rounded-full bg-blue-100 flex items-center justify-center">
-                  <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="h-12 w-12 mx-auto mb-3 rounded-full bg-champagne/20 flex items-center justify-center">
+                  <svg className="h-6 w-6 text-champagne-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
-                <p className="text-gray-500 text-sm mb-4">How can I help you today?</p>
+                <p className="text-charcoal-light text-sm mb-4">How can I help you today?</p>
                 <div className="space-y-2">
                   {SUGGESTIONS.map((s) => (
                     <button
                       key={s}
                       onClick={() => sendMessage(s)}
-                      className="block w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="block w-full text-left px-3 py-2 text-sm bg-white border border-champagne/20 hover:border-champagne hover:bg-champagne/10 rounded-lg transition-colors"
                     >
                       {s}
                     </button>
@@ -133,15 +133,15 @@ export default function ChatWidget() {
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
                     msg.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-md"
-                      : "bg-white text-gray-800 border border-gray-200 rounded-bl-md shadow-sm"
+                      ? "bg-rosegold-gradient text-white rounded-br-md"
+                      : "bg-white text-charcoal border border-champagne/20 rounded-bl-md shadow-sm"
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {msg.toolCalls.map((tc) => (
-                        <span key={tc} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">
+                        <span key={tc} className="text-[10px] px-1.5 py-0.5 rounded bg-champagne/20 text-champagne-dark font-mono">
                           {tc}
                         </span>
                       ))}
@@ -153,11 +153,11 @@ export default function ChatWidget() {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-gray-200 px-4 py-2 rounded-2xl rounded-bl-md shadow-sm">
+                <div className="bg-white border border-champagne/20 px-4 py-2 rounded-2xl rounded-bl-md shadow-sm">
                   <div className="flex gap-1">
-                    <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="h-2 w-2 bg-champagne/50 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="h-2 w-2 bg-champagne/50 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="h-2 w-2 bg-champagne/50 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default function ChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t p-3 bg-white">
+          <div className="border-t border-champagne/20 p-3 bg-white">
             <div className="flex gap-2">
               <input
                 value={input}
@@ -173,12 +173,12 @@ export default function ChatWidget() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about our services..."
                 disabled={loading}
-                className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+                className="flex-1 border border-champagne/20 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-champagne/40 focus:border-transparent disabled:opacity-50"
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={loading || !input.trim()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="bg-rosegold-gradient text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 Send
               </button>

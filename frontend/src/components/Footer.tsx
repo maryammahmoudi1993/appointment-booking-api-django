@@ -55,7 +55,7 @@ export default function Footer() {
               <BrandLogo size={32} />
               <span className="font-display text-xl font-bold text-white">BloomFlow</span>
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-gray-400">
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-charcoal-light/70">
               Premium beauty and wellness experiences, crafted with care.
               Where luxury meets expertise.
             </p>
@@ -66,7 +66,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-gray-400 transition-colors hover:bg-champagne hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-charcoal-light/70 transition-colors hover:bg-champagne hover:text-white"
                   aria-label={social.name}
                 >
                   <social.Icon />
@@ -81,7 +81,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.label}>
-                  <Link to={link.to} className="text-sm text-gray-400 transition-colors hover:text-white">
+                  <Link to={link.to} className="text-sm text-charcoal-light/70 transition-colors hover:text-white">
                     {link.label}
                   </Link>
                 </li>
@@ -95,7 +95,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-3">
               {hours.map((h) => (
                 <li key={h.day} className="text-sm">
-                  <span className="text-gray-400">{h.day}</span>
+                  <span className="text-charcoal-light/70">{h.day}</span>
                   <br />
                   <span className="text-white font-medium">{h.time}</span>
                 </li>
@@ -106,7 +106,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-champagne">Contact</h3>
-            <ul className="mt-4 space-y-3 text-sm text-gray-400">
+            <ul className="mt-4 space-y-3 text-sm text-charcoal-light/70">
               <li className="flex items-start gap-2">
                 <svg className="mt-0.5 h-4 w-4 shrink-0 text-champagne" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -131,7 +131,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-8 text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-charcoal-light">
             &copy; {new Date().getFullYear()} BloomFlow AI. All rights reserved. Built with Django, React, and OpenAI.
           </p>
         </div>
