@@ -1,14 +1,21 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 
 from .admin_copilot import admin_chat
 from .copilot import chat
 from .serializers import CopilotRequestSerializer, CopilotResponseSerializer
 
 
+class CopilotThrottle(UserRateThrottle):
+    rate = "30/hour"
+    scope = "copilot"
+
+
 class CopilotView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [CopilotThrottle]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -36,10 +43,16 @@ class CopilotView(generics.GenericAPIView):
         )
 
 
+class AdminCopilotThrottle(UserRateThrottle):
+    rate = "60/hour"
+    scope = "admin-copilot"
+
+
 class AdminCopilotView(generics.GenericAPIView):
     """Admin-only analytics copilot endpoint."""
 
     permission_classes = [IsAuthenticated, IsAdminUser]
+    throttle_classes = [AdminCopilotThrottle]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
