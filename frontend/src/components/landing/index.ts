@@ -1,5 +1,10 @@
 export { default as HeroSection } from "./HeroSection";
+export { default as ServiceCategoryBar } from "./ServiceCategoryBar";
+export { default as WhyChooseUs } from "./WhyChooseUs";
 export { default as ServicesGrid } from "./ServicesGrid";
 export { default as AboutSection } from "./AboutSection";
+export { default as HowItWorks } from "./HowItWorks";
+export { default as PromoBanner } from "./PromoBanner";
 export { default as GalleryAndTestimonials } from "./GalleryAndTestimonials";
 export { default as BookingWidgetSection } from "./BookingWidgetSection";
+export { default as FinalCta } from "./FinalCta";
