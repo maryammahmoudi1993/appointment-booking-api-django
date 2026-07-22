@@ -156,6 +156,28 @@ export default function Loyalty() {
           </div>
         </>
       )}
+
+      {summary.redemptions.length > 0 && (
+        <>
+          <h3 className="mt-8 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Your redemptions
+          </h3>
+          <div className="mt-3 space-y-2">
+            {summary.redemptions.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm"
+              >
+                <span className="text-gray-700">{r.reward_name}</span>
+                <span className="text-xs text-gray-400">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </span>
+                <span className="font-medium text-red-600">-{r.points_spent} pts</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
