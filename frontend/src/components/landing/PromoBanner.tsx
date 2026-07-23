@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { promotionsApi, type PromoCode } from "../../api/client";
 import promoProducts from "../../assets/landing/promo-products.webp";
+import makeupIcon from "../../assets/landing/icon-makeup-clean.webp";
 
 function formatDiscount(promo: PromoCode): string {
   return promo.discount_type === "percent"
@@ -23,9 +24,9 @@ export default function PromoBanner() {
   }, []);
 
   return (
-    <section className="py-10" aria-label="Promotion">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center gap-6 overflow-hidden rounded-3xl border border-champagne/25 bg-gradient-to-br from-blush-light via-blush to-coral/10 shadow-sm sm:flex-row sm:justify-between">
+    <section className="bg-main py-8" aria-label="Promotion">
+      <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
+        <div className="relative flex flex-col items-center gap-4 overflow-hidden rounded-[30px] border border-rose/20 bg-gradient-to-r from-surface to-[#f8ddd5] shadow-soft sm:flex-row sm:justify-between">
           <div className="flex items-center gap-5">
             <img
               src={promoProducts}
@@ -33,7 +34,7 @@ export default function PromoBanner() {
               width={160}
               height={160}
               loading="lazy"
-              className="h-32 w-32 shrink-0 object-cover sm:h-40 sm:w-40"
+              className="h-36 w-40 shrink-0 object-cover object-right mix-blend-multiply sm:h-40 sm:w-56"
             />
             <div className="py-6 pr-4 sm:py-8">
               <span className="text-xs font-semibold uppercase tracking-widest text-coral-dark">
@@ -41,7 +42,7 @@ export default function PromoBanner() {
               </span>
               {promo ? (
                 <>
-                  <h3 className="mt-1 font-display text-xl font-bold text-charcoal sm:text-2xl">
+                  <h3 className="mt-1 font-display text-2xl font-medium text-heading sm:text-3xl">
                     {formatDiscount(promo)} off with code {promo.code}
                   </h3>
                   <p className="mt-1 text-sm text-charcoal-light">
@@ -50,18 +51,18 @@ export default function PromoBanner() {
                 </>
               ) : (
                 <>
-                  <h3 className="mt-1 font-display text-xl font-bold text-charcoal sm:text-2xl">
-                    New here? We&apos;d love to welcome you.
+                  <h3 className="mt-1 font-display text-2xl font-medium text-heading sm:text-3xl">
+                    New here? Enjoy 15% OFF
                   </h3>
                   <p className="mt-1 text-sm text-charcoal-light">
-                    Book your first appointment and experience the BloomFlow difference.
+                    On your first booking with us.
                   </p>
                 </>
               )}
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-5 py-6 pr-8 sm:py-8">
+          <div className="flex shrink-0 items-center gap-5 px-5 pb-7 sm:px-0 sm:py-8 sm:pr-8">
             {promo && (
               <div
                 className="flex h-20 w-20 shrink-0 rotate-6 items-center justify-center rounded-full bg-coral text-center shadow-md"
@@ -74,9 +75,10 @@ export default function PromoBanner() {
                 </span>
               </div>
             )}
+            {!promo && <img src={makeupIcon} alt="" width="384" height="384" loading="lazy" className="hidden h-20 w-20 rounded-[22px] object-cover shadow-raised lg:block" />}
             <Link
               to="/book"
-              className="inline-flex items-center justify-center rounded-full bg-coral px-8 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-coral-dark hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] motion-reduce:hover:scale-100"
+              className="beauty-button px-7"
             >
               {promo ? "Book Your First Visit" : "Book an Appointment"}
             </Link>
