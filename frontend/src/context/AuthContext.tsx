@@ -18,6 +18,7 @@ interface AuthContextType {
     password2: string;
   }) => Promise<void>;
   logout: () => void;
+  updateProfile: (data: Partial<Pick<User, "email" | "first_name" | "last_name" | "phone_number">>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -57,10 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password2: string;
   }) => {
     const { data } = await authApi.register(registerData);
-    localStorage.setItem("access_token", data.access);
-    localStorage.setItem("refresh_token", data.refresh);
+    const tokens = data.tokens ?? data;
+    localStorage.setItem("access_token", tokens.access);
+    localStorage.setItem("refresh_token", tokens.refresh);
     const me = await authApi.me();
     setUser(me.data);
+  };
+
+  const updateProfile = async (
+    profileData: Partial<Pick<User, "email" | "first_name" | "last_name" | "phone_number">>,
+  ) => {
+    const { data } = await authApi.updateMe(profileData);
+    setUser(data);
   };
 
   const logout = () => {
@@ -74,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
