@@ -47,8 +47,10 @@ export interface User {
   id: number;
   email: string;
   username: string;
+  first_name: string;
+  last_name: string;
   role: "customer" | "staff" | "admin";
-  phone: string;
+  phone_number: string;
 }
 
 export interface Service {
@@ -204,6 +206,8 @@ export const authApi = {
   refresh: (refresh: string) => api.post("/auth/refresh/", { refresh }),
   logout: (refresh: string) => api.post("/auth/logout/", { refresh }),
   me: () => api.get<User>("/auth/me/"),
+  updateMe: (data: Partial<Pick<User, "email" | "first_name" | "last_name" | "phone_number">>) =>
+    api.patch<User>("/auth/me/", data),
 };
 
 export const servicesApi = {
@@ -303,6 +307,20 @@ export const reviewsApi = {
     api.get<PaginatedResponse<Review>>("/reviews/", { params }),
   create: (data: { appointment: number; rating: number; comment?: string }) =>
     api.post<Review>("/reviews/", data),
+};
+
+export interface Notification {
+  id: number;
+  notification_type: string;
+  subject: string;
+  body: string;
+  status: string;
+  created_at: string;
+  sent_at: string | null;
+}
+
+export const notificationsApi = {
+  list: () => api.get<PaginatedResponse<Notification>>("/notifications/"),
 };
 
 export const loyaltyApi = {

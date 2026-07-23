@@ -48,7 +48,7 @@ export default function ServicesGrid() {
                 key={service.id}
                 className="group overflow-hidden rounded-2xl bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.01]"
               >
-                <Link to={`/book?service=${service.id}`} className="block h-36 overflow-hidden">
+                <Link to={`/services/${service.id}`} className="block h-36 overflow-hidden">
                   <img
                     src={image}
                     alt=""
@@ -60,7 +60,7 @@ export default function ServicesGrid() {
                 </Link>
                 <div className="p-5">
                   <h3 className="font-display text-base font-semibold text-charcoal">
-                    {service.name}
+                    <Link to={`/services/${service.id}`}>{service.name}</Link>
                   </h3>
                   <p className="mt-1.5 text-xs leading-relaxed text-charcoal-light line-clamp-2">
                     {service.description}
