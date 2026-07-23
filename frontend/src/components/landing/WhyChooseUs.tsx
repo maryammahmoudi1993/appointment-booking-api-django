@@ -1,33 +1,31 @@
+import GradientIcon from "../icons/GradientIcon";
 import SectionHeading from "../ui/SectionHeading";
-import featureSkilledTeam from "../../assets/landing/feature-skilled-team.webp";
-import featureHygiene from "../../assets/landing/feature-hygiene.webp";
-import featureProducts from "../../assets/landing/feature-products.webp";
-import featureRelax from "../../assets/landing/icon-spa-relax.webp";
+import { UsersIcon, ShieldCheckIcon, SparklesIcon, LotusIcon } from "../icons/ServiceIcons";
 
 const reasons = [
   {
     number: "01",
     title: "Highly Skilled Team",
     description: "Our stylists train continuously to bring out your best look.",
-    icon: featureSkilledTeam,
+    icon: UsersIcon,
   },
   {
     number: "02",
     title: "Hygiene & Safety",
     description: "Strict sanitation protocols at every station, every visit.",
-    icon: featureHygiene,
+    icon: ShieldCheckIcon,
   },
   {
     number: "03",
     title: "Premium Products",
     description: "Only high-quality, skin- and hair-safe products, always.",
-    icon: featureProducts,
+    icon: SparklesIcon,
   },
   {
     number: "04",
     title: "Relax & Enjoy",
     description: "A calm, comfortable ambience made for your relaxation.",
-    icon: featureRelax,
+    icon: LotusIcon,
   },
 ];
 
@@ -50,9 +48,9 @@ export default function WhyChooseUs() {
                 key={reason.number}
                 className="flex gap-4 rounded-2xl border border-champagne/20 bg-white p-5 shadow-sm transition-all hover:shadow-md"
               >
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-[0_8px_18px_-6px_rgba(168,87,75,0.3)]">
-                  <img src={reason.icon} alt="" width={56} height={56} className="h-full w-full object-cover" loading="lazy" />
-                </span>
+                <GradientIcon size="sm" className="shrink-0">
+                  <reason.icon />
+                </GradientIcon>
                 <div>
                   <span className="text-xs font-bold text-coral-dark">{reason.number}</span>
                   <h3 className="font-display text-base font-semibold text-charcoal">

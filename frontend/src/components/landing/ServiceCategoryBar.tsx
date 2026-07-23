@@ -1,22 +1,25 @@
 import { Link } from "react-router-dom";
-import iconBookOnline from "../../assets/landing/icon-book-online.webp";
-import iconHairStyling from "../../assets/landing/icon-hair-styling.webp";
-import iconFacialCare from "../../assets/landing/icon-facial-care.webp";
-import iconNailPolish from "../../assets/landing/icon-nail-polish.webp";
-import iconMakeup from "../../assets/landing/icon-makeup.webp";
-import iconSkinCare from "../../assets/landing/icon-skin-care.webp";
-import iconSpaRelax from "../../assets/landing/icon-spa-relax.webp";
-import iconAllServices from "../../assets/landing/feature-products.webp";
+import GradientIcon from "../icons/GradientIcon";
+import {
+  CalendarIcon,
+  ScissorsIcon,
+  SparklesIcon,
+  HandIcon,
+  FaceIcon,
+  FlameIcon,
+  LotusIcon,
+  UsersIcon,
+} from "../icons/ServiceIcons";
 
 const categories = [
-  { label: "Book Online", icon: iconBookOnline, to: "/book" },
-  { label: "Hair Styling", icon: iconHairStyling, to: "/services" },
-  { label: "Facial Care", icon: iconFacialCare, to: "/services" },
-  { label: "Nail & Polish", icon: iconNailPolish, to: "/services" },
-  { label: "Makeup", icon: iconMakeup, to: "/services" },
-  { label: "Skin Care", icon: iconSkinCare, to: "/services" },
-  { label: "Spa & Relax", icon: iconSpaRelax, to: "/services" },
-  { label: "All Services", icon: iconAllServices, to: "/services" },
+  { label: "Book Online", icon: CalendarIcon, to: "/book" },
+  { label: "Hair Styling", icon: ScissorsIcon, to: "/services" },
+  { label: "Facial Care", icon: SparklesIcon, to: "/services" },
+  { label: "Nail & Polish", icon: HandIcon, to: "/services" },
+  { label: "Makeup", icon: FaceIcon, to: "/services" },
+  { label: "Skin Care", icon: FlameIcon, to: "/services" },
+  { label: "Spa & Relax", icon: LotusIcon, to: "/services" },
+  { label: "All Services", icon: UsersIcon, to: "/services" },
 ];
 
 export default function ServiceCategoryBar() {
@@ -32,9 +35,9 @@ export default function ServiceCategoryBar() {
             to={cat.to}
             className="group flex shrink-0 snap-start flex-col items-center gap-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral focus-visible:ring-offset-2 rounded-xl"
           >
-            <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl shadow-[0_8px_18px_-6px_rgba(168,87,75,0.35)] transition-transform group-hover:-translate-y-1">
-              <img src={cat.icon} alt="" width={56} height={56} className="h-full w-full object-cover" />
-            </span>
+            <GradientIcon size="sm" className="transition-transform group-hover:-translate-y-0.5">
+              <cat.icon />
+            </GradientIcon>
             <span className="whitespace-nowrap text-xs font-medium text-charcoal-light group-hover:text-coral-dark">
               {cat.label}
             </span>
