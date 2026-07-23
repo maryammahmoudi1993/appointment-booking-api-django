@@ -22,6 +22,31 @@
   --color-coral-dark: #A8574B;
   --color-rose-deep: #9C5A50;
 
+  --color-main: #FFF8F4;
+  --color-soft: #FEEFE8;
+  --color-blush: #F9E2DC;
+  --color-peach: #F5D3CA;
+  --color-surface: #FFFAF7;
+  --color-raised: #FFF6F1;
+  --color-strong: #F7DDD6;
+  --color-rose: #D98E88;
+  --color-rose-dark: #C87370;
+  --color-coral: #CC7B76;
+  --color-peach-accent: #EFB3A4;
+  --color-gold: #B88A58;
+  --color-gold-light: #D9B98A;
+  --color-primary: #352520;
+  --color-heading: #2F211D;
+  --color-secondary: #75635D;
+  --color-muted: #9B8580;
+  --color-success: #6E9B78;
+  --color-warning: #D6A45F;
+  --color-error: #C96F6F;
+  --color-info: #8AA4B5;
+  --shadow-soft: 0 14px 35px rgba(130, 82, 75, 0.12);
+  --shadow-raised: 0 10px 22px rgba(126, 78, 71, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --shadow-button: 0 7px 14px rgba(164, 90, 84, 0.24);
+
   --color-brand-50: #FDF5F5;
   --color-brand-100: #F8E8E8;
   --color-brand-200: #F0D4D4;
@@ -37,15 +62,184 @@
 @layer base {
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-cream);
-    color: var(--color-charcoal);
+    background-color: #FFF8F4;
+    color: #352520;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: #F5D3CA;
+    color: #2F211D;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgba(204, 123, 118, 0.48);
+    outline-offset: 3px;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
   }
+}
+
+@layer components {
+  .beauty-card {
+    border: 1px solid rgba(176, 119, 109, 0.16);
+    background: linear-gradient(145deg, rgba(255, 250, 247, 0.98), rgba(255, 246, 241, 0.94));
+    border-radius: 26px;
+    box-shadow: 0 14px 35px rgba(130, 82, 75, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .beauty-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #C87370;
+  }
+
+  .beauty-button,
+  .beauty-button-secondary {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.7rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .beauty-button {
+    border: 1px solid rgba(180, 99, 93, 0.35);
+    color: #FFFAF7;
+    background: linear-gradient(135deg, #D98E88, #C87370);
+    box-shadow: 0 7px 14px rgba(164, 90, 84, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  .beauty-button-secondary {
+    border: 1px solid rgba(176, 119, 109, 0.3);
+    color: #C87370;
+    background: #FFF6F1;
+    box-shadow: 0 5px 12px rgba(130, 82, 75, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  .beauty-button:hover,
+  .beauty-button-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 18px rgba(164, 90, 84, 0.2);
+  }
+
+  .beauty-button:active,
+  .beauty-button-secondary:active {
+    transform: translateY(1px);
+  }
+
+  .beauty-button:disabled,
+  .beauty-button-secondary:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+  }
+
+  .beauty-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #5f4c46;
+  }
+
+  .beauty-input {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 0.5rem;
+    border: 1px solid rgba(176, 119, 109, 0.24);
+    border-radius: 16px;
+    background: #FFF6F1;
+    padding: 0.72rem 0.95rem;
+    color: #352520;
+    box-shadow: inset 0 1px 2px rgba(130, 82, 75, 0.04);
+  }
+
+  .beauty-input::placeholder {
+    color: #A48F89;
+  }
+
+  .beauty-input:focus {
+    border-color: #D98E88;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(217, 142, 136, 0.16);
+  }
+
+  .beauty-skeleton {
+    background: linear-gradient(100deg, #F9E2DC 20%, #FFF6F1 38%, #F9E2DC 55%);
+    background-size: 200% 100%;
+    animation: beauty-shimmer 1.4s linear infinite;
+  }
+
+  .beauty-toggle {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    flex: 0 0 auto;
+    cursor: pointer;
+    appearance: none;
+    border-radius: 999px;
+    background: #E9D4CE;
+    transition: background 160ms ease;
+  }
+
+  .beauty-toggle::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #FFFAF7;
+    box-shadow: 0 2px 5px rgba(83, 49, 44, 0.22);
+    transition: transform 160ms ease;
+  }
+
+  .beauty-toggle:checked {
+    background: #CC7B76;
+  }
+
+  .beauty-toggle:checked::after {
+    transform: translateX(20px);
+  }
+
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -5rem;
+    z-index: 100;
+    border-radius: 999px;
+    background: #352520;
+    padding: 0.75rem 1rem;
+    color: #FFFAF7;
+    transition: top 160ms ease;
+  }
+
+  .skip-link:focus {
+    top: 1rem;
+  }
+}
+
+@keyframes beauty-shimmer {
+  to { background-position-x: -200%; }
 }
 
 @layer utilities {

@@ -6,6 +6,7 @@ import BrandLogo from "./icons/BrandLogo";
 const navLinks = [
   { to: "/services", label: "Services" },
   { to: "/staff", label: "Stylists" },
+  { to: "/reviews", label: "Reviews" },
 ];
 
 export default function Navbar() {
@@ -68,14 +69,10 @@ export default function Navbar() {
                 My Bookings
               </Link>
               {user.role === "customer" && (
-                <Link
-                  to="/loyalty"
-                  className={`transition-colors hover:text-coral-dark ${isActive("/loyalty") ? "text-coral-dark font-semibold" : ""}`}
-                  role="menuitem"
-                  aria-current={isActive("/loyalty") ? "page" : undefined}
-                >
-                  Loyalty
-                </Link>
+                <>
+                  <Link to="/loyalty" className={`transition-colors hover:text-coral-dark ${isActive("/loyalty") ? "text-coral-dark font-semibold" : ""}`} role="menuitem">Rewards</Link>
+                  <Link to="/profile" className={`transition-colors hover:text-coral-dark ${isActive("/profile") ? "text-coral-dark font-semibold" : ""}`} role="menuitem">Profile</Link>
+                </>
               )}
               {user.role === "admin" && (
                 <Link
@@ -156,9 +153,12 @@ export default function Navbar() {
                   My Bookings
                 </Link>
                 {user.role === "customer" && (
-                  <Link to="/loyalty" onClick={() => setOpen(false)} role="menuitem" aria-current={isActive("/loyalty") ? "page" : undefined}>
-                    Loyalty
-                  </Link>
+                  <>
+                    <Link to="/loyalty" onClick={() => setOpen(false)} role="menuitem" aria-current={isActive("/loyalty") ? "page" : undefined}>Rewards</Link>
+                    <Link to="/notifications" onClick={() => setOpen(false)} role="menuitem">Notifications</Link>
+                    <Link to="/profile" onClick={() => setOpen(false)} role="menuitem">Profile</Link>
+                    <Link to="/support" onClick={() => setOpen(false)} role="menuitem">Support</Link>
+                  </>
                 )}
                 {user.role === "admin" && (
                   <Link to="/admin" onClick={() => setOpen(false)} role="menuitem" aria-current={location.pathname.startsWith("/admin") ? "page" : undefined}>

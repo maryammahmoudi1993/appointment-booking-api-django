@@ -1,12 +1,13 @@
 import { Outlet } from "react-router-dom";
-import ChatWidget from "./ChatWidget";
 import Footer from "./Footer";
 import Navbar from "./Navbar";
 import SupportWidget from "./SupportWidget";
+import CustomerDock from "./CustomerDock";
 
 export default function Layout() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col pb-20 md:pb-0">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <svg width="0" height="0" className="absolute" aria-hidden="true">
         <defs>
           <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -17,12 +18,12 @@ export default function Layout() {
         </defs>
       </svg>
       <Navbar />
-      <main className="flex-1">
+      <main id="main-content" className="flex-1" tabIndex={-1}>
         <Outlet />
       </main>
       <Footer />
       <SupportWidget />
-      <ChatWidget />
+      <CustomerDock />
     </div>
   );
 }
