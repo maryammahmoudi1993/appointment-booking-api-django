@@ -7,14 +7,12 @@ import {
   HowItWorks,
   PromoBanner,
   GalleryAndTestimonials,
-  BookingWidgetSection,
-  FinalCta,
 } from "../components/landing";
 import Reveal from "../components/ui/Reveal";
 
 export default function Home() {
   return (
-    <div>
+    <div className="overflow-hidden bg-main">
       <HeroSection />
       <Reveal>
         <ServiceCategoryBar />
@@ -36,12 +34,6 @@ export default function Home() {
       </Reveal>
       <Reveal>
         <GalleryAndTestimonials />
-      </Reveal>
-      <Reveal>
-        <BookingWidgetSection />
-      </Reveal>
-      <Reveal>
-        <FinalCta />
       </Reveal>
     </div>
   );

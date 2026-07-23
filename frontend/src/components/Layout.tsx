@@ -1,10 +1,14 @@
 import { Outlet } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Footer from "./Footer";
 import Navbar from "./Navbar";
 import SupportWidget from "./SupportWidget";
 import CustomerDock from "./CustomerDock";
+import LandingHeader from "./landing/LandingHeader";
+import LandingFooter from "./landing/LandingFooter";
 
 export default function Layout() {
+  const landing = useLocation().pathname === "/";
   return (
     <div className="flex min-h-screen flex-col pb-20 md:pb-0">
       <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -17,11 +21,11 @@ export default function Layout() {
           </linearGradient>
         </defs>
       </svg>
-      <Navbar />
+      {landing ? <LandingHeader /> : <Navbar />}
       <main id="main-content" className="flex-1" tabIndex={-1}>
         <Outlet />
       </main>
-      <Footer />
+      {landing ? <LandingFooter /> : <Footer />}
       <SupportWidget />
       <CustomerDock />
     </div>
