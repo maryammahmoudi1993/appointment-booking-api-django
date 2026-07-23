@@ -1,6 +1,24 @@
 # Beauty redesign asset inventory
 
-The website uses optimized WebP derivatives of the supplied reference imagery. No source asset is stretched, no checkerboard pattern is displayed, and decorative images are hidden from assistive technology.
+The website uses optimized derivatives of the supplied reference imagery. Original assets are preserved. Landing-page components use the `*-clean.webp` and `*-clean.png` siblings where a source contained a baked checkerboard or incorrect crop.
+
+## Landing-page clean derivatives
+
+| Clean asset | Correct mapping | Processing |
+|---|---|---|
+| `icon-book-online-clean.webp` | 3D calendar | Tight center crop removes checkerboard perimeter |
+| `icon-hair-styling-clean.webp` | 3D scissors | Tight center crop removes checkerboard perimeter |
+| `icon-facial-care-clean.webp` | 3D cream jar | Tight center crop removes checkerboard perimeter |
+| `icon-nail-polish-clean.webp` | 3D nail polish | Tight center crop removes checkerboard perimeter |
+| `icon-makeup-clean.webp` | 3D lipstick and brush | Tight center crop removes checkerboard perimeter |
+| `icon-skin-care-clean.webp` | 3D skincare jar | Tight center crop removes checkerboard perimeter |
+| `icon-spa-relax-clean.webp` | 3D lotus | Tight center crop removes checkerboard perimeter and source caption |
+| `icon-all-services-clean.webp` | 3D makeup palette | Tight center crop removes checkerboard perimeter |
+| `feature-skilled-team-clean.webp` | 3D salon team | Tight crop removes checkerboard and source caption |
+| `feature-hygiene-clean.webp` | 3D shield | Tight crop removes checkerboard and source caption |
+| `feature-products-clean.webp` | 3D product jar | Tight crop removes checkerboard and source caption |
+| `botanical-branch-clean.png` | Decorative leaf branch | Checkerboard extracted to alpha |
+| `decorative-flower-clean.png` | Decorative flower | Checkerboard extracted to alpha |
 
 | Asset | Content and mapping | Dimensions | Ratio | Alpha / checkerboard | Loading and crop |
 |---|---|---:|---:|---|---|
