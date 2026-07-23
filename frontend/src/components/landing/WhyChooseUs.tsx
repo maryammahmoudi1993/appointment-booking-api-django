@@ -1,8 +1,9 @@
 import SectionHeading from "../ui/SectionHeading";
-import featureSkilledTeam from "../../assets/landing/feature-skilled-team.webp";
-import featureHygiene from "../../assets/landing/feature-hygiene.webp";
-import featureProducts from "../../assets/landing/feature-products.webp";
-import featureRelax from "../../assets/landing/icon-spa-relax.webp";
+import featureSkilledTeam from "../../assets/landing/feature-skilled-team-clean.webp";
+import featureHygiene from "../../assets/landing/feature-hygiene-clean.webp";
+import featureProducts from "../../assets/landing/feature-products-clean.webp";
+import featureRelax from "../../assets/landing/icon-spa-relax-clean.webp";
+import botanicalBranch from "../../assets/landing/botanical-branch-clean.png";
 
 const reasons = [
   {
@@ -33,32 +34,35 @@ const reasons = [
 
 export default function WhyChooseUs() {
   return (
-    <section className="py-20 bg-cream" aria-labelledby="why-choose-us-heading">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <SectionHeading
-            align="left"
-            eyebrow="Why Choose Us"
-            id="why-choose-us-heading"
-            title="Beauty that feels personal."
-            description="We blend expert care with premium products to bring out your natural glow — inside and out."
-          />
+    <section className="relative bg-main py-20 sm:py-24" aria-labelledby="why-choose-us-heading">
+      <img src={botanicalBranch} alt="" width="600" height="327" loading="lazy" className="pointer-events-none absolute -left-20 bottom-0 hidden w-64 -rotate-12 opacity-75 lg:block" />
+      <div className="mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[.78fr_1.22fr] lg:items-center">
+          <div className="relative z-10">
+            <SectionHeading
+              align="left"
+              eyebrow="Why Choose Us"
+              id="why-choose-us-heading"
+              title="Beauty that feels personal."
+              description="We blend expert care with premium products to bring out your natural glow — inside and out."
+            />
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {reasons.map((reason) => (
               <div
                 key={reason.number}
-                className="flex gap-4 rounded-2xl border border-champagne/20 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                className="beauty-card flex min-h-[142px] gap-4 p-5 transition duration-300 hover:-translate-y-1 hover:shadow-raised"
               >
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-[0_8px_18px_-6px_rgba(168,87,75,0.3)]">
-                  <img src={reason.icon} alt="" width={56} height={56} className="h-full w-full object-cover" loading="lazy" />
+                <span className="flex h-[62px] w-[62px] shrink-0 items-center justify-center overflow-hidden rounded-[18px] border border-rose/15 bg-blush shadow-raised">
+                  <img src={reason.icon} alt="" width={384} height={384} className="h-full w-full object-cover" loading="lazy" />
                 </span>
                 <div>
-                  <span className="text-xs font-bold text-coral-dark">{reason.number}</span>
-                  <h3 className="font-display text-base font-semibold text-charcoal">
+                  <span className="text-xs font-bold text-coral">{reason.number}</span>
+                  <h3 className="font-display text-lg font-semibold text-heading">
                     {reason.title}
                   </h3>
-                  <p className="mt-1 text-sm leading-relaxed text-charcoal-light">
+                  <p className="mt-1 text-xs leading-5 text-secondary">
                     {reason.description}
                   </p>
                 </div>
