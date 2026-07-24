@@ -1,7 +1,7 @@
 import SectionHeading from "../ui/SectionHeading";
-import featureSkilledTeam from "../../assets/landing/feature-skilled-team-clean.webp";
-import featureHygiene from "../../assets/landing/feature-hygiene-clean.webp";
-import featureProducts from "../../assets/landing/feature-products-clean.webp";
+import featureSkilledTeam from "../../assets/landing/feature-skilled-team-new.webp";
+import featureHygiene from "../../assets/landing/feature-hygiene-new.webp";
+import featureProducts from "../../assets/landing/feature-products-new.webp";
 import featureRelax from "../../assets/landing/icon-spa-relax-clean.webp";
 import botanicalBranch from "../../assets/landing/botanical-branch-clean.png";
 

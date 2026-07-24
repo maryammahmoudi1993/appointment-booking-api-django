@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { reviewsApi } from "../../api/client";
-import heroCharacter from "../../assets/landing/hero-character.webp";
+import heroCharacter from "../../assets/landing/hero-character-new.webp";
 import botanicalBranch from "../../assets/landing/botanical-branch-clean.png";
 import avatar1 from "../../assets/landing/avatar-1.webp";
 import avatar2 from "../../assets/landing/avatar-2.webp";
@@ -61,7 +61,7 @@ export default function HeroSection() {
             src={heroCharacter}
             alt="Woman enjoying a calm premium beauty treatment"
             width="760"
-            height="943"
+            height="977"
             fetchPriority="high"
             className="absolute inset-0 h-full w-full object-contain object-bottom [filter:drop-shadow(0_20px_24px_rgba(113,64,54,.12))]"
           />
