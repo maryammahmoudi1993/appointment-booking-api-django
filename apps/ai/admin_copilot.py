@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 
-from .gemini_client import MODEL, build_tool
+from .gemini_client import MODEL, build_tool, provider_error_reply
 from .gemini_client import get_client as _get_client
 
 logger = logging.getLogger(__name__)
@@ -87,11 +87,10 @@ def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotRes
             response = client.models.generate_content(
                 model=MODEL, contents=contents, config=config
             )
-        except Exception:
+        except Exception as exc:
             logger.exception("Gemini request failed in admin_copilot.admin_chat()")
             return AdminCopilotResponse(
-                reply="Sorry, I'm having trouble reaching the AI assistant right now. "
-                "Please try again in a moment.",
+                reply=provider_error_reply(exc),
                 tool_calls_made=tool_calls_made,
             )
 

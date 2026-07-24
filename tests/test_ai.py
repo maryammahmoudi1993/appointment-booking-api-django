@@ -742,6 +742,21 @@ class TestAdminCopilotView:
         assert "trouble reaching" in result.reply
         assert "401" not in result.reply
 
+    @patch("google.genai.Client")
+    def test_admin_chat_reports_provider_quota_exhaustion(self, mock_client_cls, settings):
+        settings.GEMINI_API_KEY = "test-key"
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+        quota_error = Exception("429 RESOURCE_EXHAUSTED")
+        quota_error.status_code = 429
+        mock_client.models.generate_content.side_effect = quota_error
+
+        from apps.ai.admin_copilot import admin_chat
+
+        result = admin_chat("Show revenue", user=None)
+        assert "quota is currently exhausted" in result.reply
+        assert "429" not in result.reply
+
     @pytest.mark.django_db
     @patch("google.genai.Client")
     def test_admin_chat_resolves_requesting_admins_own_business(self, mock_client_cls, settings):

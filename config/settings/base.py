@@ -237,3 +237,4 @@ LOGGING = {
 
 # AI Copilot
 GEMINI_API_KEY = env("GEMINI_API_KEY", default=None)
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-3.5-flash")

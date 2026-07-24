@@ -14,7 +14,27 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-MODEL = "gemini-flash-latest"
+# Pin a stable model by default. The ``gemini-flash-latest`` alias can be
+# hot-swapped to a new model with different quotas or API behaviour, which
+# makes production failures possible without a code or configuration change.
+MODEL = getattr(settings, "GEMINI_MODEL", "gemini-3.5-flash")
+
+RATE_LIMIT_REPLY = (
+    "The AI assistant's Gemini request quota is currently exhausted. "
+    "Please try again later, or ask an administrator to check the Gemini "
+    "API plan and rate limits."
+)
+
+
+def provider_error_reply(exc):
+    """Return a safe, actionable message for known provider failures."""
+    status_code = getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    if status_code == 429 or "RESOURCE_EXHAUSTED" in str(exc).upper():
+        return RATE_LIMIT_REPLY
+    return (
+        "Sorry, I'm having trouble reaching the AI assistant right now. "
+        "Please try again in a moment."
+    )
 
 # Gemini's function-calling schema uses uppercase type names (its own
 # Type enum), not the lowercase JSON-Schema convention our tools already

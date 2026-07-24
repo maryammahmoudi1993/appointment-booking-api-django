@@ -9,7 +9,7 @@ it only sees data returned by the allowlisted tools in tools.py.
 import logging
 from dataclasses import dataclass, field
 
-from .gemini_client import MODEL, build_tool
+from .gemini_client import MODEL, build_tool, provider_error_reply
 from .gemini_client import get_client as _get_client
 
 logger = logging.getLogger(__name__)
@@ -55,12 +55,6 @@ FALLBACK_NO_KEY = (
     "AI copilot is not configured. Please set the GEMINI_API_KEY "
     "environment variable to enable the AI assistant."
 )
-
-FALLBACK_PROVIDER_ERROR = (
-    "Sorry, I'm having trouble reaching the AI assistant right now. "
-    "Please try again in a moment."
-)
-
 
 @dataclass
 class CopilotResponse:
@@ -178,14 +172,14 @@ def chat(
             response = client.models.generate_content(
                 model=MODEL, contents=contents, config=config
             )
-        except Exception:
+        except Exception as exc:
             # An invalid/rejected API key, rate limit, or transient network
             # error should degrade to a friendly message, not an uncaught
             # 500 — the AI provider is an external dependency the rest of
             # the request pipeline shouldn't crash over.
             logger.exception("Gemini request failed in copilot.chat()")
             return CopilotResponse(
-                reply=FALLBACK_PROVIDER_ERROR,
+                reply=provider_error_reply(exc),
                 tool_calls_made=tool_calls_made,
                 conversation_id=str(conversation.id) if conversation else None,
             )
