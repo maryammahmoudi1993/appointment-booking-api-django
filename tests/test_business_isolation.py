@@ -3,6 +3,7 @@ from rest_framework import status
 
 from apps.business.models import Business, BusinessMembership
 from apps.engagement.models import LoyaltyReward, PromoCode, Review, SupportMessage
+from apps.staff.models import Break, TimeOff, WorkingHours
 from core.business import get_default_business, get_user_business, get_user_business_or_404
 from tests.factories import (
     AdminFactory,
@@ -94,7 +95,7 @@ class TestBusinessMembership:
         BusinessMembership.objects.create(
             user=user, business=business, role="admin"
         )
-        response = AdminFactory()
+        assert business.memberships.filter(user=user, role="admin").exists()
 
     def test_customer_without_membership_still_has_business(self, customer, db):
         business = Business.objects.first()
@@ -177,3 +178,80 @@ class TestEngagementBusinessIsolation:
         response = api_client.get("/api/support-messages/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
+
+
+@pytest.mark.django_db
+class TestStaffScheduleBusinessIsolation:
+    """Regression tests: WorkingHours/TimeOff/Break viewsets previously had no
+    business scoping at all — any admin, from any business, could list/edit
+    every business's staff schedules. See apps/staff/views.py."""
+
+    def test_other_business_working_hours_not_visible(self, api_client, other_business):
+        business = get_default_business()
+        own_staff = StaffProfileFactory(business=business).user
+        other_staff = StaffProfileFactory(business=other_business).user
+        WorkingHours.objects.create(
+            staff=own_staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
+        WorkingHours.objects.create(
+            staff=other_staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
+        admin = AdminFactory()
+        BusinessMembership.objects.create(user=admin, business=business, role="admin")
+        api_client.force_authenticate(user=admin)
+        response = api_client.get("/api/working-hours/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_other_business_time_off_not_visible(self, api_client, other_business):
+        from django.utils import timezone
+
+        business = get_default_business()
+        own_staff = StaffProfileFactory(business=business).user
+        other_staff = StaffProfileFactory(business=other_business).user
+        now = timezone.now()
+        TimeOff.objects.create(
+            staff=own_staff, start_datetime=now, end_datetime=now, reason="own"
+        )
+        TimeOff.objects.create(
+            staff=other_staff, start_datetime=now, end_datetime=now, reason="other"
+        )
+        admin = AdminFactory()
+        BusinessMembership.objects.create(user=admin, business=business, role="admin")
+        api_client.force_authenticate(user=admin)
+        response = api_client.get("/api/time-off/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_other_business_breaks_not_visible(self, api_client, other_business):
+        business = get_default_business()
+        own_profile = StaffProfileFactory(business=business)
+        other_profile = StaffProfileFactory(business=other_business)
+        Break.objects.create(
+            staff_profile=own_profile, weekday=0, start_time="12:00", end_time="13:00"
+        )
+        Break.objects.create(
+            staff_profile=other_profile, weekday=0, start_time="12:00", end_time="13:00"
+        )
+        admin = AdminFactory()
+        BusinessMembership.objects.create(user=admin, business=business, role="admin")
+        api_client.force_authenticate(user=admin)
+        response = api_client.get("/api/breaks/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+
+    def test_cross_business_admin_cannot_edit_other_business_working_hours(
+        self, api_client, other_business
+    ):
+        other_staff = StaffProfileFactory(business=other_business).user
+        wh = WorkingHours.objects.create(
+            staff=other_staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
+        business = get_default_business()
+        admin = AdminFactory()
+        BusinessMembership.objects.create(user=admin, business=business, role="admin")
+        api_client.force_authenticate(user=admin)
+        response = api_client.patch(
+            f"/api/working-hours/{wh.id}/", {"start_time": "10:00"}, format="json"
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
