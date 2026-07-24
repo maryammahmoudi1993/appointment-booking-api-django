@@ -99,10 +99,11 @@ class StaffProfileViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
         responses={201: WorkingHoursSerializer},
     ),
 )
-class WorkingHoursViewSet(viewsets.ModelViewSet):
+class WorkingHoursViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = WorkingHours.objects.all()
     serializer_class = WorkingHoursSerializer
     permission_classes = [IsAdminRole]
+    business_field = "staff__staff_profile__business"
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -126,16 +127,18 @@ class WorkingHoursViewSet(viewsets.ModelViewSet):
         responses={201: TimeOffSerializer},
     ),
 )
-class TimeOffViewSet(viewsets.ModelViewSet):
+class TimeOffViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = TimeOff.objects.all()
     serializer_class = TimeOffSerializer
     permission_classes = [IsAdminRole]
+    business_field = "staff__staff_profile__business"
 
 
-class BreakViewSet(viewsets.ModelViewSet):
+class BreakViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = Break.objects.select_related("staff_profile__user")
     serializer_class = BreakSerializer
     permission_classes = [IsAdminRole]
+    business_field = "staff_profile__business"
 
     def get_queryset(self):
         queryset = super().get_queryset()
