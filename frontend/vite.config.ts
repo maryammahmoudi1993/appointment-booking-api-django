@@ -3,7 +3,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Built assets are collected by Django's collectstatic and served by
+  // WhiteNoise under STATIC_URL ("static/"). Without this, index.html
+  // references root-relative paths like /assets/*.js that never reach
+  // WhiteNoise and instead get swallowed by the SPA catch-all route,
+  // which serves index.html back for every unmatched path. Scoped to
+  // `build` only so the local dev server still runs at the site root.
+  base: command === "build" ? "/static/" : "/",
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
@@ -20,4 +27,4 @@ export default defineConfig({
     setupFiles: "./src/test/setup.ts",
     globals: true,
   },
-});
+}));

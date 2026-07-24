@@ -16,8 +16,12 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # SecurityMiddleware (already first in base.py) — whitenoise goes right after
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
+# Not ManifestStaticFilesStorage: that renames every collected file with an
+# extra Django content hash, which would break the frontend/dist/index.html
+# built by Vite — it hardcodes Vite's own hashed asset filenames directly
+# rather than resolving them through Django's {% static %} tag.
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }

@@ -7,9 +7,9 @@
 
 Production-grade appointment booking and business management platform with AI-powered copilot, scheduling engine, loyalty, promotions, analytics, and webhook integrations.
 
-> **Live Demo:** [https://appointment-booking-api.onrender.com](https://appointment-booking-api.onrender.com)  
-> **API Docs (Swagger):** [https://appointment-booking-api.onrender.com/api/docs/](https://appointment-booking-api.onrender.com/api/docs/)  
-> **API Docs (ReDoc):** [https://appointment-booking-api.onrender.com/api/redoc/](https://appointment-booking-api.onrender.com/api/redoc/)
+> **Live Demo:** [https://bloomflow-ai.onrender.com](https://bloomflow-ai.onrender.com)  
+> **API Docs (Swagger):** [https://bloomflow-ai.onrender.com/api/docs/](https://bloomflow-ai.onrender.com/api/docs/)  
+> **API Docs (ReDoc):** [https://bloomflow-ai.onrender.com/api/redoc/](https://bloomflow-ai.onrender.com/api/redoc/)
 
 ---
 
