@@ -13,7 +13,9 @@ const avatars = [avatar1, avatar2, avatar3, avatar4];
 
 export default function HeroSection() {
   const { user } = useAuth();
-  const [rating, setRating] = useState({ average: 4.9, count: 1000 });
+  // No fabricated default — the rating is only ever shown once it's backed
+  // by real review data from the API. `null` renders nothing until then.
+  const [rating, setRating] = useState<{ average: number; count: number } | null>(null);
   const bookingTarget = user?.role === "customer" ? "/book" : "/register";
 
   useEffect(() => {
@@ -39,15 +41,17 @@ export default function HeroSection() {
             <Link to={bookingTarget} className="beauty-button px-7">Book an Appointment <span className="ml-2" aria-hidden="true">→</span></Link>
             <a href="#services" className="beauty-button-secondary px-7">Explore Services</a>
           </div>
-          <div className="mt-7 flex items-center justify-center gap-4 lg:justify-start">
-            <div className="flex -space-x-2" aria-hidden="true">
-              {avatars.map((src) => <img key={src} src={src} alt="" width="200" height="200" className="h-9 w-9 rounded-full border-2 border-main object-cover" />)}
+          {rating && (
+            <div className="mt-7 flex items-center justify-center gap-4 lg:justify-start">
+              <div className="flex -space-x-2" aria-hidden="true">
+                {avatars.map((src) => <img key={src} src={src} alt="" width="200" height="200" className="h-9 w-9 rounded-full border-2 border-main object-cover" />)}
+              </div>
+              <div className="text-left">
+                <div className="text-base tracking-[.16em] text-[#e6a54a]" aria-label={`${rating.average.toFixed(1)} out of 5 stars`}>★★★★★</div>
+                <p className="text-xs font-medium text-secondary">{rating.average.toFixed(1)}/5 from {rating.count.toLocaleString()}+ happy clients</p>
+              </div>
             </div>
-            <div className="text-left">
-              <div className="text-base tracking-[.16em] text-[#e6a54a]" aria-label={`${rating.average.toFixed(1)} out of 5 stars`}>★★★★★</div>
-              <p className="text-xs font-medium text-secondary">{rating.average.toFixed(1)}/5 from {rating.count.toLocaleString()}+ happy clients</p>
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="relative mx-auto h-[410px] w-full max-w-[610px] sm:h-[520px] lg:h-[610px]">

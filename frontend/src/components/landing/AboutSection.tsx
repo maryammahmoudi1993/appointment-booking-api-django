@@ -1,17 +1,50 @@
+import { useEffect, useState } from "react";
 import promoProducts from "../../assets/landing/promo-products.webp";
 import decorativeFlower from "../../assets/landing/decorative-flower-clean.png";
 import botanicalBranch from "../../assets/landing/botanical-branch-clean.png";
 import makeupIcon from "../../assets/landing/icon-makeup-clean.webp";
 import skinIcon from "../../assets/landing/icon-skin-care-clean.webp";
+import { reviewsApi, servicesApi, staffApi } from "../../api/client";
 
-const stats = [
-  { value: "500+", label: "Happy clients" },
-  { value: "15+", label: "Expert stylists" },
-  { value: "50+", label: "Treatments" },
-  { value: "4.9", label: "Average rating" },
-];
+interface Stat {
+  value: string;
+  label: string;
+}
 
 export default function AboutSection() {
+  // These stats used to be hardcoded ("500+ clients", "4.9 rating", etc.)
+  // and shown as if they were real business metrics. They're now computed
+  // from the same public endpoints already used elsewhere on the landing
+  // page, so the numbers shown are always genuine, live counts.
+  const [stats, setStats] = useState<Stat[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([staffApi.list(), servicesApi.list(), reviewsApi.list()])
+      .then(([staffRes, servicesRes, reviewsRes]) => {
+        if (cancelled) return;
+        const reviews = reviewsRes.data.results;
+        const averageRating = reviews.length
+          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+          : null;
+        setStats([
+          { value: `${reviewsRes.data.count}+`, label: "Client reviews" },
+          { value: `${staffRes.data.count}+`, label: "Expert stylists" },
+          { value: `${servicesRes.data.count}+`, label: "Treatments" },
+          {
+            value: averageRating ? averageRating.toFixed(1) : "New",
+            label: "Average rating",
+          },
+        ]);
+      })
+      .catch(() => {
+        if (!cancelled) setStats([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <section id="about" className="scroll-mt-8 bg-main py-20 sm:py-24" aria-labelledby="about-heading">
       <div className="mx-auto grid max-w-[1240px] gap-10 px-4 sm:px-6 lg:grid-cols-[1.02fr_.98fr] lg:items-center lg:px-8">
@@ -29,10 +62,16 @@ export default function AboutSection() {
           <p className="mt-6 text-base leading-7 text-secondary">Our artists combine thoughtful consultation, refined technique, and premium products to shape a treatment around you.</p>
           <p className="mt-4 text-base leading-7 text-secondary">From your first hello to the final mirror moment, every detail is calm, personal, and intentionally polished.</p>
           <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="rounded-[20px] border border-rose/15 bg-surface p-4 text-center shadow-raised">
-                <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-muted">{stat.label}</dt>
-                <dd className="mt-2 font-display text-2xl font-semibold text-coral">{stat.value}</dd>
+            {(stats ?? Array.from({ length: 4 })).map((stat, i) => (
+              <div key={stat ? (stat as Stat).label : i} className="rounded-[20px] border border-rose/15 bg-surface p-4 text-center shadow-raised">
+                {stat ? (
+                  <>
+                    <dt className="text-[10px] font-bold uppercase tracking-[.12em] text-muted">{(stat as Stat).label}</dt>
+                    <dd className="mt-2 font-display text-2xl font-semibold text-coral">{(stat as Stat).value}</dd>
+                  </>
+                ) : (
+                  <div className="h-10 animate-pulse rounded-lg bg-rose/10" aria-hidden="true" />
+                )}
               </div>
             ))}
           </dl>
