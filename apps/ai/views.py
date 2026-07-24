@@ -1,7 +1,9 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
+
+from core.permissions import IsAdminRole
 
 from .admin_copilot import admin_chat
 from .copilot import chat
@@ -51,7 +53,7 @@ class AdminCopilotThrottle(UserRateThrottle):
 class AdminCopilotView(generics.GenericAPIView):
     """Admin-only analytics copilot endpoint."""
 
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminRole]
     throttle_classes = [AdminCopilotThrottle]
 
     def get_serializer_class(self):
@@ -65,6 +67,7 @@ class AdminCopilotView(generics.GenericAPIView):
 
         result = admin_chat(
             message=serializer.validated_data["message"],
+            user=request.user,
             conversation_id=serializer.validated_data.get("conversation_id"),
         )
 

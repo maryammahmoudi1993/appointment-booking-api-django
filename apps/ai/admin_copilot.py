@@ -34,9 +34,14 @@ class AdminCopilotResponse:
     tool_calls_made: list[str] = field(default_factory=list)
 
 
-def admin_chat(message: str, conversation_id=None) -> AdminCopilotResponse:
+def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotResponse:
     """
     Process an admin analytics query using tool-calling.
+
+    ``user`` must be the authenticated requesting admin so that every
+    analytics tool resolves to *their* business via BusinessMembership.
+    Without it, tool resolution silently falls back to "the first active
+    business in the database," leaking other businesses' data.
     """
     import openai
     from django.conf import settings
@@ -106,7 +111,7 @@ def admin_chat(message: str, conversation_id=None) -> AdminCopilotResponse:
 
             tool_calls_made.append(fn_name)
 
-            result, error = execute_tool(fn_name, user=None, **args)
+            result, error = execute_tool(fn_name, user=user, **args)
 
             if error:
                 result = {"error": error}
