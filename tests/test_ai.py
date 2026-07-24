@@ -724,6 +724,97 @@ class TestAdminCopilotView:
         response = admin_client.post("/api/admin/copilot/", {"message": ""}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_view_passes_authenticated_user_to_admin_chat(self, admin_client, admin_user):
+        """Regression test: the view must forward request.user into admin_chat
+        so tool calls resolve to the requesting admin's own business, not the
+        globally-first active business (see apps/ai/admin_copilot.py)."""
+        with patch("apps.ai.views.admin_chat") as mock_chat:
+            from apps.ai.admin_copilot import AdminCopilotResponse
+
+            mock_chat.return_value = AdminCopilotResponse(reply="ok", tool_calls_made=[])
+            admin_client.post("/api/admin/copilot/", {"message": "Show revenue"}, format="json")
+
+            _, kwargs = mock_chat.call_args
+            assert kwargs.get("user") == admin_user
+
+    @pytest.mark.django_db
+    @patch("openai.OpenAI")
+    def test_admin_chat_resolves_requesting_admins_own_business(self, mock_openai_cls):
+        """Regression test for the cross-tenant leak: two businesses each with
+        their own admin and their own completed appointment revenue. Business
+        A is created first (so it is "the first active business"), Business B
+        second. Business B's admin asking for revenue analytics must see
+        Business B's numbers, not Business A's, via a real user-scoped call."""
+        from decimal import Decimal
+
+        from apps.business.models import Business, BusinessMembership
+
+        business_a = Business.objects.create(name="Salon A", slug="salon-a")
+        business_b = Business.objects.create(name="Salon B", slug="salon-b")
+
+        admin_b = StaffFactory()
+        admin_b.role = "admin"
+        admin_b.save()
+        BusinessMembership.objects.create(
+            user=admin_b, business=business_b, role="admin"
+        )
+
+        service_a = ServiceFactory(business=business_a, price=Decimal("100.00"))
+        staff_a = StaffFactory()
+        AppointmentFactory(
+            business=business_a,
+            staff=staff_a,
+            service=service_a,
+            status="completed",
+        )
+
+        service_b = ServiceFactory(business=business_b, price=Decimal("250.00"))
+        staff_b = StaffFactory()
+        AppointmentFactory(
+            business=business_b,
+            staff=staff_b,
+            service=service_b,
+            status="completed",
+        )
+
+        mock_client = MagicMock()
+        mock_openai_cls.return_value = mock_client
+
+        tool_call = MagicMock()
+        tool_call.id = "call_1"
+        tool_call.function.name = "get_revenue_analytics"
+        tool_call.function.arguments = "{}"
+
+        first_msg = MagicMock()
+        first_msg.tool_calls = [tool_call]
+        first_choice = MagicMock()
+        first_choice.message = first_msg
+        first_response = MagicMock()
+        first_response.choices = [first_choice]
+
+        final_msg = MagicMock()
+        final_msg.tool_calls = None
+        final_msg.content = "done"
+        final_choice = MagicMock()
+        final_choice.message = final_msg
+        final_response = MagicMock()
+        final_response.choices = [final_choice]
+
+        mock_client.chat.completions.create.side_effect = [first_response, final_response]
+
+        from apps.ai.admin_copilot import admin_chat
+
+        with patch("django.conf.settings.OPENAI_API_KEY", "sk-test"):
+            admin_chat("Show revenue", user=admin_b)
+
+        tool_message = [
+            m
+            for m in mock_client.chat.completions.create.call_args_list[1].kwargs["messages"]
+            if isinstance(m, dict) and m.get("role") == "tool"
+        ][0]
+        assert "250" in tool_message["content"]
+        assert "100" not in tool_message["content"]
+
 
 # ────────────────────────────────────────────────────────────────
 # Service Recommendation Engine
