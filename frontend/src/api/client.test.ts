@@ -50,7 +50,7 @@ describe("api client 401 interceptor", () => {
   it("does not redirect an anonymous request with no tokens at all", async () => {
     const { rejected } = registeredResponseInterceptors[0];
 
-    await rejected(make401Error()).catch(() => {});
+    await Promise.resolve(rejected(make401Error())).catch(() => {});
 
     expect(window.location.href).toBe("");
   });
@@ -59,7 +59,7 @@ describe("api client 401 interceptor", () => {
     localStorage.setItem("access_token", "stale-token");
     const { rejected } = registeredResponseInterceptors[0];
 
-    await rejected(make401Error()).catch(() => {});
+    await Promise.resolve(rejected(make401Error())).catch(() => {});
 
     expect(window.location.href).toBe("/login");
     expect(localStorage.getItem("access_token")).toBeNull();

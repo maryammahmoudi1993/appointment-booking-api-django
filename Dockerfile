@@ -19,7 +19,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements/ requirements/
-RUN pip install --no-cache-dir -r requirements/prod.txt
+COPY docker/stubs/ docker/stubs/
+# xgboost's Linux wheels unconditionally depend on nvidia-nccl-cu12, a ~300MB
+# GPU library, even though this app only runs xgboost on CPU. Install a stub
+# package first so pip considers the dependency satisfied and never downloads
+# the real one.
+RUN pip install --no-cache-dir --no-deps docker/stubs/nvidia_nccl_cu12-0.0.0-py3-none-any.whl && \
+    pip install --no-cache-dir -r requirements/prod.txt
 
 COPY . .
 
