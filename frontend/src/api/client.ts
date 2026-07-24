@@ -20,6 +20,7 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
       const refresh = localStorage.getItem("refresh_token");
+      const hadAccessToken = !!localStorage.getItem("access_token");
       if (refresh) {
         try {
           const { data } = await axios.post("/api/auth/refresh/", {
@@ -33,9 +34,16 @@ api.interceptors.response.use(
           localStorage.removeItem("refresh_token");
           window.location.href = "/login";
         }
-      } else {
+      } else if (hadAccessToken) {
+        // An access token existed but was rejected outright (no refresh
+        // token to recover with) — treat as a genuinely expired session.
+        localStorage.removeItem("access_token");
         window.location.href = "/login";
       }
+      // No tokens at all means this is a plain anonymous request (e.g. a
+      // public landing-page widget probing an auth-required endpoint) —
+      // there is no session to expire, so let the 401 reject normally and
+      // leave the visitor on the page they're already viewing.
     }
     return Promise.reject(err);
   }
