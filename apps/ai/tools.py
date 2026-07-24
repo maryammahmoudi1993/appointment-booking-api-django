@@ -2,7 +2,7 @@
 Tool registry for AI copilot function calling.
 
 Each tool is a dict with:
-  - name: unique identifier matching the OpenAI function name
+  - name: unique identifier matching the Gemini function name
   - description: shown to the LLM
   - parameters: JSON Schema for the function's arguments
   - execute: callable(**kwargs) -> dict | str  (returns data the LLM can use)
@@ -1375,16 +1375,16 @@ TOOL_DEFINITIONS = [
 TOOL_MAP = {t["name"]: t for t in TOOL_DEFINITIONS}
 
 
-def get_openai_tools():
-    """Return tool definitions formatted for the OpenAI chat completions API."""
+def get_tool_declarations():
+    """Return raw tool definitions (name/description/parameters) for the
+    admin copilot's tool allowlist filtering. Provider-specific formatting
+    (e.g. Gemini's Tool/FunctionDeclaration objects) happens in
+    gemini_client.build_tool()."""
     return [
         {
-            "type": "function",
-            "function": {
-                "name": t["name"],
-                "description": " ".join(t["description"].split()),
-                "parameters": t["parameters"],
-            },
+            "name": t["name"],
+            "description": t["description"],
+            "parameters": t["parameters"],
         }
         for t in TOOL_DEFINITIONS
     ]

@@ -10,6 +10,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 
+from .gemini_client import MODEL, build_tool
+from .gemini_client import get_client as _get_client
+
 logger = logging.getLogger(__name__)
 
 ADMIN_SYSTEM_PROMPT = """You are BloomFlow Analytics Copilot, an AI assistant for business managers.
@@ -27,6 +30,18 @@ honestly. Never fabricate analytics data.
 When presenting complex data, summarize key takeaways first, then
 provide details if requested."""
 
+ADMIN_TOOL_NAMES = {
+    "get_revenue_analytics",
+    "get_staff_analytics",
+    "get_service_analytics",
+    "get_booking_analytics",
+    "get_top_services",
+    "get_staff_performance",
+    "get_business_info",
+    "recommend_services",
+    "forecast_revenue",
+}
+
 
 @dataclass
 class AdminCopilotResponse:
@@ -43,79 +58,60 @@ def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotRes
     Without it, tool resolution silently falls back to "the first active
     business in the database," leaking other businesses' data.
     """
-    import openai
-    from django.conf import settings
-
-    api_key = getattr(settings, "OPENAI_API_KEY", "")
-    if not api_key:
+    client = _get_client()
+    if client is None:
         return AdminCopilotResponse(
-            reply="AI analytics copilot requires an OpenAI API key. "
-            "Please configure OPENAI_API_KEY in your environment."
+            reply="AI analytics copilot requires a Gemini API key. "
+            "Please configure GEMINI_API_KEY in your environment."
         )
 
-    client = openai.OpenAI(api_key=api_key)
+    from google.genai import types
 
-    from apps.ai.tools import get_openai_tools
+    from apps.ai.tools import execute_tool, get_tool_declarations
 
-    admin_tool_names = {
-        "get_revenue_analytics",
-        "get_staff_analytics",
-        "get_service_analytics",
-        "get_booking_analytics",
-        "get_top_services",
-        "get_staff_performance",
-        "get_business_info",
-        "recommend_services",
-        "forecast_revenue",
-    }
+    all_tools = get_tool_declarations()
+    admin_tool_defs = [t for t in all_tools if t["name"] in ADMIN_TOOL_NAMES]
+    tool = build_tool(admin_tool_defs)
 
-    all_tools = get_openai_tools()
-    admin_tools = [t for t in all_tools if t["function"]["name"] in admin_tool_names]
-
-    messages = [
-        {"role": "system", "content": ADMIN_SYSTEM_PROMPT},
-        {"role": "user", "content": message},
-    ]
+    config = types.GenerateContentConfig(
+        system_instruction=ADMIN_SYSTEM_PROMPT,
+        tools=[tool],
+    )
+    contents = [types.Content(role="user", parts=[types.Part.from_text(text=message)])]
 
     tool_calls_made = []
     max_rounds = 5
 
     for _ in range(max_rounds):
         try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                tools=admin_tools or None,
+            response = client.models.generate_content(
+                model=MODEL, contents=contents, config=config
             )
         except Exception:
-            logger.exception("OpenAI request failed in admin_copilot.admin_chat()")
+            logger.exception("Gemini request failed in admin_copilot.admin_chat()")
             return AdminCopilotResponse(
                 reply="Sorry, I'm having trouble reaching the AI assistant right now. "
                 "Please try again in a moment.",
                 tool_calls_made=tool_calls_made,
             )
 
-        choice = response.choices[0]
-        assistant_msg = choice.message
+        candidate = response.candidates[0]
+        parts = candidate.content.parts or []
+        function_call_parts = [p for p in parts if getattr(p, "function_call", None)]
 
-        if not assistant_msg.tool_calls:
+        if not function_call_parts:
             return AdminCopilotResponse(
-                reply=assistant_msg.content or "I couldn't generate a response.",
+                reply=response.text or "I couldn't generate a response.",
                 tool_calls_made=tool_calls_made,
             )
 
-        messages.append(assistant_msg)
+        contents.append(candidate.content)
 
-        from apps.ai.tools import execute_tool
-
-        for tc in assistant_msg.tool_calls:
-            fn_name = tc.function.name
-            import json
-
-            try:
-                args = json.loads(tc.function.arguments)
-            except json.JSONDecodeError:
-                args = {}
+        response_parts = []
+        for part in function_call_parts:
+            fc = part.function_call
+            fn_name = fc.name
+            args = dict(fc.args) if fc.args else {}
 
             tool_calls_made.append(fn_name)
 
@@ -124,11 +120,13 @@ def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotRes
             if error:
                 result = {"error": error}
 
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tc.id,
-                "content": str(result) if result else "No data available.",
-            })
+            response_parts.append(
+                types.Part.from_function_response(
+                    name=fn_name, response=result if result else {"detail": "No data available."}
+                )
+            )
+
+        contents.append(types.Content(role="user", parts=response_parts))
 
     return AdminCopilotResponse(
         reply="I've reached the maximum number of tool calls. "
