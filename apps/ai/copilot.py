@@ -1,20 +1,19 @@
 """
-BloomFlow AI Copilot — OpenAI function-calling service.
+BloomFlow AI Copilot — Gemini function-calling service.
 
 The copilot receives a user message, optionally calls tools, and returns
 a final text response.  The LLM never accesses Django models directly;
 it only sees data returned by the allowlisted tools in tools.py.
 """
 
-import json
 import logging
 from dataclasses import dataclass, field
 
-from django.conf import settings
+from .gemini_client import MODEL, build_tool
+from .gemini_client import get_client as _get_client
 
 logger = logging.getLogger(__name__)
 
-MODEL = "gpt-4o-mini"
 MAX_TOOL_ROUNDS = 8
 
 SYSTEM_PROMPT = """You are BloomFlow, a friendly AI assistant for a booking business called Bloom Studio.
@@ -53,7 +52,7 @@ LANGUAGE:
 """
 
 FALLBACK_NO_KEY = (
-    "AI copilot is not configured. Please set the OPENAI_API_KEY "
+    "AI copilot is not configured. Please set the GEMINI_API_KEY "
     "environment variable to enable the AI assistant."
 )
 
@@ -68,19 +67,6 @@ class CopilotResponse:
     reply: str
     tool_calls_made: list = field(default_factory=list)
     conversation_id: str | None = None
-
-
-def _get_client():
-    api_key = getattr(settings, "OPENAI_API_KEY", None)
-    if not api_key:
-        return None
-    try:
-        from openai import OpenAI
-
-        return OpenAI(api_key=api_key)
-    except ImportError:
-        logger.warning("openai package not installed")
-        return None
 
 
 def _save_message(conversation, role, content, tool_name="", tool_call_id=""):
@@ -106,6 +92,23 @@ def _load_history(conversation, max_messages=20):
     return history
 
 
+def _gemini_contents(history, user_message):
+    """Build a Gemini `contents` list from our internal (user/assistant)
+    history plus the new user message. Gemini only has "user"/"model"
+    roles — our stored "assistant" role maps to "model" here."""
+    from google.genai import types
+
+    contents = [
+        types.Content(
+            role="model" if m["role"] == "assistant" else "user",
+            parts=[types.Part.from_text(text=m["content"])],
+        )
+        for m in history
+    ]
+    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=user_message)]))
+    return contents
+
+
 def chat(
     user_message: str,
     user=None,
@@ -127,6 +130,8 @@ def chat(
     client = _get_client()
     if client is None:
         return CopilotResponse(reply=FALLBACK_NO_KEY)
+
+    from google.genai import types
 
     from .models import Conversation
     from .tools import TOOL_DEFINITIONS, execute_tool
@@ -153,53 +158,44 @@ def chat(
     if conversation:
         _save_message(conversation, "user", user_message)
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
     if conversation:
         history = _load_history(conversation)
-        messages.extend(history)
-    elif conversation_history:
-        messages.extend(conversation_history)
+    else:
+        history = conversation_history or []
 
-    if not any(m["role"] == "user" and m["content"] == user_message for m in messages):
-        messages.append({"role": "user", "content": user_message})
+    contents = _gemini_contents(history, user_message)
 
-    openai_tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": t["name"],
-                "description": " ".join(t["description"].split()),
-                "parameters": t["parameters"],
-            },
-        }
-        for t in TOOL_DEFINITIONS
-    ]
+    tool = build_tool(TOOL_DEFINITIONS)
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        tools=[tool],
+    )
 
     tool_calls_made = []
 
     for _ in range(MAX_TOOL_ROUNDS):
         try:
-            response = client.chat.completions.create(
-                model=MODEL, messages=messages, tools=openai_tools, tool_choice="auto"
+            response = client.models.generate_content(
+                model=MODEL, contents=contents, config=config
             )
         except Exception:
             # An invalid/rejected API key, rate limit, or transient network
             # error should degrade to a friendly message, not an uncaught
             # 500 — the AI provider is an external dependency the rest of
             # the request pipeline shouldn't crash over.
-            logger.exception("OpenAI request failed in copilot.chat()")
+            logger.exception("Gemini request failed in copilot.chat()")
             return CopilotResponse(
                 reply=FALLBACK_PROVIDER_ERROR,
                 tool_calls_made=tool_calls_made,
                 conversation_id=str(conversation.id) if conversation else None,
             )
 
-        choice = response.choices[0]
-        msg = choice.message
+        candidate = response.candidates[0]
+        parts = candidate.content.parts or []
+        function_call_parts = [p for p in parts if getattr(p, "function_call", None)]
 
-        if not msg.tool_calls:
-            reply = msg.content or ""
+        if not function_call_parts:
+            reply = response.text or ""
             if conversation:
                 _save_message(conversation, "assistant", reply)
             return CopilotResponse(
@@ -208,30 +204,13 @@ def chat(
                 conversation_id=str(conversation.id) if conversation else None,
             )
 
-        messages.append(
-            {
-                "role": "assistant",
-                "content": msg.content,
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments,
-                        },
-                    }
-                    for tc in msg.tool_calls
-                ],
-            }
-        )
+        contents.append(candidate.content)
 
-        for tc in msg.tool_calls:
-            tool_name = tc.function.name
-            try:
-                args = json.loads(tc.function.arguments)
-            except json.JSONDecodeError:
-                args = {}
+        response_parts = []
+        for part in function_call_parts:
+            fc = part.function_call
+            tool_name = fc.name
+            args = dict(fc.args) if fc.args else {}
 
             if conversation:
                 args["conversation_id"] = str(conversation.id)
@@ -242,22 +221,21 @@ def chat(
             if error:
                 result = {"error": error}
 
-            result_str = json.dumps(result)
-            messages.append(
-                {"role": "tool", "tool_call_id": tc.id, "content": result_str}
-            )
+            response_parts.append(types.Part.from_function_response(name=tool_name, response=result))
 
             if conversation:
+                import json
+
                 _save_message(
                     conversation,
                     "tool",
-                    result_str[:500],
+                    json.dumps(result)[:500],
                     tool_name=tool_name,
-                    tool_call_id=tc.id,
                 )
 
-    final = messages[-1]
-    reply = final.get("content", "I'm sorry, I couldn't complete your request.")
+        contents.append(types.Content(role="user", parts=response_parts))
+
+    reply = "I'm sorry, I couldn't complete your request."
     if conversation:
         _save_message(conversation, "assistant", reply)
     return CopilotResponse(

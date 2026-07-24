@@ -43,7 +43,7 @@ Production-grade appointment booking and business management platform with AI-po
 
 ### AI Copilot
 - 23 registered tools (informational, booking, analytics)
-- OpenAI function calling with multi-turn conversation
+- Gemini function calling with multi-turn conversation
 - Booking draft confirmation-gated workflow (never books without approval)
 - Customer copilot (`POST /api/copilot/`) and Admin copilot (`POST /api/admin/copilot/`)
 - Conversation persistence with history
@@ -243,7 +243,7 @@ python -m pytest tests/test_ai.py -v
 | Database      | PostgreSQL 16                                 |
 | Auth          | JWT (simplejwt with token blacklist)          |
 | API Docs      | drf-spectacular (OpenAPI 3 / Swagger)         |
-| AI/ML         | OpenAI, XGBoost, SHAP                         |
+| AI/ML         | Google Gemini, XGBoost, SHAP                  |
 | Frontend      | React 19, TypeScript, Tailwind CSS v4         |
 | Tooling       | Docker, Makefile, pytest, ruff                |
 | CI/CD         | GitHub Actions (lint, test, security, build)  |

@@ -236,4 +236,4 @@ LOGGING = {
 }
 
 # AI Copilot
-OPENAI_API_KEY = env("OPENAI_API_KEY", default=None)
+GEMINI_API_KEY = env("GEMINI_API_KEY", default=None)

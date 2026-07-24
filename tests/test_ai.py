@@ -24,7 +24,7 @@ from apps.ai.tools import (
     execute_search_services,
     execute_suggest_staff,
     execute_tool,
-    get_openai_tools,
+    get_tool_declarations,
 )
 from apps.staff.models import StaffProfile
 from tests.factories import (
@@ -68,14 +68,13 @@ class TestToolRegistry:
             assert "execute" in tool
             assert callable(tool["execute"])
 
-    def test_get_openai_tools_format(self):
-        tools = get_openai_tools()
+    def test_get_tool_declarations_format(self):
+        tools = get_tool_declarations()
         assert len(tools) == 23
         for t in tools:
-            assert t["type"] == "function"
-            assert "name" in t["function"]
-            assert "description" in t["function"]
-            assert "parameters" in t["function"]
+            assert "name" in t
+            assert "description" in t
+            assert "parameters" in t
 
 
 # ────────────────────────────────────────────────────────────────
@@ -506,9 +505,29 @@ class TestConversationModel:
 # ────────────────────────────────────────────────────────────────
 
 
+def _gemini_text_response(text):
+    """Build a MagicMock shaped like a Gemini generate_content() response
+    with no function calls — just a final text reply."""
+    mock_response = MagicMock()
+    mock_response.text = text
+    mock_response.candidates[0].content.parts = []
+    return mock_response
+
+
+def _gemini_function_call_response(name, args):
+    """Build a MagicMock shaped like a Gemini generate_content() response
+    containing a single function call part."""
+    mock_part = MagicMock()
+    mock_part.function_call.name = name
+    mock_part.function_call.args = args
+    mock_response = MagicMock()
+    mock_response.candidates[0].content.parts = [mock_part]
+    return mock_response
+
+
 class TestCopilotService:
     def test_fallback_when_no_api_key(self, settings):
-        settings.OPENAI_API_KEY = None
+        settings.GEMINI_API_KEY = None
         from apps.ai.copilot import chat
 
         result = chat("Hello", user=None)
@@ -517,13 +536,13 @@ class TestCopilotService:
     @patch("apps.ai.copilot._get_client")
     def test_provider_error_returns_graceful_fallback_not_500(self, mock_get_client, settings):
         """Regression test: an invalid/rejected API key, rate limit, or any
-        other OpenAI SDK exception used to propagate uncaught all the way
+        other Gemini SDK exception used to propagate uncaught all the way
         to an Internal Server Error. It must now degrade to a friendly
         CopilotResponse instead."""
-        settings.OPENAI_API_KEY = "sk-test"
+        settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.chat.completions.create.side_effect = Exception(
+        mock_client.models.generate_content.side_effect = Exception(
             "Error code: 401 - invalid_api_key"
         )
 
@@ -535,20 +554,12 @@ class TestCopilotService:
 
     @patch("apps.ai.copilot._get_client")
     def test_simple_text_response(self, mock_get_client, settings):
-        settings.OPENAI_API_KEY = "sk-test"
+        settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-
-        mock_msg = MagicMock()
-        mock_msg.content = "Hello! How can I help?"
-        mock_msg.tool_calls = None
-
-        mock_choice = MagicMock()
-        mock_choice.message = mock_msg
-
-        mock_response = MagicMock()
-        mock_response.choices = [mock_choice]
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.models.generate_content.return_value = _gemini_text_response(
+            "Hello! How can I help?"
+        )
 
         from apps.ai.copilot import chat
 
@@ -558,35 +569,15 @@ class TestCopilotService:
 
     @patch("apps.ai.copilot._get_client")
     def test_tool_calling_loop(self, mock_get_client, customer, settings):
-        settings.OPENAI_API_KEY = "sk-test"
+        settings.GEMINI_API_KEY = "test-key"
         ServiceFactory.create_batch(2)
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
 
-        tool_call = MagicMock()
-        tool_call.id = "call_1"
-        tool_call.function.name = "search_services"
-        tool_call.function.arguments = "{}"
-
-        assistant_msg = MagicMock()
-        assistant_msg.content = None
-        assistant_msg.tool_calls = [tool_call]
-
-        final_msg = MagicMock()
-        final_msg.content = "We offer 2 services!"
-        final_msg.tool_calls = None
-
-        mock_choice1 = MagicMock()
-        mock_choice1.message = assistant_msg
-        mock_choice2 = MagicMock()
-        mock_choice2.message = final_msg
-
-        mock_response1 = MagicMock()
-        mock_response1.choices = [mock_choice1]
-        mock_response2 = MagicMock()
-        mock_response2.choices = [mock_choice2]
-
-        mock_client.chat.completions.create.side_effect = [mock_response1, mock_response2]
+        mock_client.models.generate_content.side_effect = [
+            _gemini_function_call_response("search_services", {}),
+            _gemini_text_response("We offer 2 services!"),
+        ]
 
         from apps.ai.copilot import chat
 
@@ -597,20 +588,10 @@ class TestCopilotService:
 
     @patch("apps.ai.copilot._get_client")
     def test_conversation_persisted(self, mock_get_client, customer, settings):
-        settings.OPENAI_API_KEY = "sk-test"
+        settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-
-        mock_msg = MagicMock()
-        mock_msg.content = "Hello!"
-        mock_msg.tool_calls = None
-
-        mock_choice = MagicMock()
-        mock_choice.message = mock_msg
-
-        mock_response = MagicMock()
-        mock_response.choices = [mock_choice]
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.models.generate_content.return_value = _gemini_text_response("Hello!")
 
         from apps.ai.copilot import chat
 
@@ -622,25 +603,12 @@ class TestCopilotService:
 
     @patch("apps.ai.copilot._get_client")
     def test_max_rounds_exceeded(self, mock_get_client, db, settings):
-        settings.OPENAI_API_KEY = "sk-test"
+        settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-
-        tool_call = MagicMock()
-        tool_call.id = "call_loop"
-        tool_call.function.name = "search_services"
-        tool_call.function.arguments = "{}"
-
-        loop_msg = MagicMock()
-        loop_msg.content = None
-        loop_msg.tool_calls = [tool_call]
-
-        mock_choice = MagicMock()
-        mock_choice.message = loop_msg
-
-        mock_response = MagicMock()
-        mock_response.choices = [mock_choice]
-        mock_client.chat.completions.create.return_value = mock_response
+        mock_client.models.generate_content.return_value = _gemini_function_call_response(
+            "search_services", {}
+        )
 
         from apps.ai.copilot import chat
 
@@ -756,15 +724,15 @@ class TestAdminCopilotView:
             _, kwargs = mock_chat.call_args
             assert kwargs.get("user") == admin_user
 
-    @patch("openai.OpenAI")
-    def test_admin_chat_provider_error_returns_graceful_fallback(self, mock_openai_cls, settings):
-        """Regression test: an OpenAI SDK exception (invalid key, rate limit,
+    @patch("google.genai.Client")
+    def test_admin_chat_provider_error_returns_graceful_fallback(self, mock_client_cls, settings):
+        """Regression test: a Gemini SDK exception (invalid key, rate limit,
         network error) used to propagate uncaught to a 500 in admin_chat()
         too. Must degrade to a friendly AdminCopilotResponse instead."""
-        settings.OPENAI_API_KEY = "sk-test"
+        settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
-        mock_openai_cls.return_value = mock_client
-        mock_client.chat.completions.create.side_effect = Exception(
+        mock_client_cls.return_value = mock_client
+        mock_client.models.generate_content.side_effect = Exception(
             "Error code: 401 - invalid_api_key"
         )
 
@@ -775,8 +743,8 @@ class TestAdminCopilotView:
         assert "401" not in result.reply
 
     @pytest.mark.django_db
-    @patch("openai.OpenAI")
-    def test_admin_chat_resolves_requesting_admins_own_business(self, mock_openai_cls):
+    @patch("google.genai.Client")
+    def test_admin_chat_resolves_requesting_admins_own_business(self, mock_client_cls, settings):
         """Regression test for the cross-tenant leak: two businesses each with
         their own admin and their own completed appointment revenue. Business
         A is created first (so it is "the first active business"), Business B
@@ -814,43 +782,25 @@ class TestAdminCopilotView:
             status="completed",
         )
 
+        settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
-        mock_openai_cls.return_value = mock_client
-
-        tool_call = MagicMock()
-        tool_call.id = "call_1"
-        tool_call.function.name = "get_revenue_analytics"
-        tool_call.function.arguments = "{}"
-
-        first_msg = MagicMock()
-        first_msg.tool_calls = [tool_call]
-        first_choice = MagicMock()
-        first_choice.message = first_msg
-        first_response = MagicMock()
-        first_response.choices = [first_choice]
-
-        final_msg = MagicMock()
-        final_msg.tool_calls = None
-        final_msg.content = "done"
-        final_choice = MagicMock()
-        final_choice.message = final_msg
-        final_response = MagicMock()
-        final_response.choices = [final_choice]
-
-        mock_client.chat.completions.create.side_effect = [first_response, final_response]
+        mock_client_cls.return_value = mock_client
+        mock_client.models.generate_content.side_effect = [
+            _gemini_function_call_response("get_revenue_analytics", {}),
+            _gemini_text_response("done"),
+        ]
 
         from apps.ai.admin_copilot import admin_chat
 
-        with patch("django.conf.settings.OPENAI_API_KEY", "sk-test"):
-            admin_chat("Show revenue", user=admin_b)
+        admin_chat("Show revenue", user=admin_b)
 
-        tool_message = [
-            m
-            for m in mock_client.chat.completions.create.call_args_list[1].kwargs["messages"]
-            if isinstance(m, dict) and m.get("role") == "tool"
-        ][0]
-        assert "250" in tool_message["content"]
-        assert "100" not in tool_message["content"]
+        second_call_contents = mock_client.models.generate_content.call_args_list[1].kwargs[
+            "contents"
+        ]
+        function_response_content = second_call_contents[-1]
+        tool_result = function_response_content.parts[0].function_response.response
+        assert "250" in str(tool_result)
+        assert "100" not in str(tool_result)
 
 
 # ────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 -r prod.txt
-openai>=1.0,<2.0
+google-genai>=1.0,<2.0
 xgboost>=2.0,<3.0
 scikit-learn>=1.5,<2.0
 pandas>=2.2,<2.3
