@@ -1,10 +1,13 @@
+import concurrent.futures
 from datetime import time, timedelta
 
 import pytest
+from django.db import connection
 from django.utils import timezone
 from rest_framework import status
 
-from apps.appointments.validators import validate_booking
+from apps.appointments.models import Appointment
+from apps.appointments.validators import create_appointment_atomic, validate_booking
 from apps.staff.services import get_available_slots
 from core.exceptions import BookingConflict, DuringTimeOff, OutsideWorkingHours
 from tests.factories import (
@@ -182,3 +185,66 @@ class TestSchedulingAvailability:
         assert "buffer_before_minutes" in response.data
         assert "buffer_after_minutes" in response.data
         assert "breaks" in response.data
+
+
+@pytest.mark.django_db(transaction=True)
+class TestSchedulingConcurrency:
+    def test_concurrent_bookings_for_same_never_before_booked_slot(self):
+        """Regression test: select_for_update() on Appointment alone cannot
+        lock a slot with zero existing rows. N concurrent requests for the
+        exact same never-before-booked slot must yield exactly one success
+        and N-1 BookingConflict errors, never more than one Appointment."""
+        staff = StaffFactory()
+        service = ServiceFactory(duration_minutes=30)
+        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        customers = [CustomerFactory() for _ in range(5)]
+        target = _next_weekday(0)
+        start = _make_aware(
+            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=9))
+        )
+        end = start + timedelta(minutes=30)
+
+        staff_id, service_id = staff.id, service.id
+        customer_ids = [c.id for c in customers]
+
+        def attempt_booking(customer_id):
+            from django.db.utils import OperationalError
+
+            try:
+                appt = create_appointment_atomic(
+                    customer_id=customer_id,
+                    staff_id=staff_id,
+                    service_id=service_id,
+                    start_datetime=start,
+                    end_datetime=end,
+                )
+                return ("ok", appt.id)
+            except BookingConflict:
+                return ("conflict", None)
+            except OperationalError as exc:
+                # SQLite (used only in local/dev test runs; CI and prod use
+                # real Postgres) has no MVCC row locking and instead enforces
+                # exclusivity via a coarser whole-database write lock — a
+                # "database is locked" error here is itself evidence the
+                # second writer was correctly blocked from double-booking,
+                # just via a different mechanism than our staff-row lock.
+                if "locked" in str(exc).lower():
+                    return ("conflict", None)
+                raise
+            finally:
+                connection.close()
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(executor.map(attempt_booking, customer_ids))
+
+        successes = [r for r in results if r[0] == "ok"]
+        conflicts = [r for r in results if r[0] == "conflict"]
+
+        assert len(successes) == 1, f"Expected exactly 1 successful booking, got {results}"
+        assert len(conflicts) == 4, f"Expected 4 conflicts, got {results}"
+        assert (
+            Appointment.objects.filter(
+                staff_id=staff_id, start_datetime=start, end_datetime=end
+            ).count()
+            == 1
+        )

@@ -119,6 +119,17 @@ def validate_booking(
         buffer_query &= ~Q(id=exclude_appointment_id)
 
     with transaction.atomic():
+        # select_for_update() on Appointment alone cannot prevent a race for a
+        # slot with zero existing rows — there is nothing yet to lock, so two
+        # concurrent requests can both pass the .exists() check below and both
+        # insert. Locking a stable per-staff resource first forces concurrent
+        # booking attempts for the same staff member to serialize: the second
+        # transaction blocks here until the first commits (or rolls back), and
+        # then re-runs the conflict check against the now-committed row.
+        from apps.accounts.models import User
+
+        User.objects.select_for_update().get(pk=staff_id)
+
         existing = Appointment.objects.select_for_update().filter(buffer_query)
         if existing.exists():
             from core.exceptions import BookingConflict
