@@ -77,7 +77,9 @@ class StaffProfileViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     )
     @action(detail=False, methods=["post"], url_path="onboard")
     def onboard(self, request):
-        serializer = StaffCreateSerializer(data=request.data)
+        serializer = StaffCreateSerializer(
+            data=request.data, context={"business": self.get_business()}
+        )
         serializer.is_valid(raise_exception=True)
         profile = serializer.save()
         return Response(

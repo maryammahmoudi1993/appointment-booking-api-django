@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 
 from tests.factories import (
+    AdminFactory,
     AppointmentFactory,
     CustomerFactory,
     ServiceFactory,
@@ -139,3 +140,34 @@ class TestStaffAvailability:
             if s["start"] == to_start.strftime("%H:%M:%S")
         )
         assert blocked["available"] is False
+
+
+@pytest.mark.django_db
+class TestStaffOnboarding:
+    def test_onboarded_staff_is_visible_in_listing(self, api_client):
+        """Regression test: staff onboarded via POST /api/staff/onboard/
+        previously got business=None and silently never appeared in any
+        business-scoped listing again."""
+        from apps.staff.models import StaffProfile
+
+        admin = AdminFactory()
+        api_client.force_authenticate(user=admin)
+
+        response = api_client.post(
+            "/api/staff/onboard/",
+            {
+                "username": "new_stylist",
+                "email": "new_stylist@example.com",
+                "password": "supersecret123",
+                "bio": "New hire",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+
+        profile = StaffProfile.objects.get(id=response.data["id"])
+        assert profile.business is not None
+
+        list_response = api_client.get("/api/staff/")
+        usernames = [s["username"] for s in list_response.data["results"]]
+        assert "new_stylist" in usernames

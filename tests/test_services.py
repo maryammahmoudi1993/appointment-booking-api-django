@@ -31,6 +31,27 @@ class TestServiceCreate:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == "New Service"
 
+    def test_created_service_is_visible_in_listing(self, admin_client):
+        """Regression test: services created via POST previously got
+        business=None and silently never appeared in any listing again."""
+        from apps.services.models import Service
+
+        data = {
+            "name": "Visible Service",
+            "description": "Must show up after creation",
+            "duration_minutes": 30,
+            "price": "40.00",
+        }
+        create_response = admin_client.post("/api/services/", data, format="json")
+        assert create_response.status_code == status.HTTP_201_CREATED
+
+        service = Service.objects.get(id=create_response.data["id"])
+        assert service.business is not None
+
+        list_response = admin_client.get("/api/services/")
+        names = [s["name"] for s in list_response.data["results"]]
+        assert "Visible Service" in names
+
     def test_customer_cannot_create_service(self, auth_client):
         data = {
             "name": "New Service",
