@@ -155,7 +155,9 @@ def run_eval_suite(
     for case in cases:
         try:
             tool_names, tool_args = eval_fn(case.message)
-            tools_ok = evaluate_tool_selection(case.message, case.expected_tools, tool_names)
+            tools_ok = evaluate_tool_selection(
+                case.message, case.expected_tools, tool_names
+            )
             params_ok = evaluate_tool_params(case.expected_params, tool_args)
             results.append(
                 EvalResult(

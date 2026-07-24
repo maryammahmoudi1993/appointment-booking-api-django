@@ -1,5 +1,7 @@
 # 06 — Testing, Security & Performance Audit
 
+> **Current-state addendum:** Current execution supersedes the baseline: **331 backend tests passed at 89.04% measured coverage** and **11 frontend tests passed**. Django checks, migrations, Ruff lint/format, TypeScript, Vite build, and both npm and Python production dependency audits pass with zero known vulnerabilities after upgrading to Django 5.2.16, DRF 3.16.1, and SimpleJWT 5.5.1. Customer cancellation, paginated analytics, prefetched staff reviews, production HTTPS/HSTS, live-path AI observability, structured tool-call rendering, and held-out ML evaluation have regressions. Remaining gaps: no browser E2E/accessibility/visual/load tests and local concurrency uses SQLite rather than PostgreSQL.
+
 ## Testing maturity
 
 ### Backend — verified by direct execution

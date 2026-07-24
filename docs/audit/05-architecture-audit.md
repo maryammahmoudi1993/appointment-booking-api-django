@@ -1,5 +1,7 @@
 # 05 — System Architecture Audit
 
+> **Current-state addendum (commit `25ad7e6`):** The modular-monolith classification and diagrams remain valid, except the AI provider is now **Google Gemini via `apps/ai/gemini_client.py`**, not OpenAI. The target architecture should keep this modular monolith. Highest-value boundary work remains extracting analytics/selectors, generating TypeScript DTOs from OpenAPI, moving durable notification/webhook retries to a worker only if operational need justifies it, and wiring the existing AI observability boundary. Microservices are not recommended.
+
 ## Classification
 
 This is a **modular monolith** — a well-organized Django project split into 9 domain apps (`accounts`, `services`, `staff`, `appointments`, `engagement`, `notifications`, `analytics`, `business`, `ai`) plus a `core` shared-utilities module, served alongside a separately-built React SPA. It is not microservices, and it should not become microservices — the scale and team size (solo developer, portfolio demo) does not justify that complexity. The classification is: **modular monolith, inconsistently enforced** — some domains have a real service/selector layer (`ai`, `staff`, `appointments/validators.py`, `engagement/services.py`, `notifications`), others still have business logic embedded directly in views (`analytics`, `reviews`, `loyalty` balance calculation). No `selectors.py` pattern exists anywhere in the repo.

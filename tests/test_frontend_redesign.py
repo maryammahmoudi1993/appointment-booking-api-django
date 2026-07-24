@@ -61,12 +61,12 @@ def test_design_system_includes_accessible_states():
 
 def test_landing_page_ctas_and_sections_are_wired():
     home = (FRONTEND / "pages" / "Home.tsx").read_text(encoding="utf-8")
-    header = (
-        FRONTEND / "components" / "landing" / "LandingHeader.tsx"
-    ).read_text(encoding="utf-8")
-    hero = (
-        FRONTEND / "components" / "landing" / "HeroSection.tsx"
-    ).read_text(encoding="utf-8")
+    header = (FRONTEND / "components" / "landing" / "LandingHeader.tsx").read_text(
+        encoding="utf-8"
+    )
+    hero = (FRONTEND / "components" / "landing" / "HeroSection.tsx").read_text(
+        encoding="utf-8"
+    )
     sections = " ".join(
         path.read_text(encoding="utf-8")
         for path in (FRONTEND / "components" / "landing").glob("*.tsx")

@@ -44,14 +44,29 @@ from tests.factories import (
 
 class TestToolRegistry:
     EXPECTED_TOOLS = {
-        "search_services", "get_service_details", "get_staff", "suggest_staff",
-        "find_available_slots", "get_appointments", "get_business_info",
-        "create_booking_draft", "get_booking_draft", "confirm_booking_draft",
-        "create_reschedule_draft", "confirm_reschedule",
-        "create_cancellation_draft", "confirm_cancellation",
-        "recommend_services", "predict_no_show", "forecast_revenue",
-        "get_revenue_analytics", "get_staff_analytics", "get_service_analytics",
-        "get_booking_analytics", "get_top_services", "get_staff_performance",
+        "search_services",
+        "get_service_details",
+        "get_staff",
+        "suggest_staff",
+        "find_available_slots",
+        "get_appointments",
+        "get_business_info",
+        "create_booking_draft",
+        "get_booking_draft",
+        "confirm_booking_draft",
+        "create_reschedule_draft",
+        "confirm_reschedule",
+        "create_cancellation_draft",
+        "confirm_cancellation",
+        "recommend_services",
+        "predict_no_show",
+        "forecast_revenue",
+        "get_revenue_analytics",
+        "get_staff_analytics",
+        "get_service_analytics",
+        "get_booking_analytics",
+        "get_top_services",
+        "get_staff_performance",
     }
 
     def test_all_tools_registered(self):
@@ -189,7 +204,9 @@ class TestFindAvailableSlots:
         svc = ServiceFactory(duration_minutes=30)
         sp = StaffProfile.objects.get(user=staff_user)
         sp.services_offered.add(svc)
-        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="10:00")
+        WorkingHoursFactory(
+            staff=staff_user, weekday=0, start_time="09:00", end_time="10:00"
+        )
         target = _next_weekday(0)
         result = execute_find_available_slots(
             service_id=svc.id, date=target.isoformat(), user=None
@@ -273,7 +290,9 @@ class TestCreateBookingDraft:
         svc = ServiceFactory(duration_minutes=30, price="50.00")
         sp = StaffProfile.objects.get(user=staff_user)
         sp.services_offered.add(svc)
-        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff_user, weekday=0, start_time="09:00", end_time="17:00"
+        )
         target = _next_weekday(0)
         return staff_user, svc, target
 
@@ -305,16 +324,22 @@ class TestCreateBookingDraft:
     def test_nonexistent_service(self, customer):
         staff = StaffFactory()
         result = execute_create_booking_draft(
-            user=customer, service_id=99999, staff_id=staff.id,
-            date="2026-01-01", start_time="10:00"
+            user=customer,
+            service_id=99999,
+            staff_id=staff.id,
+            date="2026-01-01",
+            start_time="10:00",
         )
         assert "error" in result
 
     def test_creates_draft_record_in_db(self, customer):
         staff_user, svc, target = self._setup_booking_context(customer)
         execute_create_booking_draft(
-            user=customer, service_id=svc.id, staff_id=staff_user.id,
-            date=target.isoformat(), start_time="10:00"
+            user=customer,
+            service_id=svc.id,
+            staff_id=staff_user.id,
+            date=target.isoformat(),
+            start_time="10:00",
         )
         assert BookingDraft.objects.filter(user=customer).count() == 1
 
@@ -332,11 +357,16 @@ class TestConfirmBookingDraft:
         svc = ServiceFactory(duration_minutes=30, price="50.00")
         sp = StaffProfile.objects.get(user=staff_user)
         sp.services_offered.add(svc)
-        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff_user, weekday=0, start_time="09:00", end_time="17:00"
+        )
         target = _next_weekday(0)
         result = execute_create_booking_draft(
-            user=customer, service_id=svc.id, staff_id=staff_user.id,
-            date=target.isoformat(), start_time="10:00"
+            user=customer,
+            service_id=svc.id,
+            staff_id=staff_user.id,
+            date=target.isoformat(),
+            start_time="10:00",
         )
         return result["draft_id"]
 
@@ -353,7 +383,9 @@ class TestConfirmBookingDraft:
         svc = ServiceFactory(duration_minutes=30)
         _next_weekday(0)
         draft = BookingDraft.objects.create(
-            user=customer, service=svc, staff=staff_user,
+            user=customer,
+            service=svc,
+            staff=staff_user,
             start_datetime=timezone.now() + timedelta(days=30, hours=10),
             end_datetime=timezone.now() + timedelta(days=30, hours=10, minutes=30),
             price=svc.price,
@@ -392,7 +424,9 @@ class TestGetBookingDraft:
         StaffProfileFactory(user=staff_user)
         svc = ServiceFactory(name="Facial", price="75.00")
         draft = BookingDraft.objects.create(
-            user=customer, service=svc, staff=staff_user,
+            user=customer,
+            service=svc,
+            staff=staff_user,
             start_datetime=timezone.now() + timedelta(days=1, hours=10),
             end_datetime=timezone.now() + timedelta(days=1, hours=11),
             price=svc.price,
@@ -407,7 +441,9 @@ class TestGetBookingDraft:
         staff_user = StaffFactory()
         svc = ServiceFactory()
         draft = BookingDraft.objects.create(
-            user=customer, service=svc, staff=staff_user,
+            user=customer,
+            service=svc,
+            staff=staff_user,
             start_datetime=timezone.now() + timedelta(days=1),
             end_datetime=timezone.now() + timedelta(days=1, minutes=30),
             price=svc.price,
@@ -418,7 +454,9 @@ class TestGetBookingDraft:
         assert result["status"] == "expired"
 
     def test_nonexistent_draft(self, customer):
-        result = execute_get_booking_draft(user=customer, draft_id="00000000-0000-0000-0000-000000000000")
+        result = execute_get_booking_draft(
+            user=customer, draft_id="00000000-0000-0000-0000-000000000000"
+        )
         assert "error" in result
 
 
@@ -468,12 +506,18 @@ class TestRescheduleDraft:
         staff_user = StaffFactory()
         StaffProfile.objects.get_or_create(user=staff_user)
         svc = ServiceFactory(duration_minutes=30)
-        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
-        appt = AppointmentFactory(customer=customer, staff=staff_user, service=svc, status="confirmed")
+        WorkingHoursFactory(
+            staff=staff_user, weekday=0, start_time="09:00", end_time="17:00"
+        )
+        appt = AppointmentFactory(
+            customer=customer, staff=staff_user, service=svc, status="confirmed"
+        )
         target = _next_weekday(1)
         result = execute_create_reschedule_draft(
-            user=customer, appointment_id=appt.id,
-            new_date=target.isoformat(), new_start_time="11:00"
+            user=customer,
+            appointment_id=appt.id,
+            new_date=target.isoformat(),
+            new_start_time="11:00",
         )
         assert "draft_id" in result
         assert result["original_appointment_id"] == appt.id
@@ -493,9 +537,7 @@ class TestConversationModel:
 
     def test_message_creation(self, customer):
         conv = Conversation.objects.create(user=customer)
-        msg = Message.objects.create(
-            conversation=conv, role="user", content="Hello"
-        )
+        msg = Message.objects.create(conversation=conv, role="user", content="Hello")
         assert msg.id is not None
         assert conv.messages.count() == 1
 
@@ -534,7 +576,9 @@ class TestCopilotService:
         assert "not configured" in result.reply
 
     @patch("apps.ai.copilot._get_client")
-    def test_provider_error_returns_graceful_fallback_not_500(self, mock_get_client, settings):
+    def test_provider_error_returns_graceful_fallback_not_500(
+        self, mock_get_client, settings
+    ):
         """Regression test: an invalid/rejected API key, rate limit, or any
         other Gemini SDK exception used to propagate uncaught all the way
         to an Internal Server Error. It must now degrade to a friendly
@@ -568,6 +612,29 @@ class TestCopilotService:
         assert result.tool_calls_made == []
 
     @patch("apps.ai.copilot._get_client")
+    def test_live_chat_path_records_redacted_observability(
+        self, mock_get_client, customer, settings
+    ):
+        from apps.ai.observability import collector
+
+        collector.reset()
+        settings.GEMINI_API_KEY = "test-key"
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_client.models.generate_content.return_value = _gemini_text_response(
+            "A safe response"
+        )
+
+        from apps.ai.copilot import chat
+
+        chat("My private booking question", user=customer)
+
+        recent = collector.get_recent_interactions(limit=1)
+        assert recent[0]["user_id"] == customer.id
+        assert recent[0]["message"] == "[redacted]"
+        assert recent[0]["reply"] == "[redacted]"
+
+    @patch("apps.ai.copilot._get_client")
     def test_tool_calling_loop(self, mock_get_client, customer, settings):
         settings.GEMINI_API_KEY = "test-key"
         ServiceFactory.create_batch(2)
@@ -591,7 +658,9 @@ class TestCopilotService:
         settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.models.generate_content.return_value = _gemini_text_response("Hello!")
+        mock_client.models.generate_content.return_value = _gemini_text_response(
+            "Hello!"
+        )
 
         from apps.ai.copilot import chat
 
@@ -606,8 +675,8 @@ class TestCopilotService:
         settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
-        mock_client.models.generate_content.return_value = _gemini_function_call_response(
-            "search_services", {}
+        mock_client.models.generate_content.return_value = (
+            _gemini_function_call_response("search_services", {})
         )
 
         from apps.ai.copilot import chat
@@ -632,9 +701,7 @@ class TestCopilotView:
         from apps.ai.copilot import CopilotResponse
 
         mock_chat.return_value = CopilotResponse(reply="Hello!", tool_calls_made=[])
-        response = auth_client.post(
-            "/api/copilot/", {"message": "Hi"}, format="json"
-        )
+        response = auth_client.post("/api/copilot/", {"message": "Hi"}, format="json")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["reply"] == "Hello!"
 
@@ -645,9 +712,7 @@ class TestCopilotView:
         mock_chat.return_value = CopilotResponse(
             reply="Hello!", tool_calls_made=[], conversation_id="abc-123"
         )
-        response = auth_client.post(
-            "/api/copilot/", {"message": "Hi"}, format="json"
-        )
+        response = auth_client.post("/api/copilot/", {"message": "Hi"}, format="json")
         assert response.data["conversation_id"] == "abc-123"
 
     @patch("apps.ai.views.chat")
@@ -693,39 +758,55 @@ class TestAdminCopilotView:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_non_admin_gets_403(self, auth_client):
-        response = auth_client.post("/api/admin/copilot/", {"message": "Hi"}, format="json")
+        response = auth_client.post(
+            "/api/admin/copilot/", {"message": "Hi"}, format="json"
+        )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @patch("apps.ai.views.admin_chat")
     def test_admin_post_returns_reply(self, mock_chat, admin_client):
         from apps.ai.admin_copilot import AdminCopilotResponse
 
-        mock_chat.return_value = AdminCopilotResponse(reply="Revenue is up", tool_calls_made=[])
-        response = admin_client.post("/api/admin/copilot/", {"message": "Show revenue"}, format="json")
+        mock_chat.return_value = AdminCopilotResponse(
+            reply="Revenue is up", tool_calls_made=[]
+        )
+        response = admin_client.post(
+            "/api/admin/copilot/", {"message": "Show revenue"}, format="json"
+        )
         assert response.status_code == status.HTTP_200_OK
         assert "reply" in response.json()
         mock_chat.assert_called_once()
 
     @patch("apps.ai.views.admin_chat")
     def test_empty_message_rejected(self, mock_chat, admin_client):
-        response = admin_client.post("/api/admin/copilot/", {"message": ""}, format="json")
+        response = admin_client.post(
+            "/api/admin/copilot/", {"message": ""}, format="json"
+        )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_view_passes_authenticated_user_to_admin_chat(self, admin_client, admin_user):
+    def test_view_passes_authenticated_user_to_admin_chat(
+        self, admin_client, admin_user
+    ):
         """Regression test: the view must forward request.user into admin_chat
         so tool calls resolve to the requesting admin's own business, not the
         globally-first active business (see apps/ai/admin_copilot.py)."""
         with patch("apps.ai.views.admin_chat") as mock_chat:
             from apps.ai.admin_copilot import AdminCopilotResponse
 
-            mock_chat.return_value = AdminCopilotResponse(reply="ok", tool_calls_made=[])
-            admin_client.post("/api/admin/copilot/", {"message": "Show revenue"}, format="json")
+            mock_chat.return_value = AdminCopilotResponse(
+                reply="ok", tool_calls_made=[]
+            )
+            admin_client.post(
+                "/api/admin/copilot/", {"message": "Show revenue"}, format="json"
+            )
 
             _, kwargs = mock_chat.call_args
             assert kwargs.get("user") == admin_user
 
     @patch("google.genai.Client")
-    def test_admin_chat_provider_error_returns_graceful_fallback(self, mock_client_cls, settings):
+    def test_admin_chat_provider_error_returns_graceful_fallback(
+        self, mock_client_cls, settings
+    ):
         """Regression test: a Gemini SDK exception (invalid key, rate limit,
         network error) used to propagate uncaught to a 500 in admin_chat()
         too. Must degrade to a friendly AdminCopilotResponse instead."""
@@ -743,7 +824,9 @@ class TestAdminCopilotView:
         assert "401" not in result.reply
 
     @patch("google.genai.Client")
-    def test_admin_chat_reports_provider_quota_exhaustion(self, mock_client_cls, settings):
+    def test_admin_chat_reports_provider_quota_exhaustion(
+        self, mock_client_cls, settings
+    ):
         settings.GEMINI_API_KEY = "test-key"
         mock_client = MagicMock()
         mock_client_cls.return_value = mock_client
@@ -759,7 +842,9 @@ class TestAdminCopilotView:
 
     @pytest.mark.django_db
     @patch("google.genai.Client")
-    def test_admin_chat_resolves_requesting_admins_own_business(self, mock_client_cls, settings):
+    def test_admin_chat_resolves_requesting_admins_own_business(
+        self, mock_client_cls, settings
+    ):
         """Regression test for the cross-tenant leak: two businesses each with
         their own admin and their own completed appointment revenue. Business
         A is created first (so it is "the first active business"), Business B
@@ -809,9 +894,9 @@ class TestAdminCopilotView:
 
         admin_chat("Show revenue", user=admin_b)
 
-        second_call_contents = mock_client.models.generate_content.call_args_list[1].kwargs[
-            "contents"
-        ]
+        second_call_contents = mock_client.models.generate_content.call_args_list[
+            1
+        ].kwargs["contents"]
         function_response_content = second_call_contents[-1]
         tool_result = function_response_content.parts[0].function_response.response
         assert "250" in str(tool_result)
@@ -900,12 +985,8 @@ class TestRecommenderPopularityScore:
         staff_user = StaffFactory()
 
         for _ in range(5):
-            AppointmentFactory(
-                staff=staff_user, service=svc_a, status="completed"
-            )
-        AppointmentFactory(
-            staff=staff_user, service=svc_b, status="completed"
-        )
+            AppointmentFactory(staff=staff_user, service=svc_a, status="completed")
+        AppointmentFactory(staff=staff_user, service=svc_b, status="completed")
 
         scores = _popularity_scores(svc_a.business_id)
         assert scores[svc_a.id] == 1.0
@@ -1012,7 +1093,9 @@ class TestRecommendServices:
         from apps.ai.recommender import recommend_services
 
         svc = ServiceFactory()
-        results = recommend_services(customer_id=None, business_id=svc.business_id, top_n=1)
+        results = recommend_services(
+            customer_id=None, business_id=svc.business_id, top_n=1
+        )
         assert len(results) == 1
         assert results[0].factors["history"] == 0.0
         assert results[0].factors["recency"] == 0.0
@@ -1038,15 +1121,19 @@ class TestRecommendServices:
 
         svc = ServiceFactory()
         staff_user = StaffFactory()
-        AppointmentFactory(
-            staff=staff_user, service=svc, status="completed"
-        )
+        AppointmentFactory(staff=staff_user, service=svc, status="completed")
 
         results_default = recommend_services(business_id=svc.business_id, top_n=1)
         results_custom = recommend_services(
             business_id=svc.business_id,
             top_n=1,
-            weights={"popularity": 1.0, "history": 0, "rating": 0, "availability": 0, "recency": 0},
+            weights={
+                "popularity": 1.0,
+                "history": 0,
+                "rating": 0,
+                "availability": 0,
+                "recency": 0,
+            },
         )
         assert results_default[0].total_score != results_custom[0].total_score
 
@@ -1144,6 +1231,38 @@ class TestNoShowPredictor:
         assert len(X) >= 3
         assert 1.0 in y
         assert 0.0 in y
+
+    def test_evaluation_reports_holdout_metrics_and_data_provenance(self):
+        from apps.ai.no_show import EvaluationReport, evaluate_no_show_model
+
+        report = evaluate_no_show_model()
+
+        assert isinstance(report, EvaluationReport)
+        assert report.data_source == "synthetic"
+        assert report.training_samples == 800
+        assert report.test_samples == 200
+        for metric in (
+            report.positive_rate,
+            report.precision,
+            report.recall,
+            report.f1_score,
+            report.brier_score,
+            report.expected_calibration_error,
+        ):
+            assert 0 <= metric <= 1
+
+    @pytest.mark.parametrize(
+        ("test_fraction", "threshold"),
+        [(0, 0.5), (1, 0.5), (0.2, 0), (0.2, 1)],
+    )
+    def test_evaluation_rejects_invalid_configuration(self, test_fraction, threshold):
+        from apps.ai.no_show import evaluate_no_show_model
+
+        with pytest.raises(ValueError):
+            evaluate_no_show_model(
+                test_fraction=test_fraction,
+                threshold=threshold,
+            )
 
 
 @pytest.mark.django_db
@@ -1311,9 +1430,7 @@ class TestExecuteForecastRevenue:
 
         svc = ServiceFactory(price="120.00")
         staff_user = StaffFactory()
-        AppointmentFactory(
-            staff=staff_user, service=svc, status="completed"
-        )
+        AppointmentFactory(staff=staff_user, service=svc, status="completed")
         result = execute_forecast_revenue(user=None, forecast_days=7)
         assert result["total_forecast"] > 0 or len(result["forecast_points"]) == 0
 
@@ -1431,7 +1548,9 @@ class TestAdminToolsWithData:
         from apps.ai.tools import execute_get_top_services
 
         service = ServiceFactory()
-        AppointmentFactory(status="completed", service=service, business=service.business)
+        AppointmentFactory(
+            status="completed", service=service, business=service.business
+        )
         result = execute_get_top_services(user=None, top_n=3)
         assert len(result["services"]) == 1
 

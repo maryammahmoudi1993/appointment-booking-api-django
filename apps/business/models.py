@@ -85,4 +85,6 @@ class BusinessMembership(models.Model):
         verbose_name_plural = "business memberships"
 
     def __str__(self) -> str:
-        return f"{self.user.username} @ {self.business.name} ({self.get_role_display()})"
+        return (
+            f"{self.user.username} @ {self.business.name} ({self.get_role_display()})"
+        )

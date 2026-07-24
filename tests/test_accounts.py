@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
 from core.permissions import IsAdminRole, IsOwnerOrStaffOrAdmin, IsStaffRole
-
 from tests.factories import AdminFactory, CustomerFactory, StaffFactory
 
 User = get_user_model()

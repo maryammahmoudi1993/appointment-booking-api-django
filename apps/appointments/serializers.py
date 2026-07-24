@@ -11,7 +11,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source="service.name", read_only=True)
     has_review = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
-    promo_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    promo_code = serializers.CharField(
+        write_only=True, required=False, allow_blank=True
+    )
 
     class Meta:
         model = Appointment

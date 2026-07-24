@@ -57,7 +57,13 @@ class TimeOffAdmin(admin.ModelAdmin):
 
 @admin.register(Break)
 class BreakAdmin(admin.ModelAdmin):
-    list_display = ("staff_profile", "weekday_display", "start_time", "end_time", "label")
+    list_display = (
+        "staff_profile",
+        "weekday_display",
+        "start_time",
+        "end_time",
+        "label",
+    )
     list_filter = ("weekday", "staff_profile")
     search_fields = ("staff_profile__user__username", "label")
 

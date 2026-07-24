@@ -185,6 +185,62 @@ class TestAppointmentCancel:
         response = api_client.post(f"/api/appointments/{appointment.id}/cancel/")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_customer_cannot_cancel_inside_business_notice_window(
+        self, api_client, customer_user, staff_user, service
+    ):
+        from apps.business.models import BusinessSettings
+        from core.business import get_default_business
+
+        business = get_default_business()
+        settings, _ = BusinessSettings.objects.get_or_create(business=business)
+        settings.cancellation_window_hours = 24
+        settings.save(update_fields=["cancellation_window_hours"])
+        api_client.force_authenticate(user=customer_user)
+        start = timezone.now() + timedelta(hours=12)
+        appointment = AppointmentFactory(
+            business=business,
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="confirmed",
+        )
+
+        response = api_client.post(f"/api/appointments/{appointment.id}/cancel/")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "24 hours' notice" in response.data["detail"]
+        appointment.refresh_from_db()
+        assert appointment.status == "confirmed"
+
+    def test_admin_can_cancel_inside_customer_notice_window(
+        self, api_client, admin_user, customer_user, staff_user, service
+    ):
+        from apps.business.models import BusinessSettings
+        from core.business import get_default_business
+
+        business = get_default_business()
+        BusinessSettings.objects.update_or_create(
+            business=business, defaults={"cancellation_window_hours": 24}
+        )
+        api_client.force_authenticate(user=admin_user)
+        start = timezone.now() + timedelta(hours=2)
+        appointment = AppointmentFactory(
+            business=business,
+            customer=customer_user,
+            staff=staff_user,
+            service=service,
+            start_datetime=start,
+            end_datetime=start + timedelta(minutes=30),
+            status="confirmed",
+        )
+
+        response = api_client.post(f"/api/appointments/{appointment.id}/cancel/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "cancelled"
+
 
 @pytest.mark.django_db
 class TestAppointmentConfirm:
@@ -381,9 +437,7 @@ class TestAppointmentAuditLog:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) >= 1
 
-    def test_reschedule_by_staff(
-        self, api_client, staff_user, customer_user, service
-    ):
+    def test_reschedule_by_staff(self, api_client, staff_user, customer_user, service):
         api_client.force_authenticate(user=staff_user)
         target = _next_weekday(0)
         start = _make_aware(
@@ -407,7 +461,10 @@ class TestAppointmentAuditLog:
         new_end = new_start + timedelta(minutes=30)
         response = api_client.post(
             f"/api/appointments/{appointment.id}/reschedule/",
-            {"start_datetime": new_start.isoformat(), "end_datetime": new_end.isoformat()},
+            {
+                "start_datetime": new_start.isoformat(),
+                "end_datetime": new_end.isoformat(),
+            },
         )
         assert response.status_code == status.HTTP_200_OK
         logs = appointment.audit_logs.all()
@@ -434,7 +491,10 @@ class TestAppointmentAuditLog:
         )
         response = api_client.post(
             f"/api/appointments/{appointment.id}/reschedule/",
-            {"start_datetime": start.isoformat(), "end_datetime": (start + timedelta(minutes=30)).isoformat()},
+            {
+                "start_datetime": start.isoformat(),
+                "end_datetime": (start + timedelta(minutes=30)).isoformat(),
+            },
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -458,6 +518,9 @@ class TestAppointmentAuditLog:
         )
         response = api_client.post(
             f"/api/appointments/{appointment.id}/reschedule/",
-            {"start_datetime": start.isoformat(), "end_datetime": (start + timedelta(minutes=30)).isoformat()},
+            {
+                "start_datetime": start.isoformat(),
+                "end_datetime": (start + timedelta(minutes=30)).isoformat(),
+            },
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST

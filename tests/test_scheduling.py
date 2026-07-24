@@ -9,7 +9,7 @@ from rest_framework import status
 from apps.appointments.models import Appointment
 from apps.appointments.validators import create_appointment_atomic, validate_booking
 from apps.staff.services import get_available_slots
-from core.exceptions import BookingConflict, DuringTimeOff, OutsideWorkingHours
+from core.exceptions import BookingConflict, DuringTimeOff
 from tests.factories import (
     AppointmentFactory,
     CustomerFactory,
@@ -38,10 +38,14 @@ class TestSchedulingBuffers:
         staff = StaffFactory()
         service = ServiceFactory(duration_minutes=30)
         StaffProfileFactory(user=staff, buffer_after_minutes=15)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
         target = _next_weekday(0)
         start1 = _make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=9))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=9)
+            )
         )
         end1 = start1 + timedelta(minutes=30)
         start2 = end1
@@ -63,10 +67,14 @@ class TestSchedulingBuffers:
         staff = StaffFactory()
         service = ServiceFactory(duration_minutes=30)
         StaffProfileFactory(user=staff, buffer_after_minutes=0)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
         target = _next_weekday(0)
         start1 = _make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=9))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=9)
+            )
         )
         end1 = start1 + timedelta(minutes=30)
         start2 = end1
@@ -103,7 +111,9 @@ class TestSchedulingBreakTimezone:
         staff = StaffFactory()
         service = ServiceFactory(duration_minutes=30)
         StaffProfileFactory(user=staff, timezone="Etc/GMT+5")
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="23:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="23:00"
+        )
         profile = staff.staff_profile
         BreakModel.objects.create(
             staff_profile=profile,
@@ -140,7 +150,9 @@ class TestSchedulingBreaks:
         staff = StaffFactory()
         service = ServiceFactory(duration_minutes=30)
         profile = StaffProfileFactory(user=staff)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
         BreakModel.objects.create(
             staff_profile=profile,
             weekday=0,
@@ -150,7 +162,9 @@ class TestSchedulingBreaks:
         )
         target = _next_weekday(0)
         start = _make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=12))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=12)
+            )
         )
         end = start + timedelta(minutes=30)
         with pytest.raises(DuringTimeOff):
@@ -162,7 +176,9 @@ class TestSchedulingBreaks:
         staff = StaffFactory()
         service = ServiceFactory(duration_minutes=30)
         profile = StaffProfileFactory(user=staff)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
         BreakModel.objects.create(
             staff_profile=profile,
             weekday=0,
@@ -172,7 +188,9 @@ class TestSchedulingBreaks:
         )
         target = _next_weekday(0)
         start = _make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=10))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10)
+            )
         )
         end = start + timedelta(minutes=30)
         validate_booking(staff.id, service.id, start, end)
@@ -182,7 +200,9 @@ class TestSchedulingBreaks:
 
         staff = StaffFactory()
         profile = StaffProfileFactory(user=staff)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
         BreakModel.objects.create(
             staff_profile=profile,
             weekday=0,
@@ -193,9 +213,7 @@ class TestSchedulingBreaks:
         target = _next_weekday(0)
         slots = get_available_slots(staff.id, target)
         lunch_slots = [
-            s
-            for s in slots
-            if s["start"] >= time(12, 0) and s["end"] <= time(13, 0)
+            s for s in slots if s["start"] >= time(12, 0) and s["end"] <= time(13, 0)
         ]
         assert len(lunch_slots) == 0 or all(not s["available"] for s in lunch_slots)
 
@@ -205,10 +223,14 @@ class TestSchedulingAvailability:
     def test_buffer_reflected_in_availability(self, db):
         staff = StaffFactory()
         StaffProfileFactory(user=staff, buffer_after_minutes=15)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="10:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="10:00"
+        )
         target = _next_weekday(0)
         start = _make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=9))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=9)
+            )
         )
         end = start + timedelta(minutes=30)
         AppointmentFactory(
@@ -221,7 +243,9 @@ class TestSchedulingAvailability:
         )
         slots = get_available_slots(staff.id, target)
         slot_after = [s for s in slots if s["start"] == time(9, 30)]
-        assert len(slot_after) == 1, f"Expected 1 slot at 09:30, got {[(s['start'], s['available']) for s in slots]}"
+        assert (
+            len(slot_after) == 1
+        ), f"Expected 1 slot at 09:30, got {[(s['start'], s['available']) for s in slots]}"
         assert slot_after[0]["available"] is False
 
     def test_staff_profile_timezone_in_export(self, api_client, db):
@@ -244,11 +268,15 @@ class TestSchedulingConcurrency:
         and N-1 BookingConflict errors, never more than one Appointment."""
         staff = StaffFactory()
         service = ServiceFactory(duration_minutes=30)
-        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff, weekday=0, start_time="09:00", end_time="17:00"
+        )
         customers = [CustomerFactory() for _ in range(5)]
         target = _next_weekday(0)
         start = _make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=9))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=9)
+            )
         )
         end = start + timedelta(minutes=30)
 
@@ -288,7 +316,9 @@ class TestSchedulingConcurrency:
         successes = [r for r in results if r[0] == "ok"]
         conflicts = [r for r in results if r[0] == "conflict"]
 
-        assert len(successes) == 1, f"Expected exactly 1 successful booking, got {results}"
+        assert (
+            len(successes) == 1
+        ), f"Expected exactly 1 successful booking, got {results}"
         assert len(conflicts) == 4, f"Expected 4 conflicts, got {results}"
         assert (
             Appointment.objects.filter(

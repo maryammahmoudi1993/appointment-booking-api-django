@@ -1,5 +1,7 @@
 # 02 — UI/UX Audit
 
+> **Current-state addendum:** The detailed baseline below is retained for traceability, but fabricated marketing content, newsletter dead ends, inconsistent footer branding/placeholders, cosmetic category links, and cancellation-window friction are resolved. Category cards now open active service filters. No reference images were supplied, and the required browser runtime failed initialization, so pixel similarity and seven-viewport results remain **Not verified**. The missing transformation gallery remains optional portfolio scope.
+
 ## Method and limitation (read first)
 
 No reference design images and no screenshots of the current implementation were attached to this conversation, and no browser/screenshot tool was available in this environment. **Phase 3's pixel-level comparison at 7 viewport sizes could not be performed** and every "similarity %" that would require a reference image is marked **Not Verified**. What follows instead is a structural, evidence-based audit of the actual landing-page source code (`frontend/src/pages/Home.tsx` and `frontend/src/components/landing/*`), which is enough to determine section existence, data authenticity, and code-level accessibility/responsiveness — the parts of Phase 3/4 that don't require a rendered screenshot.

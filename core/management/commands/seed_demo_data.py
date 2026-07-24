@@ -11,7 +11,6 @@ from apps.engagement.models import LoyaltyReward, PromoCode, Review
 from apps.services.models import Service
 from apps.staff.models import StaffProfile, TimeOff, WorkingHours
 
-
 BLOOM_STUDIO = {
     "name": "Bloom Studio",
     "slug": "bloom-studio",
@@ -24,52 +23,239 @@ BLOOM_STUDIO = {
 }
 
 SERVICES_DATA = [
-    {"name": "Women's Haircut & Style", "description": "Precision cut with wash, conditioning treatment, and professional blow-dry styling", "duration_minutes": 60, "price": 85.00, "category": "Hair"},
-    {"name": "Men's Haircut", "description": "Classic or modern cut with hot towel finish", "duration_minutes": 30, "price": 45.00, "category": "Hair"},
-    {"name": "Balayage / Ombre", "description": "Hand-painted highlights for a natural, sun-kissed gradient effect", "duration_minutes": 150, "price": 220.00, "category": "Hair"},
-    {"name": "Gel Manicure", "description": "Long-lasting gel polish application with cuticle care and hand massage", "duration_minutes": 45, "price": 55.00, "category": "Nails"},
-    {"name": "Spa Pedicure", "description": "Luxurious pedicure with exfoliation, mask, hot stones, and polish", "duration_minutes": 60, "price": 70.00, "category": "Nails"},
-    {"name": "Classic Facial", "description": "Deep cleanse, exfoliation, extractions, and hydrating mask for glowing skin", "duration_minutes": 60, "price": 95.00, "category": "Skincare"},
-    {"name": "Deep Tissue Massage", "description": "Therapeutic 60-minute massage targeting muscle tension and knots", "duration_minutes": 60, "price": 110.00, "category": "Wellness"},
-    {"name": "Lash Extensions — Full Set", "description": "Individual semi-permanent lash extensions for a full, natural look", "duration_minutes": 120, "price": 180.00, "category": "Beauty"},
-    {"name": "Brow Lamination & Tint", "description": "Semi-permanent brow shaping with color tint for defined, fluffy brows", "duration_minutes": 45, "price": 75.00, "category": "Beauty"},
-    {"name": "Hair Coloring — Full", "description": "Single-process all-over color with gloss finish", "duration_minutes": 120, "price": 150.00, "category": "Hair"},
+    {
+        "name": "Women's Haircut & Style",
+        "description": "Precision cut with wash, conditioning treatment, and professional blow-dry styling",
+        "duration_minutes": 60,
+        "price": 85.00,
+        "category": "Hair",
+    },
+    {
+        "name": "Men's Haircut",
+        "description": "Classic or modern cut with hot towel finish",
+        "duration_minutes": 30,
+        "price": 45.00,
+        "category": "Hair",
+    },
+    {
+        "name": "Balayage / Ombre",
+        "description": "Hand-painted highlights for a natural, sun-kissed gradient effect",
+        "duration_minutes": 150,
+        "price": 220.00,
+        "category": "Hair",
+    },
+    {
+        "name": "Gel Manicure",
+        "description": "Long-lasting gel polish application with cuticle care and hand massage",
+        "duration_minutes": 45,
+        "price": 55.00,
+        "category": "Nails",
+    },
+    {
+        "name": "Spa Pedicure",
+        "description": "Luxurious pedicure with exfoliation, mask, hot stones, and polish",
+        "duration_minutes": 60,
+        "price": 70.00,
+        "category": "Nails",
+    },
+    {
+        "name": "Classic Facial",
+        "description": "Deep cleanse, exfoliation, extractions, and hydrating mask for glowing skin",
+        "duration_minutes": 60,
+        "price": 95.00,
+        "category": "Skincare",
+    },
+    {
+        "name": "Deep Tissue Massage",
+        "description": "Therapeutic 60-minute massage targeting muscle tension and knots",
+        "duration_minutes": 60,
+        "price": 110.00,
+        "category": "Wellness",
+    },
+    {
+        "name": "Lash Extensions — Full Set",
+        "description": "Individual semi-permanent lash extensions for a full, natural look",
+        "duration_minutes": 120,
+        "price": 180.00,
+        "category": "Beauty",
+    },
+    {
+        "name": "Brow Lamination & Tint",
+        "description": "Semi-permanent brow shaping with color tint for defined, fluffy brows",
+        "duration_minutes": 45,
+        "price": 75.00,
+        "category": "Beauty",
+    },
+    {
+        "name": "Hair Coloring — Full",
+        "description": "Single-process all-over color with gloss finish",
+        "duration_minutes": 120,
+        "price": 150.00,
+        "category": "Hair",
+    },
 ]
 
 STAFF_DATA = [
-    {"username": "mia salon", "first_name": "Mia", "last_name": "Rodriguez", "email": "mia@bloomstudio.com", "services": ["Women's Haircut & Style", "Balayage / Ombre", "Hair Coloring — Full"]},
-    {"username": "james park", "first_name": "James", "last_name": "Park", "email": "james@bloomstudio.com", "services": ["Men's Haircut", "Women's Haircut & Style"]},
-    {"username": "sofia chen", "first_name": "Sofia", "last_name": "Chen", "email": "sofia@bloomstudio.com", "services": ["Gel Manicure", "Spa Pedicure"]},
-    {"username": "aria williams", "first_name": "Aria", "last_name": "Williams", "email": "aria@bloomstudio.com", "services": ["Classic Facial", "Deep Tissue Massage"]},
-    {"username": "noah kim", "first_name": "Noah", "last_name": "Kim", "email": "noah@bloomstudio.com", "services": ["Lash Extensions — Full Set", "Brow Lamination & Tint"]},
+    {
+        "username": "mia salon",
+        "first_name": "Mia",
+        "last_name": "Rodriguez",
+        "email": "mia@bloomstudio.com",
+        "services": [
+            "Women's Haircut & Style",
+            "Balayage / Ombre",
+            "Hair Coloring — Full",
+        ],
+    },
+    {
+        "username": "james park",
+        "first_name": "James",
+        "last_name": "Park",
+        "email": "james@bloomstudio.com",
+        "services": ["Men's Haircut", "Women's Haircut & Style"],
+    },
+    {
+        "username": "sofia chen",
+        "first_name": "Sofia",
+        "last_name": "Chen",
+        "email": "sofia@bloomstudio.com",
+        "services": ["Gel Manicure", "Spa Pedicure"],
+    },
+    {
+        "username": "aria williams",
+        "first_name": "Aria",
+        "last_name": "Williams",
+        "email": "aria@bloomstudio.com",
+        "services": ["Classic Facial", "Deep Tissue Massage"],
+    },
+    {
+        "username": "noah kim",
+        "first_name": "Noah",
+        "last_name": "Kim",
+        "email": "noah@bloomstudio.com",
+        "services": ["Lash Extensions — Full Set", "Brow Lamination & Tint"],
+    },
 ]
 
 CUSTOMER_DATA = [
-    {"username": "emma.johnson", "first_name": "Emma", "last_name": "Johnson", "email": "emma.j@email.com", "phone": "+1-555-0201"},
-    {"username": "liam.martinez", "first_name": "Liam", "last_name": "Martinez", "email": "liam.m@email.com", "phone": "+1-555-0202"},
-    {"username": "olivia.brown", "first_name": "Olivia", "last_name": "Brown", "email": "olivia.b@email.com", "phone": "+1-555-0203"},
-    {"username": "noah.davis", "first_name": "Noah", "last_name": "Davis", "email": "noah.d@email.com", "phone": "+1-555-0204"},
-    {"username": "ava.garcia", "first_name": "Ava", "last_name": "Garcia", "email": "ava.g@email.com", "phone": "+1-555-0205"},
-    {"username": "ethan.wilson", "first_name": "Ethan", "last_name": "Wilson", "email": "ethan.w@email.com", "phone": "+1-555-0206"},
-    {"username": "sophia.anderson", "first_name": "Sophia", "last_name": "Anderson", "email": "sophia.a@email.com", "phone": "+1-555-0207"},
-    {"username": "mason.thomas", "first_name": "Mason", "last_name": "Thomas", "email": "mason.t@email.com", "phone": "+1-555-0208"},
+    {
+        "username": "emma.johnson",
+        "first_name": "Emma",
+        "last_name": "Johnson",
+        "email": "emma.j@email.com",
+        "phone": "+1-555-0201",
+    },
+    {
+        "username": "liam.martinez",
+        "first_name": "Liam",
+        "last_name": "Martinez",
+        "email": "liam.m@email.com",
+        "phone": "+1-555-0202",
+    },
+    {
+        "username": "olivia.brown",
+        "first_name": "Olivia",
+        "last_name": "Brown",
+        "email": "olivia.b@email.com",
+        "phone": "+1-555-0203",
+    },
+    {
+        "username": "noah.davis",
+        "first_name": "Noah",
+        "last_name": "Davis",
+        "email": "noah.d@email.com",
+        "phone": "+1-555-0204",
+    },
+    {
+        "username": "ava.garcia",
+        "first_name": "Ava",
+        "last_name": "Garcia",
+        "email": "ava.g@email.com",
+        "phone": "+1-555-0205",
+    },
+    {
+        "username": "ethan.wilson",
+        "first_name": "Ethan",
+        "last_name": "Wilson",
+        "email": "ethan.w@email.com",
+        "phone": "+1-555-0206",
+    },
+    {
+        "username": "sophia.anderson",
+        "first_name": "Sophia",
+        "last_name": "Anderson",
+        "email": "sophia.a@email.com",
+        "phone": "+1-555-0207",
+    },
+    {
+        "username": "mason.thomas",
+        "first_name": "Mason",
+        "last_name": "Thomas",
+        "email": "mason.t@email.com",
+        "phone": "+1-555-0208",
+    },
 ]
 
 REWARD_DATA = [
-    {"name": "10% Off Next Visit", "description": "Valid on any single service", "points_cost": 50},
-    {"name": "Free Scalp Treatment", "description": "Add-on during any hair service", "points_cost": 75},
-    {"name": "Free Gel Manicure", "description": "One complimentary manicure session", "points_cost": 120},
-    {"name": "Free Haircut", "description": "Complimentary haircut and style session", "points_cost": 200},
-    {"name": "Spa Day Package", "description": "Facial + massage combo (2 hours)", "points_cost": 350},
+    {
+        "name": "10% Off Next Visit",
+        "description": "Valid on any single service",
+        "points_cost": 50,
+    },
+    {
+        "name": "Free Scalp Treatment",
+        "description": "Add-on during any hair service",
+        "points_cost": 75,
+    },
+    {
+        "name": "Free Gel Manicure",
+        "description": "One complimentary manicure session",
+        "points_cost": 120,
+    },
+    {
+        "name": "Free Haircut",
+        "description": "Complimentary haircut and style session",
+        "points_cost": 200,
+    },
+    {
+        "name": "Spa Day Package",
+        "description": "Facial + massage combo (2 hours)",
+        "points_cost": 350,
+    },
 ]
 
 PROMO_DATA = [
-    {"code": "WELCOME20", "description": "New client welcome — 20% off first visit", "discount_type": "percent", "discount_value": 20},
-    {"code": "SPRING25", "description": "Spring special — $25 off any service over $100", "discount_type": "fixed", "discount_value": 25},
-    {"code": "REFERAFRIEND", "description": "Refer a friend — $15 credit for both", "discount_type": "fixed", "discount_value": 15},
+    {
+        "code": "WELCOME20",
+        "description": "New client welcome — 20% off first visit",
+        "discount_type": "percent",
+        "discount_value": 20,
+    },
+    {
+        "code": "SPRING25",
+        "description": "Spring special — $25 off any service over $100",
+        "discount_type": "fixed",
+        "discount_value": 25,
+    },
+    {
+        "code": "REFERAFRIEND",
+        "description": "Refer a friend — $15 credit for both",
+        "discount_type": "fixed",
+        "discount_value": 15,
+    },
 ]
 
-APPOINTMENT_STATUSES = ["completed", "completed", "completed", "cancelled", "confirmed", "pending", "completed", "completed", "pending"]
+APPOINTMENT_STATUSES = [
+    "completed",
+    "completed",
+    "completed",
+    "cancelled",
+    "confirmed",
+    "pending",
+    "completed",
+    "completed",
+    "pending",
+]
 
 REVIEW_COMMENTS = [
     (5, "Absolutely loved my balayage! Mia is a true artist."),
@@ -127,7 +313,10 @@ class Command(BaseCommand):
         for s in STAFF_DATA:
             user, _ = User.objects.update_or_create(
                 username=s["username"],
-                defaults={**{k: v for k, v in s.items() if k != "services"}, "role": "staff"},
+                defaults={
+                    **{k: v for k, v in s.items() if k != "services"},
+                    "role": "staff",
+                },
             )
             user.set_password("staff123")
             user.save()
@@ -146,11 +335,13 @@ class Command(BaseCommand):
         for staff in staff_users:
             for weekday in range(5):
                 WorkingHours.objects.update_or_create(
-                    staff=staff, weekday=weekday,
+                    staff=staff,
+                    weekday=weekday,
                     defaults={"start_time": "09:00", "end_time": "17:00"},
                 )
             WorkingHours.objects.update_or_create(
-                staff=staff, weekday=5,
+                staff=staff,
+                weekday=5,
                 defaults={"start_time": "10:00", "end_time": "14:00"},
             )
 
@@ -186,7 +377,11 @@ class Command(BaseCommand):
                 hour = random.choice([9, 10, 10, 11, 11, 13, 14, 14, 15, 16])
                 staff = random.choice(staff_users)
                 service = random.choice(
-                    [s for s in services if s in staff.staff_profile.services_offered.all()]
+                    [
+                        s
+                        for s in services
+                        if s in staff.staff_profile.services_offered.all()
+                    ]
                     or services[:2]
                 )
                 start = timezone.make_aware(
@@ -222,11 +417,15 @@ class Command(BaseCommand):
                     appointments.append(apt)
 
         completed = [a for a in appointments if a.status == "completed"]
-        self.stdout.write(f"  Appointments: {len(appointments)} ({len(completed)} completed)")
+        self.stdout.write(
+            f"  Appointments: {len(appointments)} ({len(completed)} completed)"
+        )
 
         # Reviews — ~40% of completed appointments
         reviewed = set()
-        for apt in random.sample(completed, k=min(int(len(completed) * 0.4), len(completed))):
+        for apt in random.sample(
+            completed, k=min(int(len(completed) * 0.4), len(completed))
+        ):
             if apt.id in reviewed:
                 continue
             rating, comment = random.choice(REVIEW_COMMENTS)
@@ -262,14 +461,18 @@ class Command(BaseCommand):
         TimeOff.objects.get_or_create(
             staff=random.choice(staff_users),
             start_datetime=timezone.make_aware(
-                timezone.datetime.combine(future.date(), timezone.datetime.min.time().replace(hour=12))
+                timezone.datetime.combine(
+                    future.date(), timezone.datetime.min.time().replace(hour=12)
+                )
             ),
             end_datetime=timezone.make_aware(
-                timezone.datetime.combine(future.date(), timezone.datetime.min.time().replace(hour=15))
+                timezone.datetime.combine(
+                    future.date(), timezone.datetime.min.time().replace(hour=15)
+                )
             ),
             defaults={"reason": "Personal appointment"},
         )
-        self.stdout.write(f"  Time off: 1 upcoming")
+        self.stdout.write("  Time off: 1 upcoming")
 
         self.stdout.write(self.style.SUCCESS("\nBloom Studio seeded successfully!"))
         self.stdout.write("")

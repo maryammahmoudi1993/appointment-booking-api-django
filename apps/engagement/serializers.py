@@ -113,7 +113,11 @@ class PromoCodeSerializer(serializers.ModelSerializer):
 
     def get_revenue_influenced(self, obj) -> str:
         total = sum(
-            (r.appointment.service.price for r in obj.redemptions.all() if r.appointment),
+            (
+                r.appointment.service.price
+                for r in obj.redemptions.all()
+                if r.appointment
+            ),
             start=0,
         )
         return str(total)

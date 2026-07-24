@@ -11,12 +11,12 @@ import iconAllServices from "../../assets/landing/icon-all-services-clean.webp";
 
 const categories = [
   { label: "Book Online", icon: iconBookOnline, to: "/book" },
-  { label: "Hair Styling", icon: iconHairStyling, to: "/services" },
-  { label: "Facial Care", icon: iconFacialCare, to: "/services" },
-  { label: "Nail & Polish", icon: iconNailPolish, to: "/services" },
-  { label: "Makeup", icon: iconMakeup, to: "/services" },
-  { label: "Skin Care", icon: iconSkinCare, to: "/services" },
-  { label: "Spa & Relax", icon: iconSpaRelax, to: "/services" },
+  { label: "Hair Styling", icon: iconHairStyling, to: "/services?category=hair" },
+  { label: "Facial Care", icon: iconFacialCare, to: "/services?category=facial" },
+  { label: "Nail & Polish", icon: iconNailPolish, to: "/services?category=nails" },
+  { label: "Makeup", icon: iconMakeup, to: "/services?category=facial" },
+  { label: "Skin Care", icon: iconSkinCare, to: "/services?category=facial" },
+  { label: "Spa & Relax", icon: iconSpaRelax, to: "/services?category=spa" },
   { label: "All Services", icon: iconAllServices, to: "/services" },
 ];
 

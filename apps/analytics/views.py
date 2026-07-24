@@ -4,6 +4,7 @@ from django.db.models import Avg, Count, Q, Sum
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,19 +12,29 @@ from rest_framework.views import APIView
 from apps.appointments.models import Appointment
 from apps.business.models import BusinessMembership
 from apps.engagement.models import Review
-from apps.services.models import Service
 from apps.staff.models import StaffProfile
+from core.business import get_default_business
 from core.permissions import IsAdminRole
 
 
-from core.business import get_default_business
+class AnalyticsPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class PaginatedAnalyticsView(APIView):
+    pagination_class = AnalyticsPagination
+
+    def paginate(self, request, result):
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(result, request, view=self)
+        return paginator.get_paginated_response(page)
 
 
 def _get_business(user):
     membership = (
-        BusinessMembership.objects.filter(user=user)
-        .select_related("business")
-        .first()
+        BusinessMembership.objects.filter(user=user).select_related("business").first()
     )
     if membership:
         return membership.business
@@ -35,24 +46,29 @@ def _business_appointments(user):
     return Appointment.objects.filter(business=business), business
 
 
-@extend_schema_view(get=extend_schema(
-    tags=["Analytics"],
-    summary="Revenue analytics",
-    description="Admin only. Monthly revenue breakdown, total revenue, average ticket size.",
-))
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Analytics"],
+        summary="Revenue analytics",
+        description="Admin only. Monthly revenue breakdown, total revenue, average ticket size.",
+    )
+)
 class RevenueAnalyticsView(APIView):
     permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request):
         qs, _ = _business_appointments(request.user)
         completed = qs.filter(status="completed").select_related("service")
-        total_revenue = completed.aggregate(total=Sum("service__price"))["total"] or Decimal("0.00")
+        total_revenue = completed.aggregate(total=Sum("service__price"))[
+            "total"
+        ] or Decimal("0.00")
         total_bookings = completed.count()
-        average_ticket = total_revenue / total_bookings if total_bookings else Decimal("0.00")
+        average_ticket = (
+            total_revenue / total_bookings if total_bookings else Decimal("0.00")
+        )
 
         revenue_by_period = (
-            completed
-            .annotate(period=TruncMonth("start_datetime"))
+            completed.annotate(period=TruncMonth("start_datetime"))
             .values("period")
             .annotate(
                 revenue=Sum("service__price"),
@@ -70,20 +86,24 @@ class RevenueAnalyticsView(APIView):
             for p in revenue_by_period
         ]
 
-        return Response({
-            "total_revenue": str(total_revenue),
-            "total_bookings": total_bookings,
-            "average_ticket": str(average_ticket),
-            "revenue_by_period": revenue_data,
-        })
+        return Response(
+            {
+                "total_revenue": str(total_revenue),
+                "total_bookings": total_bookings,
+                "average_ticket": str(average_ticket),
+                "revenue_by_period": revenue_data,
+            }
+        )
 
 
-@extend_schema_view(get=extend_schema(
-    tags=["Analytics"],
-    summary="Staff analytics",
-    description="Admin only. Per-staff booking counts, revenue, and average ratings.",
-))
-class StaffAnalyticsView(APIView):
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Analytics"],
+        summary="Staff analytics",
+        description="Admin only. Per-staff booking counts, revenue, and average ratings.",
+    )
+)
+class StaffAnalyticsView(PaginatedAnalyticsView):
     permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request):
@@ -94,7 +114,9 @@ class StaffAnalyticsView(APIView):
 
         staff_appointments = (
             qs.filter(staff_id__in=staff_ids)
-            .values("staff_id", "staff__first_name", "staff__last_name", "staff__username")
+            .values(
+                "staff_id", "staff__first_name", "staff__last_name", "staff__username"
+            )
             .annotate(
                 total_bookings=Count("id"),
                 completed_bookings=Count("id", filter=Q(status="completed")),
@@ -120,27 +142,34 @@ class StaffAnalyticsView(APIView):
         result = []
         for s in staff_appointments:
             sid = s["staff_id"]
-            name = f"{s['staff__first_name']} {s['staff__last_name']}".strip() or s["staff__username"]
+            name = (
+                f"{s['staff__first_name']} {s['staff__last_name']}".strip()
+                or s["staff__username"]
+            )
             rv = review_map.get(sid, {})
-            result.append({
-                "staff_id": sid,
-                "staff_name": name,
-                "total_bookings": s["total_bookings"],
-                "completed_bookings": s["completed_bookings"],
-                "total_revenue": str(s["total_revenue"] or Decimal("0.00")),
-                "average_rating": round(rv.get("average_rating", 0) or 0, 2),
-                "review_count": rv.get("review_count", 0),
-            })
+            result.append(
+                {
+                    "staff_id": sid,
+                    "staff_name": name,
+                    "total_bookings": s["total_bookings"],
+                    "completed_bookings": s["completed_bookings"],
+                    "total_revenue": str(s["total_revenue"] or Decimal("0.00")),
+                    "average_rating": round(rv.get("average_rating", 0) or 0, 2),
+                    "review_count": rv.get("review_count", 0),
+                }
+            )
 
-        return Response(result)
+        return self.paginate(request, result)
 
 
-@extend_schema_view(get=extend_schema(
-    tags=["Analytics"],
-    summary="Service analytics",
-    description="Admin only. Per-service booking counts, revenue, ratings, and average duration.",
-))
-class ServiceAnalyticsView(APIView):
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Analytics"],
+        summary="Service analytics",
+        description="Admin only. Per-service booking counts, revenue, ratings, and average duration.",
+    )
+)
+class ServiceAnalyticsView(PaginatedAnalyticsView):
     permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request):
@@ -175,25 +204,29 @@ class ServiceAnalyticsView(APIView):
         for s in service_stats:
             sid = s["service_id"]
             rv = review_map.get(sid, {})
-            result.append({
-                "service_id": sid,
-                "service_name": s["service__name"],
-                "total_bookings": s["total_bookings"],
-                "completed_bookings": s["completed_bookings"],
-                "total_revenue": str(s["total_revenue"] or Decimal("0.00")),
-                "average_rating": round(rv.get("average_rating", 0) or 0, 2),
-                "review_count": rv.get("review_count", 0),
-                "average_duration": s["service__duration_minutes"],
-            })
+            result.append(
+                {
+                    "service_id": sid,
+                    "service_name": s["service__name"],
+                    "total_bookings": s["total_bookings"],
+                    "completed_bookings": s["completed_bookings"],
+                    "total_revenue": str(s["total_revenue"] or Decimal("0.00")),
+                    "average_rating": round(rv.get("average_rating", 0) or 0, 2),
+                    "review_count": rv.get("review_count", 0),
+                    "average_duration": s["service__duration_minutes"],
+                }
+            )
 
-        return Response(result)
+        return self.paginate(request, result)
 
 
-@extend_schema_view(get=extend_schema(
-    tags=["Analytics"],
-    summary="Booking analytics",
-    description="Admin only. Aggregate booking stats: totals, completion/cancellation rates, average daily bookings.",
-))
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Analytics"],
+        summary="Booking analytics",
+        description="Admin only. Aggregate booking stats: totals, completion/cancellation rates, average daily bookings.",
+    )
+)
 class BookingAnalyticsView(APIView):
     permission_classes = [IsAuthenticated, IsAdminRole]
 
@@ -208,27 +241,31 @@ class BookingAnalyticsView(APIView):
         completion_rate = (completed / total * 100) if total else 0
         cancellation_rate = (cancelled / total * 100) if total else 0
 
-        total_revenue = (
-            qs.filter(status="completed")
-            .aggregate(total=Sum("service__price"))["total"]
-            or Decimal("0.00")
-        )
+        total_revenue = qs.filter(status="completed").aggregate(
+            total=Sum("service__price")
+        )["total"] or Decimal("0.00")
 
-        first_booking = qs.order_by("start_datetime").values_list("start_datetime", flat=True).first()
+        first_booking = (
+            qs.order_by("start_datetime")
+            .values_list("start_datetime", flat=True)
+            .first()
+        )
         if first_booking:
             days_span = max((timezone.now().date() - first_booking.date()).days, 1)
             avg_daily = total / days_span
         else:
             avg_daily = 0
 
-        return Response({
-            "total": total,
-            "pending": status_counts.get("pending", 0),
-            "confirmed": status_counts.get("confirmed", 0),
-            "cancelled": cancelled,
-            "completed": completed,
-            "completion_rate": round(completion_rate, 2),
-            "cancellation_rate": round(cancellation_rate, 2),
-            "total_revenue": str(total_revenue),
-            "average_daily_bookings": round(avg_daily, 2),
-        })
+        return Response(
+            {
+                "total": total,
+                "pending": status_counts.get("pending", 0),
+                "confirmed": status_counts.get("confirmed", 0),
+                "cancelled": cancelled,
+                "completed": completed,
+                "completion_rate": round(completion_rate, 2),
+                "cancellation_rate": round(cancellation_rate, 2),
+                "total_revenue": str(total_revenue),
+                "average_daily_bookings": round(avg_daily, 2),
+            }
+        )

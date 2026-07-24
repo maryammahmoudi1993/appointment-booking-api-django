@@ -3,7 +3,7 @@
 [![CI](https://github.com/maryammahmoudi1993/appointment-booking-api-django/actions/workflows/ci.yml/badge.svg)](https://github.com/maryammahmoudi1993/appointment-booking-api-django/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-5.0-green)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-5.2-green)](https://www.djangoproject.com/)
 
 Production-grade appointment booking and business management platform with AI-powered copilot, scheduling engine, loyalty, promotions, analytics, and webhook integrations.
 
@@ -49,6 +49,8 @@ Production-grade appointment booking and business management platform with AI-po
 - Conversation persistence with history
 - Rate-limited (30/hour customer, 60/hour admin)
 - Evaluation framework with 11 standard test cases
+- No-show holdout metrics with explicit data provenance and limitations
+  ([evaluation report](docs/ai/no-show-evaluation.md))
 
 ### Infrastructure
 - Multi-stage Docker build (frontend + backend)
@@ -169,7 +171,7 @@ docker compose up --build
 |--------|-----------------------------|--------------------------------------|
 | GET    | `/api/analytics/revenue/`   | Revenue analytics (admin)            |
 | GET    | `/api/analytics/staff/`     | Staff analytics (admin)              |
-| GET    | `/api/analytics/service/`   | Service analytics (admin)            |
+| GET    | `/api/analytics/services/`  | Service analytics (admin)            |
 | GET    | `/api/analytics/bookings/`  | Booking analytics (admin)            |
 
 ---
@@ -190,7 +192,7 @@ apps/
   ai/             - AI copilot, tools, recommender, no-show, forecast
 core/             - Shared utilities, permissions, pagination, mixins
 frontend/         - React SPA (Vite + TypeScript + Tailwind)
-tests/            - 301 pytest tests with factory_boy
+tests/            - 331 pytest tests with factory_boy
 ```
 
 ---
@@ -239,7 +241,7 @@ python -m pytest tests/test_ai.py -v
 
 | Category      | Technology                                    |
 |---------------|-----------------------------------------------|
-| Backend       | Python 3.12, Django 5.0, DRF 3.15            |
+| Backend       | Python 3.12, Django 5.2, DRF 3.16            |
 | Database      | PostgreSQL 16                                 |
 | Auth          | JWT (simplejwt with token blacklist)          |
 | API Docs      | drf-spectacular (OpenAPI 3 / Swagger)         |

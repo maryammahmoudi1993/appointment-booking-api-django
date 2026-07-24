@@ -7,7 +7,12 @@ from rest_framework import status
 
 from apps.engagement.models import LoyaltyReward, PromoCode, Review
 from core.business import get_default_business
-from tests.factories import AdminFactory, AppointmentFactory, CustomerFactory, ServiceFactory
+from tests.factories import (
+    AdminFactory,
+    AppointmentFactory,
+    CustomerFactory,
+    ServiceFactory,
+)
 
 
 def _completed_appointment(customer, staff, service, points=50):
@@ -78,7 +83,9 @@ class TestReviews:
 
     def test_cannot_review_twice(self, auth_client, customer, staff_user, service):
         appt = _completed_appointment(customer, staff_user, service)
-        Review.objects.create(appointment=appt, customer=customer, staff=staff_user, rating=5)
+        Review.objects.create(
+            appointment=appt, customer=customer, staff=staff_user, rating=5
+        )
         response = auth_client.post(
             "/api/reviews/", {"appointment": appt.id, "rating": 3}
         )
@@ -111,9 +118,13 @@ class TestLoyalty:
         assert response.data["balance"] == 50
         assert len(response.data["history"]) == 2
 
-    def test_redeem_reward_deducts_points(self, auth_client, customer, staff_user, service):
+    def test_redeem_reward_deducts_points(
+        self, auth_client, customer, staff_user, service
+    ):
         _completed_appointment(customer, staff_user, service, points=100)
-        reward = LoyaltyReward.objects.create(name="10% off", points_cost=50, business=get_default_business())
+        reward = LoyaltyReward.objects.create(
+            name="10% off", points_cost=50, business=get_default_business()
+        )
         response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
         assert response.status_code == status.HTTP_201_CREATED
 
@@ -123,7 +134,9 @@ class TestLoyalty:
     def test_redeem_fails_with_insufficient_points(
         self, auth_client, customer, staff_user, service
     ):
-        reward = LoyaltyReward.objects.create(name="Free massage", points_cost=500, business=get_default_business())
+        reward = LoyaltyReward.objects.create(
+            name="Free massage", points_cost=500, business=get_default_business()
+        )
         response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -183,13 +196,17 @@ class TestPromotions:
         PromoCode.objects.create(
             code="TENOFF", discount_type="fixed", discount_value=Decimal("10.00")
         )
-        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff_user, weekday=0, start_time="09:00", end_time="17:00"
+        )
 
         target = timezone.now().date()
         days_ahead = (0 - target.weekday()) % 7 or 7
         target = target + timedelta(days=days_ahead)
         start = timezone.make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=10))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=10)
+            )
         )
         response = auth_client.post(
             "/api/appointments/",
@@ -210,12 +227,16 @@ class TestPromotions:
     ):
         from tests.factories import WorkingHoursFactory
 
-        WorkingHoursFactory(staff=staff_user, weekday=0, start_time="09:00", end_time="17:00")
+        WorkingHoursFactory(
+            staff=staff_user, weekday=0, start_time="09:00", end_time="17:00"
+        )
         target = timezone.now().date()
         days_ahead = (0 - target.weekday()) % 7 or 7
         target = target + timedelta(days=days_ahead)
         start = timezone.make_aware(
-            timezone.datetime.combine(target, timezone.datetime.min.time().replace(hour=11))
+            timezone.datetime.combine(
+                target, timezone.datetime.min.time().replace(hour=11)
+            )
         )
         response = auth_client.post(
             "/api/appointments/",
@@ -231,7 +252,9 @@ class TestPromotions:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         from apps.appointments.models import Appointment
 
-        assert not Appointment.objects.filter(staff=staff_user, start_datetime=start).exists()
+        assert not Appointment.objects.filter(
+            staff=staff_user, start_datetime=start
+        ).exists()
 
     def test_promo_scoped_to_service_applies(self, auth_client, service):
         promo = PromoCode.objects.create(
@@ -250,7 +273,8 @@ class TestPromotions:
         )
         promo.services.add(service)
         response = auth_client.post(
-            "/api/promotions/validate/", {"code": "HAIRONLY2", "service": other_service.id}
+            "/api/promotions/validate/",
+            {"code": "HAIRONLY2", "service": other_service.id},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -277,8 +301,12 @@ class TestSupportMessages:
         from tests.factories import CustomerFactory
 
         business = get_default_business()
-        SupportMessage.objects.create(customer=customer, message="mine", business=business)
-        SupportMessage.objects.create(customer=CustomerFactory(), message="not mine", business=business)
+        SupportMessage.objects.create(
+            customer=customer, message="mine", business=business
+        )
+        SupportMessage.objects.create(
+            customer=CustomerFactory(), message="not mine", business=business
+        )
         response = auth_client.get("/api/support-messages/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
@@ -286,7 +314,9 @@ class TestSupportMessages:
     def test_admin_sees_all_messages_inbox(self, admin_client, customer):
         from apps.engagement.models import SupportMessage
 
-        SupportMessage.objects.create(customer=customer, message="hello", business=get_default_business())
+        SupportMessage.objects.create(
+            customer=customer, message="hello", business=get_default_business()
+        )
         response = admin_client.get("/api/support-messages/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
@@ -294,7 +324,9 @@ class TestSupportMessages:
     def test_admin_can_reply(self, admin_client, customer):
         from apps.engagement.models import SupportMessage
 
-        msg = SupportMessage.objects.create(customer=customer, message="hello", business=get_default_business())
+        msg = SupportMessage.objects.create(
+            customer=customer, message="hello", business=get_default_business()
+        )
         response = admin_client.post(
             f"/api/support-messages/{msg.id}/reply/", {"reply": "We'll call you back."}
         )
@@ -306,7 +338,9 @@ class TestSupportMessages:
     def test_customer_cannot_reply(self, auth_client, customer):
         from apps.engagement.models import SupportMessage
 
-        msg = SupportMessage.objects.create(customer=customer, message="hello", business=get_default_business())
+        msg = SupportMessage.objects.create(
+            customer=customer, message="hello", business=get_default_business()
+        )
         response = auth_client.post(
             f"/api/support-messages/{msg.id}/reply/", {"reply": "nope"}
         )
@@ -349,16 +383,25 @@ class TestPromoEdgeCases:
             business=business,
         )
         from apps.engagement.models import PromoRedemption
+
         PromoRedemption.objects.create(
-            promo=promo, customer=CustomerFactory(), discount_amount=5, business=business
+            promo=promo,
+            customer=CustomerFactory(),
+            discount_amount=5,
+            business=business,
         )
         response = auth_client.post("/api/promotions/validate/", {"code": "LIMITED"})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_inactive_reward_redemption_fails(self, auth_client, customer, staff_user, service):
+    def test_inactive_reward_redemption_fails(
+        self, auth_client, customer, staff_user, service
+    ):
         _completed_appointment(customer, staff_user, service, points=100)
         reward = LoyaltyReward.objects.create(
-            name="Inactive", points_cost=50, is_active=False, business=get_default_business()
+            name="Inactive",
+            points_cost=50,
+            is_active=False,
+            business=get_default_business(),
         )
         response = auth_client.post(f"/api/loyalty/rewards/{reward.id}/redeem/")
         assert response.status_code == status.HTTP_400_BAD_REQUEST

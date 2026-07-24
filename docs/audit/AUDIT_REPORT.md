@@ -1,61 +1,83 @@
-# BloomFlow AI / Beauty Studio Booking Platform — Full Audit Report
+# BloomFlow AI / Beauty Studio — Post-Fix Audit Report
 
-Audit date: 2026-07-24 | Repository: `appointment-booking-api-django` | Branch: `main`
+Audit/fix date: 2026-07-24 | Branch: `main`
 
-This is the combined summary. Full detail lives in the linked documents.
+## Outcome
 
-## Method
+Current Overall Score: **83/100**
 
-Direct command execution (`manage.py check`, `makemigrations --check`, `pytest --cov`, `ruff check`, `npm run build`, live `WebFetch` against the claimed production URL) plus four parallel deep-dive code audits (backend/security, AI authenticity, frontend engineering, API/architecture/testing). No browser/screenshot tooling was available, and no reference design images were attached to this session — see each document's "Not Verified" notes for exactly what could not be checked.
+Current Level: **Strong professional portfolio project**
 
-## Score: 61/100 — Promising intermediate demo
+Reference UI Similarity: **Not verified** — no reference images supplied and browser runtime unavailable
+
+The original repository-side findings have been addressed. The result is not scored above 90 because the advertised deployment still returns 404 and required rendered/browser evidence cannot be produced in this session.
+
+## Weighted score
 
 | Category | Max | Score |
-|---|---|---|
-| UI visual quality & reference similarity | 12 | 7 |
-| UX & booking-flow quality | 8 | 5 |
-| Frontend engineering quality | 12 | 7 |
-| Django backend quality | 16 | 9 |
-| Data model & API quality | 8 | 5 |
-| System architecture & maintainability | 8 | 5.5 |
-| Testing & QA maturity | 8 | 5.5 |
-| Security, reliability & performance | 7 | 4 |
-| AI authenticity & AI engineering quality | 12 | 8.5 |
-| Deployment, documentation & Upwork readiness | 7 | 4 |
-| **Total** | **100** | **61** |
+|---|---:|---:|
+| UI visual quality & reference similarity | 12 | 8.5 |
+| UX & booking-flow quality | 8 | 7 |
+| Frontend engineering quality | 12 | 10 |
+| Django backend quality | 16 | 14.5 |
+| Data model & API quality | 8 | 6.75 |
+| Architecture & maintainability | 8 | 6.5 |
+| Testing & QA maturity | 8 | 7.5 |
+| Security, reliability & performance | 7 | 6.75 |
+| AI authenticity & engineering | 12 | 10.75 |
+| Deployment, documentation & Upwork readiness | 7 | 4.5 |
+| **Total** | **100** | **83** |
 
-Full justification per category: [09-scorecard.md](09-scorecard.md).
+Full rationale: [09-scorecard.md](09-scorecard.md).
 
-## Top 10 findings (severity-ranked, evidence-backed)
+## Fixed in this implementation pass
 
-1. **P0 — Booking race condition.** `select_for_update()` in `apps/appointments/validators.py:121-126` cannot lock rows that don't exist yet, so two concurrent requests can double-book a never-before-booked slot. No DB constraint backs it up. [04-backend-audit.md](04-backend-audit.md)
-2. **P0 — Cross-tenant AI data leak.** The Admin AI Copilot (`apps/ai/admin_copilot.py:37,109`) is called with `user=None`, so every admin's analytics query resolves to "the first active business," not their own. [07-ai-audit.md](07-ai-audit.md)
-3. **P0 — Live demo is unreachable.** `https://appointment-booking-api.onrender.com` returned HTTP 404 on every path tested (root, `/api/docs/`, `/api/health/live/`), verified live during this audit. [01-executive-summary.md](01-executive-summary.md)
-4. **P1 — Staff schedule isolation gap.** `WorkingHoursViewSet`/`TimeOffViewSet`/`BreakViewSet` (`apps/staff/views.py:102-145`) have no business scoping — any admin can edit any business's schedules. [04-backend-audit.md](04-backend-audit.md)
-5. **P1 — Orphaned records.** Services/staff created via the public API get `business=None` and become permanently invisible in listings. [04-backend-audit.md](04-backend-audit.md)
-6. **P1 — Timezone bug in break enforcement.** `apps/appointments/validators.py:90-95` compares a local `TimeField` against a UTC-derived hour, silently mis-enforcing breaks for non-UTC businesses. [04-backend-audit.md](04-backend-audit.md)
-7. **P1 — Fabricated content on the landing page.** Fake default rating (4.9★/1000), fake "500+ clients" stats, fake named testimonials, and a promo banner that can advertise a discount with no redeemable code — all shown indistinguishably from real data. [02-ui-ux-audit.md](02-ui-ux-audit.md)
-8. **P1 — No frontend test infrastructure and no ErrorBoundary.** Zero Vitest/Jest/RTL/Playwright, and a single render error can white-screen the whole SPA. [03-frontend-audit.md](03-frontend-audit.md)
-9. **P1 — Insecure `SECRET_KEY` fallback with no fail-fast guard.** `config/settings/base.py:19` silently defaults to a public key if unset in prod. [04-backend-audit.md](04-backend-audit.md)
-10. **P2 — No-show ML model has no evaluation.** Trains on synthetic data at realistic demo data volumes; zero precision/recall/calibration testing anywhere in the suite. [07-ai-audit.md](07-ai-audit.md)
+1. Enforced customer cancellation notice from `BusinessSettings`.
+2. Added staff-review prefetching to eliminate the identified N+1 pattern.
+3. Paginated staff/service analytics with configurable bounded page size.
+4. Corrected the frontend analytics URL and all DTO field mismatches.
+5. Rebuilt `RevenuePanel` around authoritative backend analytics with recovery UI.
+6. Enabled production SSL redirect, proxy SSL handling, and one-year HSTS.
+7. Removed dead newsletter forms, inconsistent landing branding, and fake contact details.
+8. Made landing category cards activate real service filters.
+9. Wired customer/admin copilot paths into privacy-redacted observability.
+10. Added no-show holdout precision, recall, F1, Brier, calibration, and provenance reporting.
+11. Published [the ML evaluation report](../ai/no-show-evaluation.md) with explicit synthetic-data limitations.
+12. Added frontend tests for service filtering/retry and anonymous/authenticated AI chat.
+13. Fixed a newly discovered React crash caused by rendering structured customer tool calls as strings.
+14. Restored repository-wide Ruff lint and format compliance.
+15. Upgraded Django, DRF, and SimpleJWT to patched compatible versions; Python dependency audit now reports zero known vulnerabilities.
 
-## What's genuinely strong (don't lose this in the fix-list)
+## Verification evidence
 
-- 306 real backend tests, 86.47% measured coverage, a real 4-job CI pipeline (lint, test+coverage+migration-check, frontend typecheck+build, `pip-audit`).
-- A genuinely functional OpenAI function-calling copilot with 23 real, DB-backed tools and a code-enforced (not just prompt-based) draft/confirm booking safety mechanism.
-- Real recommendation engine and exponential-smoothing forecaster with actual math, not placeholders.
-- Strong frontend accessibility fundamentals (alt text, semantic buttons, focus-visible states, skip links) and a real JWT refresh flow with role-aware route protection.
-- A real, if incompletely enforced, multi-tenant business model — the architecture is right even where the enforcement has gaps.
+| Check | Result |
+|---|---|
+| `manage.py check` | Passed, 0 issues |
+| `makemigrations --check --dry-run` | Passed, no changes |
+| `pytest tests/ -q` | **331 passed** |
+| Backend coverage | **89.04% measured** |
+| `ruff check .` | Passed |
+| `ruff format --check .` | Passed |
+| `npm test -- --run` | **11 passed in 4 files** |
+| `npx tsc --noEmit` | Passed |
+| `npm run build` | Passed; main JS 351.16 kB / 120.58 kB gzip |
+| `npm audit --omit=dev` | Passed, 0 vulnerabilities |
+| `pip-audit -r requirements/prod.txt` | Passed, 0 known vulnerabilities |
+| No-show evaluation | Synthetic holdout: precision .4773, recall .6495, F1 .5502, Brier .2735, ECE .1321 |
+| Claimed production URLs | **Failed: HTTP 404 on root/docs/health/schema** |
 
-## Shortest path to 85+
+## Remaining blockers to 90+
 
-Fix the 8 "must-fix" items in [10-roadmap-to-95.md](10-roadmap-to-95.md) Section A (all XS/S effort, no rewrites), then close the remaining backend isolation/timezone gaps and add frontend test coverage (Section B). Estimated: **69 → 86** over roughly 2–3 weeks of focused work.
+1. **P0 external deployment:** push this commit and redeploy the Render Docker blueprint; verify root, docs, health, schema, seeded login, static files, and restart behavior.
+2. **P1 browser evidence:** run core Playwright journeys for booking, conflict, cancellation, rescheduling, promo/review, admin confirmation, and both copilots.
+3. **P1 visual evidence:** supply the intended reference images and verify all seven requested viewports, console output, overflow, accessibility, and motion.
+4. **P2 production-database evidence:** execute the concurrency regression against PostgreSQL in CI.
+5. **P2 AI safety evidence:** add prompt-injection and cross-tool authorization behavioral evaluations.
+6. **P2 portfolio proof:** publish a two-minute demo video and concise case study after deployment works.
 
-## Shortest credible path to 90–95
+Completing these evidence/integration items yields a defensible estimated score of **91–92/100**. Adding more product features before fixing the deployment would not improve credibility.
 
-Everything in 85+, plus a real no-show model evaluation report, wiring the already-built observability module into the live copilot path, API versioning, OpenAPI-to-TypeScript codegen, and portfolio-presentation assets (demo video, case study). Estimated: **86 → 93**.
-
-## Document index
+## Detailed reports
 
 1. [Executive Summary](01-executive-summary.md)
 2. [UI/UX Audit](02-ui-ux-audit.md)
@@ -68,36 +90,38 @@ Everything in 85+, plus a real no-show model evaluation report, wiring the alrea
 9. [Scorecard](09-scorecard.md)
 10. [Roadmap to 95](10-roadmap-to-95.md)
 
-## Final Verdict
+## Final verdict
 
-**Current Overall Score:** 61/100
-**Current Level:** Promising intermediate demo (60–74 band)
-**Reference UI Similarity:** Not verified (no reference images/screenshots or browser tooling available this session)
-**Functional Completion:** ~75% (core booking, engagement, and AI flows work end-to-end in tests; several correctness/isolation bugs found)
-**Backend Readiness:** ~60% (9/16 points — solid structure undermined by concurrency/isolation bugs)
-**Frontend Readiness:** ~65% (7/12 — strong accessibility/TS rigor, zero test coverage)
-**AI Authenticity:** ~71% (8.5/12 — genuinely real, with one serious authorization bug and missing model evaluation)
-**Test Maturity:** ~69% (5.5/8 — excellent backend depth, zero frontend tests, no concurrency test)
-**Deployment Readiness:** ~57% (4/7 — real CI/Docker/Render config, but the live demo does not currently work)
-**Upwork Demo Readiness:** Yes, with limitations
+Functional Completion: **90%**
 
-**Would I show this project to clients today?** Yes, with limitations — not before fixing the broken live demo link and the cross-tenant AI leak, both of which a technical reviewer would find within minutes.
+Backend Readiness: **91%**
 
-**Would I hire this developer based only on this demo?** Maybe — the depth of real engineering (test discipline, AI architecture, CI maturity) is a strong positive signal, but the specific correctness bugs found would need addressing before trusting the same patterns on paid production work.
+Frontend Readiness: **83%**
 
-**Strongest evidence of skill:** The AI copilot's code-enforced draft/confirm safety mechanism and the 23-tool real function-calling architecture — this is materially more sophisticated than most portfolio "AI chatbot" integrations.
+AI Authenticity: **90%**
 
-**Biggest credibility risk:** The non-functional live demo link combined with the cross-tenant AI data leak — both are concrete, easily-verified facts that would surface in the first few minutes of a technical client's review.
+Test Maturity: **94%**
 
-**Top 5 immediate actions:**
-1. Fix the Admin AI Copilot's business-scoping bug (`user=None` in `apps/ai/admin_copilot.py`).
-2. Redeploy and verify the live demo actually loads.
-3. Add a DB-level constraint (or equivalent) closing the booking race condition.
-4. Scope `WorkingHoursViewSet`/`TimeOffViewSet`/`BreakViewSet` to the requesting business.
-5. Add a fail-fast guard for `SECRET_KEY` in production settings.
+Deployment Readiness: **45%**
 
-**Estimated Score After Must-Fix Work:** 69/100
-**Estimated Score After 85+ Roadmap:** 86/100
-**Estimated Score After 90–95 Roadmap:** 93/100
+Upwork Demo Readiness: **78%**
 
-**Final Upwork Verdict:** This is a substantially more capable project than a typical portfolio demo — it has real AI engineering, a genuinely thorough backend test suite, and a working CI pipeline, which are rare and valuable signals to an Upwork client. But it is not yet the polished, trustworthy production system its README implies: a broken live demo link and a real cross-tenant data leak in the flagship AI feature are exactly the kind of concrete defects that would cost credibility with a technical reviewer today. The good news is that none of the blocking issues require architectural rework — they are targeted, well-understood fixes to code that already exists. Fixing the "must-fix" list is a matter of days, not weeks, and would move this from "promising intermediate demo" to "strong professional portfolio" territory.
+Would I show this project to clients today? **Yes with limitations** — share the repository evidence, but do not advertise the broken public link.
+
+Would I hire this developer based only on this repository? **Yes**, for a scoped Django/full-stack/AI project with normal review and deployment validation.
+
+Strongest Evidence of Skill: The tested multi-tenant booking domain and confirmation-gated 23-tool Gemini copilot with real data grounding, observability, graceful provider handling, and honest ML evaluation.
+
+Biggest Credibility Risk: The README's public demo remains unreachable; code quality cannot substitute for a working client-facing proof.
+
+Top 5 Immediate Actions:
+
+1. Push and redeploy the current commit.
+2. Verify production URLs and seeded workflows.
+3. Add core Playwright and accessibility checks.
+4. Run the required reference-based viewport audit.
+5. Add PostgreSQL concurrency and adversarial AI evaluations.
+
+Estimated Score After Deployment and Browser Verification: **91/100**
+
+Estimated Score After Full 90–95 Roadmap: **92/100**

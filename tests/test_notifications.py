@@ -2,10 +2,10 @@ from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 from django.utils import timezone
 from rest_framework import status
 
-import requests
 from apps.notifications.models import Notification, WebhookDelivery, WebhookSubscription
 from tests.factories import (
     AppointmentFactory,
@@ -65,7 +65,9 @@ def _make_appointment_data(customer_user, staff_user, service, hour=10):
 
 @pytest.mark.django_db
 class TestNotificationCreatedOnAppointment:
-    def test_created_when_appointment_booked(self, api_client, customer_user, staff_user, service):
+    def test_created_when_appointment_booked(
+        self, api_client, customer_user, staff_user, service
+    ):
         api_client.force_authenticate(user=customer_user)
         data = _make_appointment_data(customer_user, staff_user, service)
         response = api_client.post("/api/appointments/", data)
@@ -74,7 +76,9 @@ class TestNotificationCreatedOnAppointment:
         assert notifs.count() >= 1
         assert any("booked" in n.subject.lower() for n in notifs)
 
-    def test_created_when_appointment_confirmed(self, api_client, staff_user, customer_user, service):
+    def test_created_when_appointment_confirmed(
+        self, api_client, staff_user, customer_user, service
+    ):
         api_client.force_authenticate(user=staff_user)
         target = _next_weekday(0)
         start = _make_aware(
@@ -94,7 +98,9 @@ class TestNotificationCreatedOnAppointment:
         notifs = Notification.objects.filter(recipient=customer_user)
         assert any("confirmed" in n.subject.lower() for n in notifs)
 
-    def test_created_when_appointment_cancelled(self, api_client, customer_user, staff_user, service):
+    def test_created_when_appointment_cancelled(
+        self, api_client, customer_user, staff_user, service
+    ):
         api_client.force_authenticate(user=customer_user)
         target = _next_weekday(0)
         start = _make_aware(
@@ -114,7 +120,9 @@ class TestNotificationCreatedOnAppointment:
         notifs = Notification.objects.filter(recipient=customer_user)
         assert any("cancelled" in n.subject.lower() for n in notifs)
 
-    def test_created_when_appointment_completed(self, api_client, admin_user, customer_user, staff_user, service):
+    def test_created_when_appointment_completed(
+        self, api_client, admin_user, customer_user, staff_user, service
+    ):
         api_client.force_authenticate(user=admin_user)
         target = _next_weekday(0)
         start = _make_aware(
@@ -151,7 +159,10 @@ class TestWebhookSubscriptionAPI:
         api_client.force_authenticate(user=customer_user)
         data = {"url": "https://example.com/webhook"}
         response = api_client.post("/api/webhook-subscriptions/", data)
-        assert response.status_code in (status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED)
+        assert response.status_code in (
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED,
+        )
 
     def test_admin_can_list_subscriptions(self, admin_client):
         response = admin_client.get("/api/webhook-subscriptions/")
@@ -160,12 +171,17 @@ class TestWebhookSubscriptionAPI:
     def test_non_admin_cannot_list_subscriptions(self, api_client, customer_user):
         api_client.force_authenticate(user=customer_user)
         response = api_client.get("/api/webhook-subscriptions/")
-        assert response.status_code in (status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED)
+        assert response.status_code in (
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED,
+        )
 
 
 @pytest.mark.django_db
 class TestNotificationAPI:
-    def test_admin_can_list_notifications(self, admin_client, customer_user, staff_user, service):
+    def test_admin_can_list_notifications(
+        self, admin_client, customer_user, staff_user, service
+    ):
         target = _next_weekday(0)
         start = _make_aware(
             timezone.datetime.combine(
@@ -186,13 +202,18 @@ class TestNotificationAPI:
     def test_non_admin_cannot_list_notifications(self, api_client, customer_user):
         api_client.force_authenticate(user=customer_user)
         response = api_client.get("/api/notifications/")
-        assert response.status_code in (status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED)
+        assert response.status_code in (
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_401_UNAUTHORIZED,
+        )
 
 
 @pytest.mark.django_db
 class TestWebhookDelivery:
     @patch("requests.post")
-    def test_webhook_delivered_on_appointment_created(self, mock_post, db, customer_user, staff_user, service):
+    def test_webhook_delivered_on_appointment_created(
+        self, mock_post, db, customer_user, staff_user, service
+    ):
         mock_resp = Mock()
         mock_resp.status_code = 200
         mock_resp.text = "OK"
@@ -217,7 +238,9 @@ class TestWebhookDelivery:
         assert created is not None
 
     @patch("requests.post")
-    def test_webhook_delivery_success(self, mock_post, db, customer_user, staff_user, service):
+    def test_webhook_delivery_success(
+        self, mock_post, db, customer_user, staff_user, service
+    ):
         from apps.business.models import Business
 
         mock_resp = Mock()
@@ -237,13 +260,17 @@ class TestWebhookDelivery:
             service=service,
         )
         deliveries = WebhookDelivery.objects.filter(subscription=sub)
-        successful = deliveries.filter(status="success", event_type="appointment.created").first()
+        successful = deliveries.filter(
+            status="success", event_type="appointment.created"
+        ).first()
         assert successful is not None
         assert successful.response_status == 200
         assert successful.completed_at is not None
 
     @patch("requests.post")
-    def test_webhook_delivery_failure(self, mock_post, db, customer_user, staff_user, service):
+    def test_webhook_delivery_failure(
+        self, mock_post, db, customer_user, staff_user, service
+    ):
         from apps.business.models import Business
 
         mock_resp = Mock()
@@ -263,13 +290,17 @@ class TestWebhookDelivery:
             service=service,
         )
         deliveries = WebhookDelivery.objects.filter(subscription=sub)
-        failed = deliveries.filter(status="failed", event_type="appointment.created").first()
+        failed = deliveries.filter(
+            status="failed", event_type="appointment.created"
+        ).first()
         assert failed is not None
         assert failed.response_status == 500
         assert "Server Error" in failed.response_body
 
     @patch("requests.post")
-    def test_webhook_delivery_exception(self, mock_post, db, customer_user, staff_user, service):
+    def test_webhook_delivery_exception(
+        self, mock_post, db, customer_user, staff_user, service
+    ):
         from apps.business.models import Business
 
         mock_post.side_effect = requests.RequestException("Connection refused")
@@ -286,7 +317,9 @@ class TestWebhookDelivery:
             service=service,
         )
         deliveries = WebhookDelivery.objects.filter(subscription=sub)
-        failed = deliveries.filter(status="failed", event_type="appointment.created").first()
+        failed = deliveries.filter(
+            status="failed", event_type="appointment.created"
+        ).first()
         assert failed is not None
         assert "Connection refused" in failed.error_message
 
@@ -310,7 +343,9 @@ class TestWebhookDelivery:
 
 @pytest.mark.django_db
 class TestNotificationBusinessIsolation:
-    def test_notification_scoped_to_business(self, api_client, admin_user, customer_user, staff_user, service):
+    def test_notification_scoped_to_business(
+        self, api_client, admin_user, customer_user, staff_user, service
+    ):
         from apps.business.models import Business
 
         other_biz = Business.objects.create(name="Other Co", slug="other-co")
@@ -343,8 +378,12 @@ class TestWebhookBusinessIsolation:
 
         business = Business.objects.first()
         other_biz = Business.objects.create(name="Other Co", slug="other-co")
-        WebhookSubscription.objects.create(business=other_biz, url="https://other.com/hook")
-        WebhookSubscription.objects.create(business=business, url="https://mine.com/hook")
+        WebhookSubscription.objects.create(
+            business=other_biz, url="https://other.com/hook"
+        )
+        WebhookSubscription.objects.create(
+            business=business, url="https://mine.com/hook"
+        )
         api_client.force_authenticate(user=admin_user)
         response = api_client.get("/api/webhook-subscriptions/")
         assert response.status_code == status.HTTP_200_OK

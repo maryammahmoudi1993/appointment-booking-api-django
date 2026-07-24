@@ -7,10 +7,12 @@ it only sees data returned by the allowlisted tools in tools.py.
 """
 
 import logging
+import time
 from dataclasses import dataclass, field
 
 from .gemini_client import MODEL, build_tool, provider_error_reply
 from .gemini_client import get_client as _get_client
+from .observability import CopilotInteraction, ToolCallRecord, collector
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ FALLBACK_NO_KEY = (
     "environment variable to enable the AI assistant."
 )
 
+
 @dataclass
 class CopilotResponse:
     reply: str
@@ -76,7 +79,6 @@ def _save_message(conversation, role, content, tool_name="", tool_call_id=""):
 
 
 def _load_history(conversation, max_messages=20):
-
     messages = list(conversation.messages.order_by("-created_at")[:max_messages])
     messages.reverse()
     history = []
@@ -99,11 +101,13 @@ def _gemini_contents(history, user_message):
         )
         for m in history
     ]
-    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=user_message)]))
+    contents.append(
+        types.Content(role="user", parts=[types.Part.from_text(text=user_message)])
+    )
     return contents
 
 
-def chat(
+def _chat_impl(
     user_message: str,
     user=None,
     conversation_id=None,
@@ -215,7 +219,9 @@ def chat(
             if error:
                 result = {"error": error}
 
-            response_parts.append(types.Part.from_function_response(name=tool_name, response=result))
+            response_parts.append(
+                types.Part.from_function_response(name=tool_name, response=result)
+            )
 
             if conversation:
                 import json
@@ -237,3 +243,40 @@ def chat(
         tool_calls_made=tool_calls_made,
         conversation_id=str(conversation.id) if conversation else None,
     )
+
+
+def chat(
+    user_message: str,
+    user=None,
+    conversation_id=None,
+    conversation_history=None,
+) -> CopilotResponse:
+    """Run the customer copilot and record privacy-limited operational metrics."""
+    started = time.monotonic()
+    response = _chat_impl(
+        user_message=user_message,
+        user=user,
+        conversation_id=conversation_id,
+        conversation_history=conversation_history,
+    )
+    records = [
+        ToolCallRecord(
+            tool_name=call["tool"],
+            args={"keys": sorted(call.get("args", {}).keys())},
+            result=None,
+            error=None,
+            duration_ms=0,
+        )
+        for call in response.tool_calls_made
+    ]
+    collector.record_interaction(
+        CopilotInteraction(
+            user_id=getattr(user, "id", None),
+            message="[redacted]",
+            reply="[redacted]",
+            tool_calls=records,
+            total_duration_ms=(time.monotonic() - started) * 1000,
+            rounds=len(records),
+        )
+    )
+    return response

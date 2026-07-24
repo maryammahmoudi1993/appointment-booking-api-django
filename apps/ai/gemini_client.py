@@ -36,6 +36,7 @@ def provider_error_reply(exc):
         "Please try again in a moment."
     )
 
+
 # Gemini's function-calling schema uses uppercase type names (its own
 # Type enum), not the lowercase JSON-Schema convention our tools already
 # use. Converting explicitly here is safer than relying on the SDK to
@@ -71,7 +72,8 @@ def _convert_schema(schema):
         converted["type"] = _TYPE_MAP.get(converted["type"], converted["type"])
     if "properties" in converted:
         converted["properties"] = {
-            key: _convert_schema(value) for key, value in converted["properties"].items()
+            key: _convert_schema(value)
+            for key, value in converted["properties"].items()
         }
     if "items" in converted:
         converted["items"] = _convert_schema(converted["items"])

@@ -1,5 +1,7 @@
 # 03 — Frontend Engineering Audit
 
+> **Current-state addendum:** FE-1, FE-3, FE-4, FE-5, FE-8, the category false affordance, and the unused `ChatWidget` finding are resolved. The revenue panel now consumes backend analytics with matching DTOs and recoverable errors. A structured customer tool-call rendering crash was found by new tests and fixed. Vitest/RTL now runs **11 tests across 4 files** covering ErrorBoundary, PrivateRoute, service filtering/retry, and anonymous/authenticated AI chat. TypeScript and production build pass. Remaining gaps are no browser E2E/a11y/visual suite, large admin components, duplicated error parsing, and no dedicated ESLint rule set (Ruff covers Python only).
+
 Stack: React 19 + TypeScript + Vite 6 + Tailwind CSS v4. Verified by direct execution: `npm run build` (`tsc -b && vite build`) succeeds, producing route-level code-split chunks. No ESLint config exists in the repo. No test script exists in `package.json`.
 
 ## Structure

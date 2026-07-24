@@ -9,8 +9,14 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
-def _create_notification_record(business=None, recipient=None, recipient_email="",
-                                 notification_type="email", subject="", body=""):
+def _create_notification_record(
+    business=None,
+    recipient=None,
+    recipient_email="",
+    notification_type="email",
+    subject="",
+    body="",
+):
     from .models import Notification
 
     return Notification.objects.create(
@@ -45,30 +51,41 @@ def deliver_webhook(subscription, event_type, payload):
     )
 
     try:
-        resp = requests.post(
-            subscription.url, data=body, headers=headers, timeout=10
-        )
+        resp = requests.post(subscription.url, data=body, headers=headers, timeout=10)
         delivery.response_status = resp.status_code
         delivery.response_body = resp.text[:2000]
         if 200 <= resp.status_code < 300:
             delivery.status = "success"
             delivery.completed_at = timezone.now()
-            logger.info("Webhook %s delivered to %s (HTTP %d)",
-                        delivery.id, subscription.url, resp.status_code)
+            logger.info(
+                "Webhook %s delivered to %s (HTTP %d)",
+                delivery.id,
+                subscription.url,
+                resp.status_code,
+            )
         else:
             delivery.status = "failed"
             delivery.error_message = f"HTTP {resp.status_code}: {resp.text[:200]}"
-            logger.warning("Webhook %s failed at %s (HTTP %d)",
-                          delivery.id, subscription.url, resp.status_code)
+            logger.warning(
+                "Webhook %s failed at %s (HTTP %d)",
+                delivery.id,
+                subscription.url,
+                resp.status_code,
+            )
     except requests.RequestException as exc:
         delivery.status = "failed"
         delivery.error_message = str(exc)[:500]
         logger.error("Webhook %s error for %s: %s", delivery.id, subscription.url, exc)
 
-    delivery.save(update_fields=[
-        "status", "response_status", "response_body",
-        "error_message", "completed_at",
-    ])
+    delivery.save(
+        update_fields=[
+            "status",
+            "response_status",
+            "response_body",
+            "error_message",
+            "completed_at",
+        ]
+    )
     return delivery
 
 

@@ -1,5 +1,7 @@
 # 04 — Django Backend Audit
 
+> **Current-state addendum:** The original P0/P1 findings are resolved and regression-tested. Customer cancellation now enforces `BusinessSettings.cancellation_window_hours`; staff reviews are prefetched; staff/service analytics are paginated; production HTTPS/HSTS is configured. Current direct result: **331 tests passed, 89.04% coverage**, Django checks/migrations and repository-wide Ruff checks passed. Remaining material issues are no API versioning, analytics aggregation still residing in views, and the need to exercise PostgreSQL row-lock semantics in PostgreSQL CI rather than infer them from SQLite.
+
 Verified directly: `python manage.py check` → 0 issues. `makemigrations --check --dry-run` → no changes detected. `pytest tests/` → **306 passed**, coverage **86.47%** (measured, not estimated).
 
 ## Booking domain correctness

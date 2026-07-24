@@ -16,8 +16,14 @@ class WebhookDeliveryInline(admin.TabularInline):
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "notification_type", "recipient", "recipient_email",
-        "subject", "status", "business", "created_at",
+        "id",
+        "notification_type",
+        "recipient",
+        "recipient_email",
+        "subject",
+        "status",
+        "business",
+        "created_at",
     )
     list_filter = ("notification_type", "status", "business")
     search_fields = ("recipient__email", "recipient__username", "subject", "body")
@@ -36,8 +42,13 @@ class WebhookSubscriptionAdmin(admin.ModelAdmin):
 @admin.register(WebhookDelivery)
 class WebhookDeliveryAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "subscription", "event_type", "status",
-        "response_status", "retry_count", "created_at",
+        "id",
+        "subscription",
+        "event_type",
+        "status",
+        "response_status",
+        "retry_count",
+        "created_at",
     )
     list_filter = ("status", "event_type")
     search_fields = ("event_type",)

@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { copilotApi } from "../api/client";
+import { copilotApi, type CopilotResponse } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  toolCalls?: string[];
+  toolCalls?: CopilotResponse["tool_calls_made"];
 }
 
 const SUGGESTIONS = [
@@ -158,11 +158,14 @@ export default function ChatWidget() {
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                   {msg.toolCalls && msg.toolCalls.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
-                      {msg.toolCalls.map((tc) => (
-                        <span key={tc} className="text-[10px] px-1.5 py-0.5 rounded bg-champagne/20 text-coral-dark font-mono">
-                          {tc}
+                      {msg.toolCalls.map((tc) => {
+                        const toolName = typeof tc === "string" ? tc : tc.tool;
+                        return (
+                        <span key={toolName} className="text-[10px] px-1.5 py-0.5 rounded bg-champagne/20 text-coral-dark font-mono">
+                          {toolName}
                         </span>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

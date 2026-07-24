@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { servicesApi, type Service } from "../api/client";
 import { imageForService } from "../utils/serviceImage";
 import PageHero from "../components/ui/PageHero";
@@ -18,11 +18,17 @@ const filters = [
 ];
 
 export default function Services() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const requestedCategory = searchParams.get("category") ?? "all";
+  const [filter, setFilter] = useState(
+    filters.some((item) => item.key === requestedCategory)
+      ? requestedCategory
+      : "all",
+  );
 
   const load = () => {
     setLoading(true);
@@ -33,6 +39,13 @@ export default function Services() {
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
+  useEffect(() => {
+    setFilter(
+      filters.some((item) => item.key === requestedCategory)
+        ? requestedCategory
+        : "all",
+    );
+  }, [requestedCategory]);
 
   const visible = useMemo(() => {
     const active = filters.find((item) => item.key === filter) ?? filters[0];
@@ -58,7 +71,10 @@ export default function Services() {
               {filters.map((item) => (
                 <button
                   key={item.key}
-                  onClick={() => setFilter(item.key)}
+                  onClick={() => {
+                    setFilter(item.key);
+                    setSearchParams(item.key === "all" ? {} : { category: item.key });
+                  }}
                   aria-pressed={filter === item.key}
                   className={`flex min-w-fit items-center gap-2 rounded-[18px] border px-4 py-2.5 text-sm font-semibold transition ${
                     filter === item.key ? "border-coral bg-blush text-coral shadow-raised" : "border-transparent bg-soft text-secondary hover:border-rose/25"
@@ -116,7 +132,7 @@ export default function Services() {
             <span className="text-5xl" aria-hidden="true">✦</span>
             <h2 className="mt-4 text-2xl text-heading">No matching services</h2>
             <p className="mt-2 text-secondary">Try another category or a broader search.</p>
-            <button onClick={() => { setQuery(""); setFilter("all"); }} className="beauty-button-secondary mt-5">Clear filters</button>
+            <button onClick={() => { setQuery(""); setFilter("all"); setSearchParams({}); }} className="beauty-button-secondary mt-5">Clear filters</button>
           </div>
         )}
       </section>

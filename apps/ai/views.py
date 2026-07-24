@@ -71,7 +71,9 @@ class AdminCopilotView(generics.GenericAPIView):
             conversation_id=serializer.validated_data.get("conversation_id"),
         )
 
-        return Response({
-            "reply": result.reply,
-            "tool_calls_made": result.tool_calls_made,
-        })
+        return Response(
+            {
+                "reply": result.reply,
+                "tool_calls_made": result.tool_calls_made,
+            }
+        )

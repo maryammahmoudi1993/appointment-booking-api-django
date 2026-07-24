@@ -40,7 +40,7 @@ def _notify_appointment_created(appointment):
         notification_type="email",
         subject="Appointment Booked",
         body=f"Your appointment for {appointment.service.name} "
-             f"on {appointment.start_datetime:%Y-%m-%d %H:%M} has been booked.",
+        f"on {appointment.start_datetime:%Y-%m-%d %H:%M} has been booked.",
     )
     if appointment.business and appointment.business.email:
         _create_notification_record(
@@ -49,8 +49,8 @@ def _notify_appointment_created(appointment):
             notification_type="email",
             subject="New Appointment",
             body=f"New booking: {appointment.customer.get_full_name()} "
-                 f"for {appointment.service.name} "
-                 f"on {appointment.start_datetime:%Y-%m-%d %H:%M}.",
+            f"for {appointment.service.name} "
+            f"on {appointment.start_datetime:%Y-%m-%d %H:%M}.",
         )
 
     _queue_webhook(appointment, "appointment.created")
@@ -71,8 +71,8 @@ def _notify_status_change(appointment, old_status, new_status):
         notification_type="email",
         subject=subject,
         body=f"Your appointment for {appointment.service.name} "
-             f"on {appointment.start_datetime:%Y-%m-%d %H:%M} "
-             f"has been {new_status}.",
+        f"on {appointment.start_datetime:%Y-%m-%d %H:%M} "
+        f"has been {new_status}.",
     )
     _queue_webhook(appointment, f"appointment.{new_status}")
 
@@ -86,7 +86,7 @@ def _notify_reschedule(appointment):
         notification_type="email",
         subject="Appointment Rescheduled",
         body=f"Your appointment for {appointment.service.name} "
-             f"has been moved to {appointment.start_datetime:%Y-%m-%d %H:%M}.",
+        f"has been moved to {appointment.start_datetime:%Y-%m-%d %H:%M}.",
     )
     _queue_webhook(appointment, "appointment.rescheduled")
 
@@ -97,7 +97,8 @@ def _queue_webhook(appointment, event_type):
     if not appointment.business:
         return
     subs = WebhookSubscription.objects.filter(
-        business=appointment.business, is_active=True,
+        business=appointment.business,
+        is_active=True,
     )
     for sub in subs:
         if sub.events:

@@ -67,9 +67,11 @@ def _history_scores(customer_id: int, business_id: int | None) -> dict[int, floa
         return {}
 
     max_count = max(counts.values()) or 1
-    all_services = Service.objects.filter(
-        business_id=business_id
-    ).values_list("id", flat=True) if business_id else Service.objects.all().values_list("id", flat=True)
+    all_services = (
+        Service.objects.filter(business_id=business_id).values_list("id", flat=True)
+        if business_id
+        else Service.objects.all().values_list("id", flat=True)
+    )
 
     return {sid: counts.get(sid, 0) / max_count for sid in all_services}
 
@@ -89,9 +91,11 @@ def _rating_scores(business_id: int | None) -> dict[int, float]:
         .values_list("appointment__service_id", "avg_rating")
     )
 
-    all_services = Service.objects.filter(
-        business_id=business_id
-    ).values_list("id", flat=True) if business_id else Service.objects.all().values_list("id", flat=True)
+    all_services = (
+        Service.objects.filter(business_id=business_id).values_list("id", flat=True)
+        if business_id
+        else Service.objects.all().values_list("id", flat=True)
+    )
 
     return {sid: (ratings.get(sid, 0) or 0) / 5.0 for sid in all_services}
 
@@ -154,9 +158,11 @@ def _popularity_scores(business_id: int | None) -> dict[int, float]:
     max_count = max(counts.values()) or 1
     from apps.services.models import Service
 
-    all_services = Service.objects.filter(
-        business_id=business_id
-    ).values_list("id", flat=True) if business_id else Service.objects.all().values_list("id", flat=True)
+    all_services = (
+        Service.objects.filter(business_id=business_id).values_list("id", flat=True)
+        if business_id
+        else Service.objects.all().values_list("id", flat=True)
+    )
 
     return {sid: counts.get(sid, 0) / max_count for sid in all_services}
 
@@ -250,7 +256,9 @@ def recommend_services(
 
         parts = []
         if h > 0:
-            parts.append(f"you've booked this {round(h * 100)}% as often as your top service")
+            parts.append(
+                f"you've booked this {round(h * 100)}% as often as your top service"
+            )
         if r > 0:
             parts.append(f"rated {round(r * 5, 1)}/5 by customers")
         if a > 0:
@@ -260,15 +268,21 @@ def recommend_services(
         if rec > 0:
             parts.append(f"booked recently ({round(rec * 100)}% recency)")
 
-        explanation = "Recommended because: " + "; ".join(parts) + "." if parts else "No strong signals — ranked by default popularity."
+        explanation = (
+            "Recommended because: " + "; ".join(parts) + "."
+            if parts
+            else "No strong signals — ranked by default popularity."
+        )
 
-        scores.append(ServiceScore(
-            service_id=sid,
-            service_name=svc.name,
-            total_score=round(total, 4),
-            factors=factors,
-            explanation=explanation,
-        ))
+        scores.append(
+            ServiceScore(
+                service_id=sid,
+                service_name=svc.name,
+                total_score=round(total, 4),
+                factors=factors,
+                explanation=explanation,
+            )
+        )
 
     scores.sort(key=lambda s: s.total_score, reverse=True)
     return scores[:top_n]

@@ -10,9 +10,7 @@ from .models import Break, StaffProfile, TimeOff, WorkingHours
 SLOT_DURATION = 30
 
 
-def get_available_slots(
-    staff_id: int, target_date, business_settings=None
-):
+def get_available_slots(staff_id: int, target_date, business_settings=None):
     weekday = target_date.weekday()
 
     staff_profile = StaffProfile.objects.filter(user_id=staff_id).first()
@@ -37,9 +35,11 @@ def get_available_slots(
         end_datetime__date__gte=target_date,
     )
 
-    breaks = Break.objects.filter(
-        staff_profile=staff_profile, weekday=weekday
-    ) if staff_profile else Break.objects.none()
+    breaks = (
+        Break.objects.filter(staff_profile=staff_profile, weekday=weekday)
+        if staff_profile
+        else Break.objects.none()
+    )
 
     existing = Appointment.objects.filter(
         staff_id=staff_id,

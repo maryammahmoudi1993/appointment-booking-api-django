@@ -55,7 +55,7 @@ from .services import get_available_slots
 )
 class StaffProfileViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = StaffProfile.objects.select_related("user").prefetch_related(
-        "services_offered"
+        "services_offered", "breaks", "user__reviews_received"
     )
     serializer_class = StaffProfileSerializer
     http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]

@@ -1,5 +1,7 @@
 # 10 — Gap Analysis, Prioritized Change Plan & Roadmap
 
+> **Current-state addendum:** All original repository-side must-fix items are implemented, including green Ruff/CI commands, patched zero-vulnerability Python/npm dependencies, cancellation notice, analytics contract/pagination/N+1, ML evaluation, AI observability, dead newsletter removal, and expanded frontend tests. The public Render service still returns 404 and browser verification remains unavailable. Current score **83**. The remaining path is: (1) push/redeploy and verify, (2) run core Playwright journeys and the seven-viewport visual/accessibility audit with reference images, (3) add PostgreSQL concurrency CI and prompt-injection/tool-abuse evals, and (4) publish the demo video/case study. These external/integration proofs are required for an honest 90+.
+
 ## Gap analysis table (highest-priority items)
 
 | ID | Area | Expected | Current | Severity | Evidence | Effort | Acceptance criteria |

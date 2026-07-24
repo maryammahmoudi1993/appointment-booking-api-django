@@ -1,5 +1,7 @@
 # 07 — AI Authenticity & AI Engineering Audit
 
+> **Current-state addendum:** Replace “OpenAI” in the baseline with **Google Gemini**. The genuine 23-tool, ORM-grounded, confirmation-gated architecture remains. Tenant isolation, real customer chat wiring, stable/configurable model selection, and quota fallbacks are covered. Live customer/admin paths now record privacy-redacted interaction/tool metrics. `evaluate_no_show_model()` adds deterministic holdout precision, recall, F1, Brier, calibration error, and explicit real/synthetic provenance; the current synthetic result is published at `docs/ai/no-show-evaluation.md`. Current AI score is **10.75/12**. Deductions remain for synthetic data/cancellation-as-no-show labeling, absent prompt-injection/tool-abuse behavioral evals, and no persisted admin conversation history.
+
 This is the most important section for a developer positioning as an AI/Full-Stack Developer, so the standard applied here is strict: every README AI claim was checked against actual code, not accepted at face value.
 
 ## Claim-by-claim verdict

@@ -32,7 +32,14 @@ class LoyaltyRedemptionAdmin(admin.ModelAdmin):
 
 @admin.register(PromoCode)
 class PromoCodeAdmin(admin.ModelAdmin):
-    list_display = ("code", "discount_type", "discount_value", "is_active", "business", "created_at")
+    list_display = (
+        "code",
+        "discount_type",
+        "discount_value",
+        "is_active",
+        "business",
+        "created_at",
+    )
     list_filter = ("is_active", "discount_type", "business")
     search_fields = ("code", "description")
 

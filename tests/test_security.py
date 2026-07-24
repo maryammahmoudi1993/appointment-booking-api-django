@@ -5,7 +5,9 @@ from core.security import enforce_secret_key_configured
 
 
 class TestEnforceSecretKeyConfigured:
-    def test_raises_when_debug_false_and_secret_key_is_the_insecure_default(self, settings):
+    def test_raises_when_debug_false_and_secret_key_is_the_insecure_default(
+        self, settings
+    ):
         settings.DEBUG = False
         settings.SECRET_KEY = settings.INSECURE_DEFAULT_SECRET_KEY
         with pytest.raises(ImproperlyConfigured):

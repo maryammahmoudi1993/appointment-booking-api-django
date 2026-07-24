@@ -14,10 +14,14 @@ class Review(models.Model):
         "appointments.Appointment", on_delete=models.CASCADE, related_name="review"
     )
     customer = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews_written"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reviews_written",
     )
     staff = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reviews_received"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reviews_received",
     )
     rating = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)]
@@ -153,7 +157,9 @@ class SupportMessage(models.Model):
         null=True,
     )
     customer = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="support_messages"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="support_messages",
     )
     message = models.TextField()
     is_read = models.BooleanField(default=False)
@@ -165,4 +171,6 @@ class SupportMessage(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"Message from {self.customer.username} at {self.created_at:%Y-%m-%d %H:%M}"
+        return (
+            f"Message from {self.customer.username} at {self.created_at:%Y-%m-%d %H:%M}"
+        )

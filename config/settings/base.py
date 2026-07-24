@@ -173,15 +173,39 @@ SPECTACULAR_SETTINGS = {
     "TAGS": [
         {"name": "Auth", "description": "JWT authentication endpoints"},
         {"name": "Services", "description": "Service catalog management"},
-        {"name": "Staff", "description": "Staff profiles, availability, breaks, and time-off"},
-        {"name": "Appointments", "description": "Booking creation, lifecycle, reschedule, and audit log"},
-        {"name": "Reviews", "description": "Customer reviews for completed appointments"},
-        {"name": "Loyalty", "description": "Loyalty rewards, points balance, and redemptions"},
-        {"name": "Promotions", "description": "Promo codes, validation, and redemptions"},
+        {
+            "name": "Staff",
+            "description": "Staff profiles, availability, breaks, and time-off",
+        },
+        {
+            "name": "Appointments",
+            "description": "Booking creation, lifecycle, reschedule, and audit log",
+        },
+        {
+            "name": "Reviews",
+            "description": "Customer reviews for completed appointments",
+        },
+        {
+            "name": "Loyalty",
+            "description": "Loyalty rewards, points balance, and redemptions",
+        },
+        {
+            "name": "Promotions",
+            "description": "Promo codes, validation, and redemptions",
+        },
         {"name": "Support", "description": "Customer-to-admin support messaging"},
-        {"name": "Notifications", "description": "Notification outbox and delivery history"},
-        {"name": "Webhooks", "description": "Webhook subscriptions, delivery log, and event callbacks"},
-        {"name": "Analytics", "description": "Revenue, staff, service, and booking analytics"},
+        {
+            "name": "Notifications",
+            "description": "Notification outbox and delivery history",
+        },
+        {
+            "name": "Webhooks",
+            "description": "Webhook subscriptions, delivery log, and event callbacks",
+        },
+        {
+            "name": "Analytics",
+            "description": "Revenue, staff, service, and booking analytics",
+        },
     ],
 }
 
@@ -194,9 +218,7 @@ EMAIL_PORT = env("EMAIL_PORT", default=587, cast=int)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env("EMAIL_USE_TLS", default=True, cast=bool)
-DEFAULT_FROM_EMAIL = env(
-    "DEFAULT_FROM_EMAIL", default="noreply@bloomflow.app"
-)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@bloomflow.app")
 
 # CORS
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")

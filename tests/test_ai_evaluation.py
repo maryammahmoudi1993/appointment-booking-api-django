@@ -225,9 +225,9 @@ class TestEvaluateToolParams:
         assert evaluate_tool_params({"query": "hair"}, {"query": "hair"}) is True
 
     def test_partial_match(self):
-        assert evaluate_tool_params(
-            {"query": "hair"}, {"query": "hair styling"}
-        ) is True
+        assert (
+            evaluate_tool_params({"query": "hair"}, {"query": "hair styling"}) is True
+        )
 
     def test_missing_param(self):
         assert evaluate_tool_params({"query": "hair"}, {}) is False
@@ -242,8 +242,14 @@ class TestRunEvalSuite:
             return ["search_services"], {"query": message}
 
         cases = [
-            EvalCase(name="a", message="What services?", expected_tools=["search_services"]),
-            EvalCase(name="b", message="Do you have hair styling?", expected_tools=["search_services"]),
+            EvalCase(
+                name="a", message="What services?", expected_tools=["search_services"]
+            ),
+            EvalCase(
+                name="b",
+                message="Do you have hair styling?",
+                expected_tools=["search_services"],
+            ),
         ]
         results = run_eval_suite(mock_eval_fn, cases)
         assert len(results) == 2
@@ -275,16 +281,26 @@ class TestSummarizeResults:
     def test_summary(self):
         results = [
             EvalResult(
-                case_name="a", tools_called=["x"], tools_correct=True,
-                params_correct=True, passed=True,
+                case_name="a",
+                tools_called=["x"],
+                tools_correct=True,
+                params_correct=True,
+                passed=True,
             ),
             EvalResult(
-                case_name="b", tools_called=["y"], tools_correct=False,
-                params_correct=False, passed=False,
+                case_name="b",
+                tools_called=["y"],
+                tools_correct=False,
+                params_correct=False,
+                passed=False,
             ),
             EvalResult(
-                case_name="c", tools_called=[], tools_correct=False,
-                params_correct=False, passed=False, error="boom",
+                case_name="c",
+                tools_called=[],
+                tools_correct=False,
+                params_correct=False,
+                passed=False,
+                error="boom",
             ),
         ]
         summary = summarize_results(results)

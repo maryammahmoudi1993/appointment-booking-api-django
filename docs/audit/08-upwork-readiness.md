@@ -1,5 +1,7 @@
 # 08 — Upwork Client Readiness Review
 
+> **Current-state addendum:** The original source-level P0/P1 defects are fixed with regressions, repository-wide lint/format and all tests/builds pass, customer cancellation and analytics contracts are hardened, and AI observability/evaluation evidence is published. The hiring signal is now strong. The public proof remains the blocker: the advertised Render root/docs/health/schema still return 404 and browser/visual workflows are unverified. Verdict is **Yes with limitations** until the current commit is deployed and demonstrated.
+
 ## Direct answers
 
 1. **Does the project look like a real client product?** Yes, more than most portfolio projects — real multi-domain Django backend, real CI, real AI integration, real test suite. It is undermined by a non-functional live demo link and a few visible cross-tenant bugs a careful technical reviewer would find quickly.

@@ -4,7 +4,11 @@ from rest_framework import status
 from apps.business.models import Business, BusinessMembership
 from apps.engagement.models import LoyaltyReward, PromoCode, Review, SupportMessage
 from apps.staff.models import Break, TimeOff, WorkingHours
-from core.business import get_default_business, get_user_business, get_user_business_or_404
+from core.business import (
+    get_default_business,
+    get_user_business,
+    get_user_business_or_404,
+)
 from tests.factories import (
     AdminFactory,
     AppointmentFactory,
@@ -36,13 +40,18 @@ class TestBusinessIsolation:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 2
 
-    def test_cross_business_appointment_404(self, auth_client, customer, other_business):
+    def test_cross_business_appointment_404(
+        self, auth_client, customer, other_business
+    ):
         other_staff = StaffProfileFactory(business=other_business)
         appt = AppointmentFactory(
             customer=customer, staff=other_staff.user, business=other_business
         )
         response = auth_client.get(f"/api/appointments/{appt.id}/")
-        assert response.status_code in (status.HTTP_404_NOT_FOUND, status.HTTP_403_FORBIDDEN)
+        assert response.status_code in (
+            status.HTTP_404_NOT_FOUND,
+            status.HTTP_403_FORBIDDEN,
+        )
 
     def test_admin_sees_own_business_appointments_only(
         self, admin_client, admin_user, other_business
@@ -84,17 +93,13 @@ class TestBusinessMembership:
     def test_member_has_business_access(self, db):
         user = UserFactory()
         business = Business.objects.first()
-        BusinessMembership.objects.create(
-            user=user, business=business, role="customer"
-        )
+        BusinessMembership.objects.create(user=user, business=business, role="customer")
         assert business.memberships.filter(user=user).exists()
 
     def test_admin_membership_allows_management(self, db):
         user = AdminFactory()
         business = Business.objects.first()
-        BusinessMembership.objects.create(
-            user=user, business=business, role="admin"
-        )
+        BusinessMembership.objects.create(user=user, business=business, role="admin")
         assert business.memberships.filter(user=user, role="admin").exists()
 
     def test_customer_without_membership_still_has_business(self, customer, db):
@@ -129,8 +134,12 @@ class TestBusinessUtilities:
 class TestEngagementBusinessIsolation:
     def test_other_business_rewards_not_visible(self, api_client, other_business):
         business = get_default_business()
-        LoyaltyReward.objects.create(name="Reward A", points_cost=100, business=business)
-        LoyaltyReward.objects.create(name="Reward B", points_cost=200, business=other_business)
+        LoyaltyReward.objects.create(
+            name="Reward A", points_cost=100, business=business
+        )
+        LoyaltyReward.objects.create(
+            name="Reward B", points_cost=200, business=other_business
+        )
         # Authenticate as a user in the default business
         user = CustomerFactory()
         BusinessMembership.objects.create(user=user, business=business, role="customer")
@@ -144,10 +153,22 @@ class TestEngagementBusinessIsolation:
         staff = StaffProfileFactory().user
         cust1 = CustomerFactory()
         cust2 = CustomerFactory()
-        appt1 = AppointmentFactory(customer=cust1, staff=staff, business=business, status="completed")
-        appt2 = AppointmentFactory(customer=cust2, staff=staff, business=other_business, status="completed")
-        Review.objects.create(appointment=appt1, customer=cust1, staff=staff, rating=5, business=business)
-        Review.objects.create(appointment=appt2, customer=cust2, staff=staff, rating=4, business=other_business)
+        appt1 = AppointmentFactory(
+            customer=cust1, staff=staff, business=business, status="completed"
+        )
+        appt2 = AppointmentFactory(
+            customer=cust2, staff=staff, business=other_business, status="completed"
+        )
+        Review.objects.create(
+            appointment=appt1, customer=cust1, staff=staff, rating=5, business=business
+        )
+        Review.objects.create(
+            appointment=appt2,
+            customer=cust2,
+            staff=staff,
+            rating=4,
+            business=other_business,
+        )
         user = CustomerFactory()
         BusinessMembership.objects.create(user=user, business=business, role="customer")
         api_client.force_authenticate(user=user)
@@ -157,8 +178,15 @@ class TestEngagementBusinessIsolation:
 
     def test_other_business_promos_not_visible(self, api_client, other_business):
         business = get_default_business()
-        PromoCode.objects.create(code="PROMO1", discount_type="percent", discount_value=10, business=business)
-        PromoCode.objects.create(code="PROMO2", discount_type="fixed", discount_value=5, business=other_business)
+        PromoCode.objects.create(
+            code="PROMO1", discount_type="percent", discount_value=10, business=business
+        )
+        PromoCode.objects.create(
+            code="PROMO2",
+            discount_type="fixed",
+            discount_value=5,
+            business=other_business,
+        )
         user = AdminFactory()
         BusinessMembership.objects.create(user=user, business=business, role="admin")
         api_client.force_authenticate(user=user)
@@ -166,12 +194,16 @@ class TestEngagementBusinessIsolation:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
 
-    def test_other_business_support_messages_not_visible(self, api_client, other_business):
+    def test_other_business_support_messages_not_visible(
+        self, api_client, other_business
+    ):
         business = get_default_business()
         cust1 = CustomerFactory()
         cust2 = CustomerFactory()
         SupportMessage.objects.create(customer=cust1, message="help", business=business)
-        SupportMessage.objects.create(customer=cust2, message="other help", business=other_business)
+        SupportMessage.objects.create(
+            customer=cust2, message="other help", business=other_business
+        )
         admin = AdminFactory()
         BusinessMembership.objects.create(user=admin, business=business, role="admin")
         api_client.force_authenticate(user=admin)

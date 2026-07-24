@@ -80,7 +80,7 @@ def _exponential_smoothing_forecast(
 
     if n >= 2:
         trend_vals = np.diff(arr)
-        trend = float(np.mean(trend_vals[-min(10, n):]))
+        trend = float(np.mean(trend_vals[-min(10, n) :]))
     else:
         trend = 0.0
 
@@ -172,12 +172,14 @@ def forecast_revenue(
                 future_year += 1
             date_str = f"{future_year:04d}-{future_month:02d}"
 
-        points.append(ForecastPoint(
-            date=date_str,
-            predicted_revenue=pred,
-            lower_bound=lower,
-            upper_bound=upper,
-        ))
+        points.append(
+            ForecastPoint(
+                date=date_str,
+                predicted_revenue=pred,
+                lower_bound=lower,
+                upper_bound=upper,
+            )
+        )
 
     total_forecast = round(sum(p.predicted_revenue for p in points), 2)
 

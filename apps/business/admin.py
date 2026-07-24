@@ -12,7 +12,12 @@ class BusinessAdmin(admin.ModelAdmin):
 
 @admin.register(BusinessSettings)
 class BusinessSettingsAdmin(admin.ModelAdmin):
-    list_display = ["business", "slot_interval_minutes", "loyalty_enabled", "ai_enabled"]
+    list_display = [
+        "business",
+        "slot_interval_minutes",
+        "loyalty_enabled",
+        "ai_enabled",
+    ]
 
 
 @admin.register(BusinessMembership)

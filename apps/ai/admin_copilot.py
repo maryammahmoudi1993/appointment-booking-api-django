@@ -8,10 +8,12 @@ admin-specific analytics tools. Only accessible to admin-role users.
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass, field
 
 from .gemini_client import MODEL, build_tool, provider_error_reply
 from .gemini_client import get_client as _get_client
+from .observability import CopilotInteraction, ToolCallRecord, collector
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,9 @@ class AdminCopilotResponse:
     tool_calls_made: list[str] = field(default_factory=list)
 
 
-def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotResponse:
+def _admin_chat_impl(
+    message: str, user=None, conversation_id=None
+) -> AdminCopilotResponse:
     """
     Process an admin analytics query using tool-calling.
 
@@ -121,7 +125,8 @@ def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotRes
 
             response_parts.append(
                 types.Part.from_function_response(
-                    name=fn_name, response=result if result else {"detail": "No data available."}
+                    name=fn_name,
+                    response=result if result else {"detail": "No data available."},
                 )
             )
 
@@ -132,3 +137,35 @@ def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotRes
         "Please try a simpler question.",
         tool_calls_made=tool_calls_made,
     )
+
+
+def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotResponse:
+    """Run the analytics copilot and record privacy-limited operational metrics."""
+    started = time.monotonic()
+    response = _admin_chat_impl(
+        message=message,
+        user=user,
+        conversation_id=conversation_id,
+    )
+    records = [
+        ToolCallRecord(
+            tool_name=tool_name,
+            args={},
+            result=None,
+            error=None,
+            duration_ms=0,
+        )
+        for tool_name in response.tool_calls_made
+    ]
+    collector.record_interaction(
+        CopilotInteraction(
+            user_id=getattr(user, "id", None),
+            message="[redacted]",
+            reply="[redacted]",
+            tool_calls=records,
+            total_duration_ms=(time.monotonic() - started) * 1000,
+            rounds=len(records),
+            is_admin=True,
+        )
+    )
+    return response

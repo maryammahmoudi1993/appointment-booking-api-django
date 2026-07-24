@@ -88,4 +88,6 @@ class AppointmentAuditLog(models.Model):
         verbose_name_plural = "appointment audit logs"
 
     def __str__(self) -> str:
-        return f"{self.appointment.id} - {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"
+        return (
+            f"{self.appointment.id} - {self.action} @ {self.created_at:%Y-%m-%d %H:%M}"
+        )

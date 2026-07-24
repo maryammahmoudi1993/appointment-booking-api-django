@@ -367,7 +367,7 @@ export const supportApi = {
 
 export interface CopilotResponse {
   reply: string;
-  tool_calls_made: string[];
+  tool_calls_made: (string | { tool: string; args: Record<string, unknown> })[];
   conversation_id: string;
 }
 
@@ -400,22 +400,23 @@ export interface RevenueAnalytics {
 
 export interface StaffAnalyticsEntry {
   staff_id: number;
-  name: string;
+  staff_name: string;
   total_bookings: number;
-  completed: number;
-  revenue: string;
+  completed_bookings: number;
+  total_revenue: string;
   average_rating: number;
   review_count: number;
 }
 
 export interface ServiceAnalyticsEntry {
   service_id: number;
-  name: string;
+  service_name: string;
   total_bookings: number;
-  completed: number;
-  revenue: string;
+  completed_bookings: number;
+  total_revenue: string;
   average_rating: number;
-  duration_minutes: number;
+  review_count: number;
+  average_duration: number;
 }
 
 export interface BookingAnalytics {
@@ -431,6 +432,6 @@ export interface BookingAnalytics {
 export const analyticsApi = {
   revenue: () => api.get<RevenueAnalytics>("/analytics/revenue/"),
   staff: () => api.get<PaginatedResponse<StaffAnalyticsEntry>>("/analytics/staff/"),
-  service: () => api.get<PaginatedResponse<ServiceAnalyticsEntry>>("/analytics/service/"),
+  service: () => api.get<PaginatedResponse<ServiceAnalyticsEntry>>("/analytics/services/"),
   bookings: () => api.get<BookingAnalytics>("/analytics/bookings/"),
 };

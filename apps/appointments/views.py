@@ -1,19 +1,22 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.business.models import BusinessSettings
 from apps.engagement.models import PromoRedemption
 from apps.engagement.services import (
     PromoCodeError,
     compute_discount,
     validate_promo_code,
 )
-
 from core.mixins import BusinessScopedMixin
 
-from .models import Appointment, AppointmentAuditLog
+from .models import Appointment
 from .permissions import IsOwnerOrStaffOrAdmin
 from .serializers import (
     AppointmentAuditLogSerializer,
@@ -159,6 +162,26 @@ class AppointmentViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
                 {"detail": f"Cannot cancel a {appointment.status} appointment."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if request.user.role == "customer":
+            cancellation_hours = (
+                BusinessSettings.objects.filter(business=appointment.business)
+                .values_list("cancellation_window_hours", flat=True)
+                .first()
+            )
+            if cancellation_hours is not None:
+                deadline = appointment.start_datetime - timedelta(
+                    hours=cancellation_hours
+                )
+                if timezone.now() > deadline:
+                    return Response(
+                        {
+                            "detail": (
+                                "This appointment can no longer be cancelled online. "
+                                f"Cancellations require {cancellation_hours} hours' notice."
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
         appointment.status = "cancelled"
         appointment._changed_by = request.user
         appointment.save(update_fields=["status", "updated_at"])

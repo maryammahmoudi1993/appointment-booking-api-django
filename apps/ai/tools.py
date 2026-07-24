@@ -241,9 +241,7 @@ def execute_create_booking_draft(**kwargs):
     start_time = kwargs.get("start_time")
 
     if not all([service_id, staff_id, date_str, start_time]):
-        return {
-            "error": "service_id, staff_id, date, and start_time are required."
-        }
+        return {"error": "service_id, staff_id, date, and start_time are required."}
 
     try:
         service = Service.objects.get(id=service_id, is_active=True)
@@ -261,7 +259,9 @@ def execute_create_booking_draft(**kwargs):
     parts = start_time.split(":")
     hour, minute = int(parts[0]), int(parts[1])
     start_dt = timezone.make_aware(
-        timezone.datetime.combine(target_date, timezone.datetime.min.time().replace(hour=hour, minute=minute))
+        timezone.datetime.combine(
+            target_date, timezone.datetime.min.time().replace(hour=hour, minute=minute)
+        )
     )
     end_dt = start_dt + timedelta(minutes=service.duration_minutes)
 
@@ -271,9 +271,7 @@ def execute_create_booking_draft(**kwargs):
     conversation = None
     if conversation_id:
         try:
-            conversation = Conversation.objects.get(
-                id=conversation_id, user=user
-            )
+            conversation = Conversation.objects.get(id=conversation_id, user=user)
         except Conversation.DoesNotExist:
             pass
 
@@ -289,8 +287,14 @@ def execute_create_booking_draft(**kwargs):
         expires_at=timezone.now() + timedelta(minutes=DRAFT_EXPIRY_MINUTES),
     )
 
-    staff_sp = StaffProfile.objects.filter(user_id=staff_id).select_related("user").first()
-    staff_name = staff_sp.user.get_full_name() or staff_sp.user.username if staff_sp else "Unknown"
+    staff_sp = (
+        StaffProfile.objects.filter(user_id=staff_id).select_related("user").first()
+    )
+    staff_name = (
+        staff_sp.user.get_full_name() or staff_sp.user.username
+        if staff_sp
+        else "Unknown"
+    )
 
     return {
         "draft_id": str(draft.id),
@@ -319,9 +323,9 @@ def execute_get_booking_draft(**kwargs):
         return {"error": "draft_id is required."}
 
     try:
-        draft = BookingDraft.objects.select_related(
-            "service", "staff", "user"
-        ).get(id=draft_id)
+        draft = BookingDraft.objects.select_related("service", "staff", "user").get(
+            id=draft_id
+        )
     except BookingDraft.DoesNotExist:
         return {"error": "Draft not found."}
 
@@ -357,9 +361,9 @@ def execute_confirm_booking_draft(**kwargs):
         return {"error": "Authentication required."}
 
     try:
-        draft = BookingDraft.objects.select_related(
-            "service", "staff"
-        ).get(id=draft_id, user=user)
+        draft = BookingDraft.objects.select_related("service", "staff").get(
+            id=draft_id, user=user
+        )
     except BookingDraft.DoesNotExist:
         return {"error": "Draft not found."}
 
@@ -424,7 +428,9 @@ def execute_create_reschedule_draft(**kwargs):
     parts = new_start_time.split(":")
     hour, minute = int(parts[0]), int(parts[1])
     new_start = timezone.make_aware(
-        timezone.datetime.combine(target_date, timezone.datetime.min.time().replace(hour=hour, minute=minute))
+        timezone.datetime.combine(
+            target_date, timezone.datetime.min.time().replace(hour=hour, minute=minute)
+        )
     )
     new_end = new_start + timedelta(minutes=appt.service.duration_minutes)
 
@@ -647,9 +653,9 @@ def execute_predict_no_show(user, **kwargs):
     try:
         from apps.appointments.models import Appointment
 
-        appt = Appointment.objects.select_related(
-            "customer", "staff", "service"
-        ).get(id=appointment_id)
+        appt = Appointment.objects.select_related("customer", "staff", "service").get(
+            id=appointment_id
+        )
     except Appointment.DoesNotExist:
         return {"error": f"Appointment #{appointment_id} not found."}
 
@@ -728,9 +734,13 @@ def execute_get_revenue_analytics(user, **kwargs):
 
     qs = qs.select_related("service")
 
-    total_revenue = qs.aggregate(total=Sum("service__price"))["total"] or Decimal("0.00")
+    total_revenue = qs.aggregate(total=Sum("service__price"))["total"] or Decimal(
+        "0.00"
+    )
     total_bookings = qs.count()
-    average_ticket = total_revenue / total_bookings if total_bookings else Decimal("0.00")
+    average_ticket = (
+        total_revenue / total_bookings if total_bookings else Decimal("0.00")
+    )
 
     monthly = (
         qs.annotate(period=TruncMonth("start_datetime"))
@@ -769,9 +779,11 @@ def execute_get_staff_analytics(user, **kwargs):
     if business:
         qs = qs.filter(business=business)
 
-    staff_ids = StaffProfile.objects.filter(business=business).values_list(
-        "user_id", flat=True
-    ) if business else StaffProfile.objects.all().values_list("user_id", flat=True)
+    staff_ids = (
+        StaffProfile.objects.filter(business=business).values_list("user_id", flat=True)
+        if business
+        else StaffProfile.objects.all().values_list("user_id", flat=True)
+    )
 
     staff_data = (
         qs.filter(staff_id__in=staff_ids)
@@ -797,7 +809,8 @@ def execute_get_staff_analytics(user, **kwargs):
         "staff": [
             {
                 "staff_id": s["staff_id"],
-                "name": f"{s['staff__first_name']} {s['staff__last_name']}".strip() or s["staff__username"],
+                "name": f"{s['staff__first_name']} {s['staff__last_name']}".strip()
+                or s["staff__username"],
                 "total_bookings": s["total_bookings"],
                 "completed": s["completed"],
                 "revenue": str(s["revenue"] or Decimal("0.00")),
@@ -957,17 +970,15 @@ def execute_get_staff_performance(user, **kwargs):
     total = qs.count()
     completed = qs.filter(status="completed").count()
     cancelled = qs.filter(status="cancelled").count()
-    revenue = qs.filter(status="completed").aggregate(
-        total=Sum("service__price")
-    )["total"] or Decimal("0.00")
+    revenue = qs.filter(status="completed").aggregate(total=Sum("service__price"))[
+        "total"
+    ] or Decimal("0.00")
 
     review_qs = Review.objects.filter(staff_id=staff_id)
     if business:
         review_qs = review_qs.filter(business=business)
 
-    review_stats = review_qs.aggregate(
-        avg_rating=Avg("rating"), count=Count("id")
-    )
+    review_stats = review_qs.aggregate(avg_rating=Avg("rating"), count=Count("id"))
 
     service_breakdown = (
         qs.filter(status="completed")
@@ -986,7 +997,11 @@ def execute_get_staff_performance(user, **kwargs):
         "average_rating": round(review_stats.get("avg_rating", 0) or 0, 2),
         "review_count": review_stats.get("count", 0),
         "top_services": [
-            {"name": s["service__name"], "bookings": s["count"], "revenue": str(s["rev"] or Decimal("0.00"))}
+            {
+                "name": s["service__name"],
+                "bookings": s["count"],
+                "revenue": str(s["rev"] or Decimal("0.00")),
+            }
             for s in service_breakdown[:5]
         ],
     }
@@ -1037,8 +1052,14 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "query": {"type": "string", "description": "Search term for service name."},
-                "category": {"type": "string", "description": "Filter by service category."},
+                "query": {
+                    "type": "string",
+                    "description": "Search term for service name.",
+                },
+                "category": {
+                    "type": "string",
+                    "description": "Filter by service category.",
+                },
             },
             "required": [],
         },
@@ -1062,7 +1083,10 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "service_name": {"type": "string", "description": "Filter staff who offer this service."},
+                "service_name": {
+                    "type": "string",
+                    "description": "Filter staff who offer this service.",
+                },
             },
             "required": [],
         },
@@ -1074,7 +1098,10 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "service_id": {"type": "integer", "description": "The service ID to find staff for."},
+                "service_id": {
+                    "type": "integer",
+                    "description": "The service ID to find staff for.",
+                },
             },
             "required": ["service_id"],
         },
@@ -1091,7 +1118,10 @@ TOOL_DEFINITIONS = [
             "properties": {
                 "service_id": {"type": "integer", "description": "The service ID."},
                 "date": {"type": "string", "description": "Date in YYYY-MM-DD format."},
-                "staff_id": {"type": "integer", "description": "Optional: specific staff member ID."},
+                "staff_id": {
+                    "type": "integer",
+                    "description": "Optional: specific staff member ID.",
+                },
             },
             "required": ["service_id", "date"],
         },
@@ -1129,10 +1159,19 @@ TOOL_DEFINITIONS = [
             "type": "object",
             "properties": {
                 "service_id": {"type": "integer", "description": "The service ID."},
-                "staff_id": {"type": "integer", "description": "The staff member's user ID."},
+                "staff_id": {
+                    "type": "integer",
+                    "description": "The staff member's user ID.",
+                },
                 "date": {"type": "string", "description": "Date in YYYY-MM-DD format."},
-                "start_time": {"type": "string", "description": "Start time in HH:MM format."},
-                "conversation_id": {"type": "string", "description": "Optional conversation UUID."},
+                "start_time": {
+                    "type": "string",
+                    "description": "Start time in HH:MM format.",
+                },
+                "conversation_id": {
+                    "type": "string",
+                    "description": "Optional conversation UUID.",
+                },
             },
             "required": ["service_id", "staff_id", "date", "start_time"],
         },
@@ -1159,7 +1198,10 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "draft_id": {"type": "string", "description": "The draft UUID to confirm."},
+                "draft_id": {
+                    "type": "string",
+                    "description": "The draft UUID to confirm.",
+                },
             },
             "required": ["draft_id"],
         },
@@ -1171,10 +1213,22 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "appointment_id": {"type": "integer", "description": "The appointment to reschedule."},
-                "new_date": {"type": "string", "description": "New date in YYYY-MM-DD format."},
-                "new_start_time": {"type": "string", "description": "New start time in HH:MM format."},
-                "conversation_id": {"type": "string", "description": "Optional conversation UUID."},
+                "appointment_id": {
+                    "type": "integer",
+                    "description": "The appointment to reschedule.",
+                },
+                "new_date": {
+                    "type": "string",
+                    "description": "New date in YYYY-MM-DD format.",
+                },
+                "new_start_time": {
+                    "type": "string",
+                    "description": "New start time in HH:MM format.",
+                },
+                "conversation_id": {
+                    "type": "string",
+                    "description": "Optional conversation UUID.",
+                },
             },
             "required": ["appointment_id", "new_date", "new_start_time"],
         },
@@ -1186,7 +1240,10 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "draft_id": {"type": "string", "description": "The reschedule draft UUID."},
+                "draft_id": {
+                    "type": "string",
+                    "description": "The reschedule draft UUID.",
+                },
             },
             "required": ["draft_id"],
         },
@@ -1198,8 +1255,14 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "appointment_id": {"type": "integer", "description": "The appointment to cancel."},
-                "conversation_id": {"type": "string", "description": "Optional conversation UUID."},
+                "appointment_id": {
+                    "type": "integer",
+                    "description": "The appointment to cancel.",
+                },
+                "conversation_id": {
+                    "type": "string",
+                    "description": "Optional conversation UUID.",
+                },
             },
             "required": ["appointment_id"],
         },
@@ -1211,7 +1274,10 @@ TOOL_DEFINITIONS = [
         "parameters": {
             "type": "object",
             "properties": {
-                "draft_id": {"type": "string", "description": "The cancellation draft UUID."},
+                "draft_id": {
+                    "type": "string",
+                    "description": "The cancellation draft UUID.",
+                },
             },
             "required": ["draft_id"],
         },

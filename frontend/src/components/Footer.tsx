@@ -61,11 +61,6 @@ export default function Footer() {
               Premium beauty and wellness experiences, crafted with care.
               Where luxury meets expertise.
             </p>
-            <form className="mt-5 flex overflow-hidden rounded-full border border-white/20 bg-white/10" onSubmit={(event) => event.preventDefault()}>
-              <label className="sr-only" htmlFor="footer-email">Email address</label>
-              <input id="footer-email" type="email" placeholder="Enter your email…" className="min-w-0 flex-1 bg-transparent px-4 py-2.5 text-sm text-white placeholder:text-white/45 focus:outline-none" />
-              <button className="px-4 text-white" aria-label="Join salon updates">→</button>
-            </form>
             <div className="mt-6 flex gap-4">
               {socialLinks.map((social) => (
                 <a

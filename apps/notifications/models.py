@@ -53,13 +53,17 @@ class WebhookSubscription(models.Model):
         related_name="webhook_subscriptions",
     )
     url = models.URLField(max_length=500)
-    secret = models.CharField(max_length=255, blank=True,
-                               help_text="HMAC signing secret. Leave blank to auto-generate.")
+    secret = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="HMAC signing secret. Leave blank to auto-generate.",
+    )
     is_active = models.BooleanField(default=True)
     events = models.CharField(
-        max_length=500, blank=True,
+        max_length=500,
+        blank=True,
         help_text="Comma-separated event types (e.g. appointment.created,appointment.cancelled). "
-                  "Leave blank to receive all events."
+        "Leave blank to receive all events.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

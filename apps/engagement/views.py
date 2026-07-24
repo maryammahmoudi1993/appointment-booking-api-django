@@ -44,7 +44,9 @@ from .services import PromoCodeError, validate_promo_code
     ),
 )
 class ReviewViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
-    queryset = Review.objects.select_related("customer", "staff", "appointment__service")
+    queryset = Review.objects.select_related(
+        "customer", "staff", "appointment__service"
+    )
     serializer_class = ReviewSerializer
     http_method_names = ["get", "post", "delete", "head", "options"]
 
@@ -103,7 +105,9 @@ class LoyaltyRewardViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
             )
         business = self.get_business()
         redemption = LoyaltyRedemption.objects.create(
-            customer=request.user, reward=reward, points_spent=reward.points_cost,
+            customer=request.user,
+            reward=reward,
+            points_spent=reward.points_cost,
             business=business,
         )
         return Response(
@@ -119,9 +123,9 @@ def _loyalty_balance(user) -> int:
         or 0
     )
     spent = (
-        LoyaltyRedemption.objects.filter(customer=user).aggregate(total=Sum("points_spent"))[
-            "total"
-        ]
+        LoyaltyRedemption.objects.filter(customer=user).aggregate(
+            total=Sum("points_spent")
+        )["total"]
         or 0
     )
     return earned - spent
@@ -136,9 +140,13 @@ class LoyaltySummaryView(APIView):
     permission_classes = [IsAuthenticated, IsCustomerRole]
 
     def get(self, request):
-        earned_appointments = Appointment.objects.filter(
-            customer=request.user, status="completed", points_earned__gt=0
-        ).select_related("service").order_by("-start_datetime")
+        earned_appointments = (
+            Appointment.objects.filter(
+                customer=request.user, status="completed", points_earned__gt=0
+            )
+            .select_related("service")
+            .order_by("-start_datetime")
+        )
         redemptions = LoyaltyRedemption.objects.filter(
             customer=request.user
         ).select_related("reward")
@@ -163,7 +171,9 @@ class LoyaltySummaryView(APIView):
 
 @extend_schema_view(
     list=extend_schema(tags=["Promotions"], summary="List promo campaigns (admin)"),
-    create=extend_schema(tags=["Promotions"], summary="Create a promo campaign (admin)"),
+    create=extend_schema(
+        tags=["Promotions"], summary="Create a promo campaign (admin)"
+    ),
 )
 class PromoCodeViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     queryset = PromoCode.objects.all()
@@ -208,7 +218,9 @@ class PromoCodeViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     ),
 )
 class PromoRedemptionViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
-    queryset = PromoRedemption.objects.select_related("promo", "customer", "appointment")
+    queryset = PromoRedemption.objects.select_related(
+        "promo", "customer", "appointment"
+    )
     serializer_class = PromoRedemptionSerializer
     http_method_names = ["get", "head", "options"]
 
@@ -259,7 +271,12 @@ class SupportMessageViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
         tags=["Support"],
         summary="Reply to a support message",
         description="Admin only.",
-        request={"application/json": {"type": "object", "properties": {"reply": {"type": "string"}}}},
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {"reply": {"type": "string"}},
+            }
+        },
         responses={200: SupportMessageSerializer},
     )
     @action(detail=True, methods=["post"], url_path="reply")
@@ -268,7 +285,8 @@ class SupportMessageViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
         reply_text = request.data.get("reply", "").strip()
         if not reply_text:
             return Response(
-                {"detail": "Reply text is required."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Reply text is required."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         message.admin_reply = reply_text
         message.replied_at = timezone.now()
