@@ -16,7 +16,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"), overrides=False)
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="unsafe-dev-key-change-in-production")
+# Kept as a fallback so management commands (collectstatic, migrate, etc.)
+# never crash during local dev or an image build step where the real
+# runtime secret may not yet be injected. This is NOT itself the safety
+# check — see core.security.enforce_secret_key_configured(), called from
+# wsgi.py/asgi.py, which refuses to actually *serve* traffic if DEBUG is
+# False and SECRET_KEY still equals this sentinel value.
+INSECURE_DEFAULT_SECRET_KEY = "unsafe-dev-key-change-in-production"
+SECRET_KEY = env("DJANGO_SECRET_KEY", default=INSECURE_DEFAULT_SECRET_KEY)
 
 DEBUG = env("DJANGO_DEBUG")
 
