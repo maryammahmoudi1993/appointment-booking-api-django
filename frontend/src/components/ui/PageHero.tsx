@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import botanicalBranch from "../../assets/landing/botanical-branch.webp";
+import botanicalBranch from "../../assets/landing/botanical-branch-clean.png";
 
 interface PageHeroProps {
   eyebrow: string;
