@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { servicesApi, type Service } from "../api/client";
 import { imageForService } from "../utils/serviceImage";
 import PageHero from "../components/ui/PageHero";
-import facialIcon from "../assets/landing/icon-facial-care.webp";
-import hairIcon from "../assets/landing/icon-hair-styling.webp";
-import nailIcon from "../assets/landing/icon-nail-polish.webp";
-import spaIcon from "../assets/landing/icon-spa-relax.webp";
-import makeupIcon from "../assets/landing/icon-makeup.webp";
+import facialIcon from "../assets/landing/icon-facial-care-clean.webp";
+import hairIcon from "../assets/landing/icon-hair-styling-clean.webp";
+import nailIcon from "../assets/landing/icon-nail-polish-clean.webp";
+import spaIcon from "../assets/landing/icon-spa-relax-clean.webp";
+import allServicesIcon from "../assets/landing/icon-all-services-clean.webp";
 
 const filters = [
-  { key: "all", label: "All services", icon: makeupIcon, terms: [] },
+  { key: "all", label: "All services", icon: allServicesIcon, terms: [] },
   { key: "hair", label: "Hair", icon: hairIcon, terms: ["hair", "cut", "style", "color", "beard"] },
   { key: "facial", label: "Facials", icon: facialIcon, terms: ["facial", "skin", "brow"] },
   { key: "nails", label: "Nails", icon: nailIcon, terms: ["nail", "manicure", "pedicure"] },
