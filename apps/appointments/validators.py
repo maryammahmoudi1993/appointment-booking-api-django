@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db.models import Q
@@ -87,12 +87,37 @@ def validate_booking(
 
         raise DuringTimeOff()
 
-    break_conflict = Break.objects.filter(
-        staff_profile__user_id=staff_id,
-        weekday=weekday,
-        start_time__lt=end_datetime,
-        end_time__gt=start_datetime,
-    ).exists()
+    # Break.start_time/end_time are TimeField values representing the
+    # staff's LOCAL wall-clock break hours. Comparing them directly against
+    # start_datetime/end_datetime (aware datetimes) would make Django coerce
+    # the aware value down to a naive .time() — silently using the UTC hour
+    # instead of the staff's actual local hour for any non-UTC business. Build
+    # aware datetimes for the break window on the appointment's date, in the
+    # staff's effective timezone, and compare datetime-to-datetime instead.
+    from zoneinfo import ZoneInfo
+
+    staff_profile = StaffProfile.objects.filter(user_id=staff_id).first()
+    staff_tz = ZoneInfo("UTC")
+    if staff_profile:
+        try:
+            staff_tz = ZoneInfo(staff_profile.effective_timezone())
+        except (KeyError, TypeError):
+            pass
+
+    break_conflict = False
+    if staff_profile:
+        appt_date = timezone.localtime(start_datetime, staff_tz).date()
+        for br in Break.objects.filter(staff_profile=staff_profile, weekday=weekday):
+            br_start = timezone.make_aware(
+                datetime.combine(appt_date, br.start_time), staff_tz
+            )
+            br_end = timezone.make_aware(
+                datetime.combine(appt_date, br.end_time), staff_tz
+            )
+            if start_datetime < br_end and end_datetime > br_start:
+                break_conflict = True
+                break
+
     if break_conflict:
         from core.exceptions import DuringTimeOff
 

@@ -85,6 +85,54 @@ class TestSchedulingBuffers:
 
 
 @pytest.mark.django_db
+class TestSchedulingBreakTimezone:
+    def test_break_correctly_enforced_for_non_utc_staff(self, db):
+        """Regression test: the break-conflict check used to compare
+        Break.start_time/end_time (local wall-clock TimeFields) directly
+        against aware UTC datetimes, which Django silently reduces to the
+        UTC hour-of-day — mis-enforcing breaks for any non-UTC staff. A
+        staff member on a fixed UTC-5 timezone with a 12:00-13:00 LOCAL
+        lunch break must be blocked from booking at 17:15 UTC (=12:15
+        local), which the old UTC-hour comparison would have missed
+        entirely (17:15 is nowhere near the literal 12:00-13:00 window)."""
+        from datetime import time as time_cls
+        from zoneinfo import ZoneInfo
+
+        from apps.staff.models import Break as BreakModel
+
+        staff = StaffFactory()
+        service = ServiceFactory(duration_minutes=30)
+        StaffProfileFactory(user=staff, timezone="Etc/GMT+5")
+        WorkingHoursFactory(staff=staff, weekday=0, start_time="09:00", end_time="23:00")
+        profile = staff.staff_profile
+        BreakModel.objects.create(
+            staff_profile=profile,
+            weekday=0,
+            start_time="12:00",
+            end_time="13:00",
+            label="Lunch",
+        )
+
+        target = _next_weekday(0)
+        # 17:15-17:45 UTC == 12:15-12:45 local (Etc/GMT+5 == UTC-5) — inside
+        # the local lunch break, must be rejected.
+        during_break_start = timezone.make_aware(
+            timezone.datetime.combine(target, time_cls(17, 15)), ZoneInfo("UTC")
+        )
+        during_break_end = during_break_start + timedelta(minutes=30)
+        with pytest.raises(DuringTimeOff):
+            validate_booking(staff.id, service.id, during_break_start, during_break_end)
+
+        # 14:15-14:45 UTC == 09:15-09:45 local — outside the lunch break,
+        # must be allowed (sanity check the fix isn't overly broad).
+        outside_break_start = timezone.make_aware(
+            timezone.datetime.combine(target, time_cls(14, 15)), ZoneInfo("UTC")
+        )
+        outside_break_end = outside_break_start + timedelta(minutes=30)
+        validate_booking(staff.id, service.id, outside_break_start, outside_break_end)
+
+
+@pytest.mark.django_db
 class TestSchedulingBreaks:
     def test_break_prevents_booking(self, db):
         from apps.staff.models import Break as BreakModel
