@@ -515,6 +515,25 @@ class TestCopilotService:
         assert "not configured" in result.reply
 
     @patch("apps.ai.copilot._get_client")
+    def test_provider_error_returns_graceful_fallback_not_500(self, mock_get_client, settings):
+        """Regression test: an invalid/rejected API key, rate limit, or any
+        other OpenAI SDK exception used to propagate uncaught all the way
+        to an Internal Server Error. It must now degrade to a friendly
+        CopilotResponse instead."""
+        settings.OPENAI_API_KEY = "sk-test"
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_client.chat.completions.create.side_effect = Exception(
+            "Error code: 401 - invalid_api_key"
+        )
+
+        from apps.ai.copilot import chat
+
+        result = chat("Hi", user=None)
+        assert "trouble reaching" in result.reply
+        assert "401" not in result.reply
+
+    @patch("apps.ai.copilot._get_client")
     def test_simple_text_response(self, mock_get_client, settings):
         settings.OPENAI_API_KEY = "sk-test"
         mock_client = MagicMock()
@@ -736,6 +755,24 @@ class TestAdminCopilotView:
 
             _, kwargs = mock_chat.call_args
             assert kwargs.get("user") == admin_user
+
+    @patch("openai.OpenAI")
+    def test_admin_chat_provider_error_returns_graceful_fallback(self, mock_openai_cls, settings):
+        """Regression test: an OpenAI SDK exception (invalid key, rate limit,
+        network error) used to propagate uncaught to a 500 in admin_chat()
+        too. Must degrade to a friendly AdminCopilotResponse instead."""
+        settings.OPENAI_API_KEY = "sk-test"
+        mock_client = MagicMock()
+        mock_openai_cls.return_value = mock_client
+        mock_client.chat.completions.create.side_effect = Exception(
+            "Error code: 401 - invalid_api_key"
+        )
+
+        from apps.ai.admin_copilot import admin_chat
+
+        result = admin_chat("Show revenue", user=None)
+        assert "trouble reaching" in result.reply
+        assert "401" not in result.reply
 
     @pytest.mark.django_db
     @patch("openai.OpenAI")

@@ -81,11 +81,19 @@ def admin_chat(message: str, user=None, conversation_id=None) -> AdminCopilotRes
     max_rounds = 5
 
     for _ in range(max_rounds):
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            tools=admin_tools or None,
-        )
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                tools=admin_tools or None,
+            )
+        except Exception:
+            logger.exception("OpenAI request failed in admin_copilot.admin_chat()")
+            return AdminCopilotResponse(
+                reply="Sorry, I'm having trouble reaching the AI assistant right now. "
+                "Please try again in a moment.",
+                tool_calls_made=tool_calls_made,
+            )
 
         choice = response.choices[0]
         assistant_msg = choice.message

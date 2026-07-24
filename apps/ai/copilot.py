@@ -57,6 +57,11 @@ FALLBACK_NO_KEY = (
     "environment variable to enable the AI assistant."
 )
 
+FALLBACK_PROVIDER_ERROR = (
+    "Sorry, I'm having trouble reaching the AI assistant right now. "
+    "Please try again in a moment."
+)
+
 
 @dataclass
 class CopilotResponse:
@@ -174,9 +179,21 @@ def chat(
     tool_calls_made = []
 
     for _ in range(MAX_TOOL_ROUNDS):
-        response = client.chat.completions.create(
-            model=MODEL, messages=messages, tools=openai_tools, tool_choice="auto"
-        )
+        try:
+            response = client.chat.completions.create(
+                model=MODEL, messages=messages, tools=openai_tools, tool_choice="auto"
+            )
+        except Exception:
+            # An invalid/rejected API key, rate limit, or transient network
+            # error should degrade to a friendly message, not an uncaught
+            # 500 — the AI provider is an external dependency the rest of
+            # the request pipeline shouldn't crash over.
+            logger.exception("OpenAI request failed in copilot.chat()")
+            return CopilotResponse(
+                reply=FALLBACK_PROVIDER_ERROR,
+                tool_calls_made=tool_calls_made,
+                conversation_id=str(conversation.id) if conversation else None,
+            )
 
         choice = response.choices[0]
         msg = choice.message
