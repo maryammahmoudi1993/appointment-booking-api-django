@@ -127,7 +127,12 @@ class StaffCreateSerializer(serializers.Serializer):
         user = User(role="staff", **validated_data)
         user.set_password(password)
         user.save()
-        profile = StaffProfile.objects.create(user=user, bio=bio)
+        # `business` is not a serializer field (no mass-assignment) — it must
+        # come from the requesting admin's own business via view context, or
+        # the new StaffProfile silently vanishes from every business-scoped
+        # listing (business=None).
+        business = self.context.get("business")
+        profile = StaffProfile.objects.create(user=user, bio=bio, business=business)
         if services:
             profile.services_offered.set(services)
         return profile

@@ -52,3 +52,10 @@ class ServiceViewSet(BusinessScopedMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     search_fields = ("name", "description")
     ordering_fields = ("name", "price", "duration_minutes")
+
+    def perform_create(self, serializer):
+        # ServiceSerializer deliberately excludes `business` from its writable
+        # fields (no mass-assignment), but without assigning it here every
+        # service created through this endpoint gets business=None and then
+        # silently never appears in any business-scoped listing again.
+        serializer.save(business=self.get_business())
