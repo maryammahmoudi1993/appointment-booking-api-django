@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { copilotApi } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,6 +17,7 @@ const SUGGESTIONS = [
 ];
 
 export default function ChatWidget() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -33,6 +35,22 @@ export default function ChatWidget() {
 
     setMessages((prev) => [...prev, { role: "user", content: msg }]);
     setInput("");
+
+    // The copilot endpoint requires authentication. Without this guard an
+    // anonymous visitor's request would 401, which the global axios
+    // interceptor treats as an expired session and redirects to /login —
+    // a jarring surprise for someone who was just browsing anonymously.
+    if (!user) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Please sign in first so I can help with your bookings and account.",
+        },
+      ]);
+      return;
+    }
+
     setLoading(true);
 
     try {

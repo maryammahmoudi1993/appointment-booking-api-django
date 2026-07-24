@@ -1,14 +1,20 @@
 import { Outlet } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Footer from "./Footer";
 import Navbar from "./Navbar";
-import SupportWidget from "./SupportWidget";
+import ChatWidget from "./ChatWidget";
 import CustomerDock from "./CustomerDock";
 import LandingHeader from "./landing/LandingHeader";
 import LandingFooter from "./landing/LandingFooter";
 
 export default function Layout() {
-  const landing = useLocation().pathname === "/";
+  const { user } = useAuth();
+  // The marketing landing header/footer only make sense for a logged-out
+  // visitor. Once signed in, the landing page should behave like every
+  // other page — otherwise a logged-in customer visiting "/" loses access
+  // to My Bookings/Rewards/Profile until they navigate elsewhere first.
+  const landing = useLocation().pathname === "/" && !user;
   return (
     <div className="flex min-h-screen flex-col pb-20 md:pb-0">
       <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -26,7 +32,7 @@ export default function Layout() {
         <Outlet />
       </main>
       {landing ? <LandingFooter /> : <Footer />}
-      <SupportWidget />
+      <ChatWidget />
       <CustomerDock />
     </div>
   );
