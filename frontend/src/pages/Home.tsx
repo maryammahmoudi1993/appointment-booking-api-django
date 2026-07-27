@@ -1,6 +1,5 @@
 import {
   HeroSection,
-  PortfolioDemoBar,
   ServiceCategoryBar,
   WhyChooseUs,
   ServicesGrid,
@@ -10,13 +9,10 @@ import {
   GalleryAndTestimonials,
 } from "../components/landing";
 import Reveal from "../components/ui/Reveal";
-import { useAuth } from "../context/AuthContext";
 
 export default function Home() {
-  const { user } = useAuth();
   return (
     <div className="overflow-hidden bg-main">
-      {!user && <PortfolioDemoBar />}
       <HeroSection />
       <Reveal>
         <ServiceCategoryBar />

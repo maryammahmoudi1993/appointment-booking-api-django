@@ -7,6 +7,7 @@ import ChatWidget from "./ChatWidget";
 import CustomerDock from "./CustomerDock";
 import LandingHeader from "./landing/LandingHeader";
 import LandingFooter from "./landing/LandingFooter";
+import PortfolioDemoBar from "./landing/PortfolioDemoBar";
 
 export default function Layout() {
   const { user } = useAuth();
@@ -27,10 +28,17 @@ export default function Layout() {
           </linearGradient>
         </defs>
       </svg>
-      {landing ? <LandingHeader /> : <Navbar />}
-      <main id="main-content" className="flex-1" tabIndex={-1}>
-        <Outlet />
-      </main>
+      {landing && <PortfolioDemoBar />}
+      {/* LandingHeader floats absolutely over the Hero's background, so it
+          needs its own positioned ancestor here — otherwise its `top: 0`
+          anchors to the page's absolute top and overlaps whatever renders
+          above it (the demo bar), instead of the Hero underneath it. */}
+      <div className="relative flex flex-1 flex-col">
+        {landing ? <LandingHeader /> : <Navbar />}
+        <main id="main-content" className="flex-1" tabIndex={-1}>
+          <Outlet />
+        </main>
+      </div>
       {landing ? <LandingFooter /> : <Footer />}
       <ChatWidget />
       <CustomerDock />
