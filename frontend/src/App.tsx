@@ -1,8 +1,9 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import PrivateRoute from "./components/PrivateRoute";
 import Home from "./pages/Home";
+import { warmBackend } from "./services/backendWarmup";
 
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
@@ -30,6 +31,13 @@ function RouteLoading() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Fire-and-forget: nudges a sleeping Render free-tier instance awake
+    // as soon as the (statically hosted) landing page loads, so the API
+    // has a head start before the visitor reaches an API-backed page.
+    void warmBackend();
+  }, []);
+
   return (
     <Suspense fallback={<RouteLoading />}>
       <Routes>

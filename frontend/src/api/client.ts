@@ -1,7 +1,12 @@
 import axios from "axios";
 
+// Same-origin "/api" works for the combined Django deploy. When the
+// frontend is hosted separately (e.g. Cloudflare Pages) from the API
+// (Render), VITE_API_BASE_URL points requests at the API's own origin.
+const API_ORIGIN = import.meta.env.VITE_API_BASE_URL || "";
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: `${API_ORIGIN}/api`,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -23,7 +28,7 @@ api.interceptors.response.use(
       const hadAccessToken = !!localStorage.getItem("access_token");
       if (refresh) {
         try {
-          const { data } = await axios.post("/api/auth/refresh/", {
+          const { data } = await axios.post(`${API_ORIGIN}/api/auth/refresh/`, {
             refresh,
           });
           localStorage.setItem("access_token", data.access);

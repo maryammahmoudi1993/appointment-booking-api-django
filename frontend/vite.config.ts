@@ -10,7 +10,11 @@ export default defineConfig(({ command }) => ({
   // WhiteNoise and instead get swallowed by the SPA catch-all route,
   // which serves index.html back for every unmatched path. Scoped to
   // `build` only so the local dev server still runs at the site root.
-  base: command === "build" ? "/static/" : "/",
+  //
+  // When building for a standalone static host (Cloudflare Pages, Vercel)
+  // instead of the combined Django deploy, set VITE_BUILD_BASE_PATH=/ so
+  // assets resolve from the host's own root rather than /static/.
+  base: command === "build" ? process.env.VITE_BUILD_BASE_PATH || "/static/" : "/",
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
