@@ -1,4 +1,5 @@
 export { default as HeroSection } from "./HeroSection";
+export { default as PortfolioDemoBar } from "./PortfolioDemoBar";
 export { default as ServiceCategoryBar } from "./ServiceCategoryBar";
 export { default as WhyChooseUs } from "./WhyChooseUs";
 export { default as ServicesGrid } from "./ServicesGrid";

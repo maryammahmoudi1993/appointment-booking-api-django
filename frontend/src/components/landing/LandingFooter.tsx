@@ -21,7 +21,7 @@ export default function LandingFooter() {
         </div>
         <div className="mt-9 flex flex-col gap-3 border-t border-white/15 pt-5 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} BloomFlow. All rights reserved.</p>
-          <div className="flex gap-5"><Link to="/privacy">Privacy policy</Link><Link to="/terms">Terms of service</Link></div>
+          <div className="flex gap-5"><Link to="/case-study">Engineering case study</Link><Link to="/privacy">Privacy policy</Link><Link to="/terms">Terms of service</Link></div>
         </div>
       </div>
     </footer>

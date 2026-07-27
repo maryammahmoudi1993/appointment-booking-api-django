@@ -18,6 +18,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Support = lazy(() => import("./pages/Support"));
 const Legal = lazy(() => import("./pages/Legal"));
+const CaseStudy = lazy(() => import("./pages/CaseStudy"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/privacy" element={<Legal />} />
           <Route path="/terms" element={<Legal />} />
+          <Route path="/case-study" element={<CaseStudy />} />
           <Route path="/book" element={<PrivateRoute requiredRole="customer"><BookAppointment /></PrivateRoute>} />
           <Route path="/my-bookings" element={<PrivateRoute><MyBookings /></PrivateRoute>} />
           <Route path="/loyalty" element={<PrivateRoute requiredRole="customer"><Loyalty /></PrivateRoute>} />
